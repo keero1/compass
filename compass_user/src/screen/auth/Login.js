@@ -93,12 +93,6 @@ const Login = () => {
 
   const onGoogleLoginPressed = () => {
     console.log("google clicked");
-    
-
-  }
-
-  const onFacebookLoginPressed = () => {
-    console.log("facebook clicked");
   }
 
   return (
@@ -142,16 +136,9 @@ const Login = () => {
         </View>
 
         <View style={styles.container}>
-          <Pressable onPress={onGoogleLoginPressed} style={[styles.socialLoginButton, {marginRight: 20}]}>
+          <Pressable onPress={onGoogleLoginPressed} style={[styles.socialLoginButton]}>
             <Image
               source={IMAGES.google}
-              style={[styles.socialLoginImage, {height: height * 0.3}]}
-            />
-          </Pressable>
-
-          <Pressable onPress={onFacebookLoginPressed} style={[styles.socialLoginButton, {marginLeft: 20}]}>
-            <Image
-              source={IMAGES.facebook}
               style={[styles.socialLoginImage, {height: height * 0.3}]}
             />
           </Pressable>
