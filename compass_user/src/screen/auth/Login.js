@@ -24,7 +24,6 @@ import AuthButton from '../../components/auth/AuthButton';
 // FIREBASE
 import auth from '@react-native-firebase/auth';
 import {useNavigation} from '@react-navigation/native';
-import { GoogleSignIn } from '@react-native-google-signin/google-signin';
 
 const Login = () => {
   const navigation = useNavigation();
