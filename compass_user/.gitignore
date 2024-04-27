@@ -64,3 +64,6 @@ yarn-error.log
 
 # testing
 /coverage
+
+# api
+google_maps_api.xml
