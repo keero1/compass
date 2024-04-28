@@ -60,6 +60,7 @@ const Drawer = () => {
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
               <Text style={styles.text}>{userDisplayName || 'John Eldenring'}</Text>
+              {/* Profile */}
               <TouchableOpacity
                 onPress={() => console.log('View Profile')}
                 style={styles.viewProfileButton}>

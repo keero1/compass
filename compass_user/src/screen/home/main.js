@@ -8,7 +8,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import ROUTES from '../../constants/routes';
 
 // MAP
-import MapView, {PROVIDER_GOOGLE} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 const Main = props => {
@@ -20,6 +20,9 @@ const Main = props => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
 
+  // marker
+  const [marker, setMarker] = useState([]);
+
   useEffect(() => {
     // Fetch current location when component mounts
     Geolocation.getCurrentPosition(
@@ -30,8 +33,8 @@ const Main = props => {
         setInitialRegion({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-          latitudeDelta: 0.005,
-          longitudeDelta: 0.005,
+          latitudeDelta: 0.001,
+          longitudeDelta: 0.001,
         });
       },
       error => {
@@ -50,7 +53,7 @@ const Main = props => {
 
   // reset camera to north
   const resetRotation = () => {
-    console.log("Rotation Reset")
+    console.log('Rotation Reset');
     if (mapRef.current) {
       mapRef.current.animateCamera({heading: 0});
     }
@@ -58,13 +61,13 @@ const Main = props => {
 
   // handle centering to user
   const centerToUser = () => {
-    console.log("Reset Camera to User")
+    console.log('Reset Camera to User');
     if (currentLocation && mapRef.current) {
       mapRef.current.animateToRegion({
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        latitudeDelta: 0.005,
-        longitudeDelta: 0.005,
+        latitudeDelta: 0.001,
+        longitudeDelta: 0.001,
       });
     }
   };
@@ -72,6 +75,11 @@ const Main = props => {
   // save the current region
   const onRegionChangeComplete = region => {
     setMapRegion(region);
+  };
+
+  const onMapPress = event => {
+    const {coordinate} = event.nativeEvent;
+    setMarker([...marker, coordinate]);
   };
 
   return (
@@ -95,8 +103,17 @@ const Main = props => {
           maxZoomLevel={20}
           minZoomLevel={12}
           onRegionChangeComplete={onRegionChangeComplete}
+          pitchEnabled={false}
           showsCompass={false}
-        />
+          onPress={onMapPress}>
+          {marker.map((marker, index) => (
+            <Marker
+              key={index}
+              coordinate={marker}
+              title={`Marker ${index + 1}`}
+            />
+          ))}
+        </MapView>
         {/* compass button */}
         <TouchableOpacity onPress={resetRotation} style={styles.compassButton}>
           <Icon name="navigation" size={30} color="black" />
