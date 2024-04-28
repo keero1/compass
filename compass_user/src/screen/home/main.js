@@ -1,5 +1,5 @@
 import React, {useRef, useEffect, useState} from 'react';
-import {StyleSheet, View, TouchableOpacity, Dimensions} from 'react-native';
+import {StyleSheet, View, TouchableOpacity, Dimensions, Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -21,7 +21,7 @@ const Main = props => {
   const [mapRegion, setMapRegion] = useState(null);
 
   // marker
-  const [marker, setMarker] = useState([]);
+  const [marker, setMarker] = useState(null);
 
   useEffect(() => {
     // Fetch current location when component mounts
@@ -79,8 +79,39 @@ const Main = props => {
 
   const onMapPress = event => {
     const {coordinate} = event.nativeEvent;
-    setMarker([...marker, coordinate]);
+    const distance = calculateDistance(currentLocation, coordinate);
+
+    if (distance <= 500) {
+      setMarker(coordinate);
+    } else {
+      Alert.alert(
+        'Out of Range',
+        'Marker can only be placed within 500 meters from your current location.',
+      );
+    }
   };
+
+  const calculateDistance = (coord1, coord2) => {
+    // Radius of the Earth in meters
+    const earthRadius = 6371e3;
+
+    // Convert latitude and longitude from degrees to radians
+    const latitude1Radians = (coord1.latitude * Math.PI) / 180;
+    const latitude2Radians = (coord2.latitude * Math.PI) / 180;
+    const latitudeDifferenceRadians = ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
+    const longitudeDifferenceRadians = ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
+
+    // Haversine formula
+    const a =
+        Math.sin(latitudeDifferenceRadians / 2) * Math.sin(latitudeDifferenceRadians / 2) +
+        Math.cos(latitude1Radians) * Math.cos(latitude2Radians) * Math.sin(longitudeDifferenceRadians / 2) * Math.sin(longitudeDifferenceRadians / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    // Calculate the distance
+    const distance = earthRadius * c;
+
+    return distance;
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -105,14 +136,10 @@ const Main = props => {
           onRegionChangeComplete={onRegionChangeComplete}
           pitchEnabled={false}
           showsCompass={false}
+          toolbarEnabled={false}
           onPress={onMapPress}>
-          {marker.map((marker, index) => (
-            <Marker
-              key={index}
-              coordinate={marker}
-              title={`Marker ${index + 1}`}
-            />
-          ))}
+          {/* Marker */}
+          {marker && <Marker coordinate={marker} title="Marker" />}
         </MapView>
         {/* compass button */}
         <TouchableOpacity onPress={resetRotation} style={styles.compassButton}>
