@@ -8,4 +8,8 @@ export default {
     // DRAWER
     DRAWER: 'Drawer',
     SETTINGS: 'Settings',
+
+    //DRAWER CHILD
+
+    PROFILE: 'Profile',
 }

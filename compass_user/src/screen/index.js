@@ -11,3 +11,7 @@ export { default as Main} from './home/main';
 // drawer
 export { default as Drawer } from './drawer/Drawer';
 export { default as Settings } from './drawer/Settings';
+
+// drawer child
+
+export { default as Profile } from './drawer/profile/Profile'
