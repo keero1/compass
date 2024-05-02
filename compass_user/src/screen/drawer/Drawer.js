@@ -5,7 +5,6 @@ import {
   SafeAreaView,
   StyleSheet,
   Image,
-  useWindowDimensions,
   Text,
   TouchableOpacity,
 } from 'react-native';
@@ -13,9 +12,10 @@ import {
 //firebase
 import auth from '@react-native-firebase/auth';
 
-import {IMAGES} from '../../constants';
+import {IMAGES, ROUTES} from '../../constants';
 
-const Drawer = () => {
+const Drawer = props => {
+  const {navigation} = props;
 
   const onLogoutPressed = () => {
     Alert.alert('Alert', 'Confirm Logout?', [
@@ -52,6 +52,15 @@ const Drawer = () => {
     getUserDisplayName();
   }, []);
 
+
+  const onProfilePress = () => {
+    navigation.navigate(ROUTES.PROFILE)
+  }
+
+  const onSettingsPressed = () => {
+    navigation.navigate(ROUTES.SETTINGS)
+  }
+
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
@@ -60,8 +69,9 @@ const Drawer = () => {
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
               <Text style={styles.text}>{userDisplayName || 'John Eldenring'}</Text>
+              {/* Profile */}
               <TouchableOpacity
-                onPress={() => console.log('View Profile')}
+                onPress={onProfilePress}
                 style={styles.viewProfileButton}>
                 <Text style={styles.viewProfileButtonText}>View Profile</Text>
               </TouchableOpacity>
@@ -73,7 +83,7 @@ const Drawer = () => {
         <View style={styles.separator}></View>
 
         {/* Touchable Text Components */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onSettingsPressed}>
           <Text style={styles.menuItem}>Settings</Text>
         </TouchableOpacity>
         <TouchableOpacity>

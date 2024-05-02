@@ -96,6 +96,10 @@ const Register = props => {
     navigation.goBack();
   };
 
+  const onGoogleRegisterPressed = () => {
+    console.log("google clicked");
+  }
+
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
@@ -134,16 +138,9 @@ const Register = props => {
         </View>
 
         <View style={styles.container}>
-          <Pressable style={[styles.socialLoginButton, {marginRight: 20}]}>
+          <Pressable onPress={onGoogleRegisterPressed} style={[styles.socialLoginButton]}>
             <Image
               source={IMAGES.google}
-              style={[styles.socialLoginImage, {height: height * 0.3}]}
-            />
-          </Pressable>
-
-          <Pressable style={[styles.socialLoginButton, {marginLeft: 20}]}>
-            <Image
-              source={IMAGES.facebook}
               style={[styles.socialLoginImage, {height: height * 0.3}]}
             />
           </Pressable>
