@@ -1,5 +1,13 @@
 import React, {useRef, useEffect, useState} from 'react';
-import {StyleSheet, View, TouchableOpacity, Dimensions, Alert} from 'react-native';
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  Dimensions,
+  Alert,
+  Animated,
+  TextInput,
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -22,6 +30,11 @@ const Main = props => {
 
   // marker
   const [marker, setMarker] = useState(null);
+
+  // search boc
+
+  const [searchVisible, setSearchVisible] = useState(false);
+  const searchBoxHeight = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Fetch current location when component mounts
@@ -49,6 +62,28 @@ const Main = props => {
     navigation.navigate(ROUTES.DRAWER);
 
     console.log('DRAWER');
+  };
+
+  // search
+
+  const onSearchPressed = () => {
+    console.log('SEARCH');
+
+    setSearchVisible(true);
+    Animated.timing(searchBoxHeight, {
+      toValue: screenHeight * 0.95,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  // hide search box
+  const hideSearchBox = () => {
+    Animated.timing(searchBoxHeight, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => setSearchVisible(false));
   };
 
   // reset camera to north
@@ -98,20 +133,26 @@ const Main = props => {
     // Convert latitude and longitude from degrees to radians
     const latitude1Radians = (coord1.latitude * Math.PI) / 180;
     const latitude2Radians = (coord2.latitude * Math.PI) / 180;
-    const latitudeDifferenceRadians = ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
-    const longitudeDifferenceRadians = ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
+    const latitudeDifferenceRadians =
+      ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
+    const longitudeDifferenceRadians =
+      ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
 
     // Haversine formula
     const a =
-        Math.sin(latitudeDifferenceRadians / 2) * Math.sin(latitudeDifferenceRadians / 2) +
-        Math.cos(latitude1Radians) * Math.cos(latitude2Radians) * Math.sin(longitudeDifferenceRadians / 2) * Math.sin(longitudeDifferenceRadians / 2);
+      Math.sin(latitudeDifferenceRadians / 2) *
+        Math.sin(latitudeDifferenceRadians / 2) +
+      Math.cos(latitude1Radians) *
+        Math.cos(latitude2Radians) *
+        Math.sin(longitudeDifferenceRadians / 2) *
+        Math.sin(longitudeDifferenceRadians / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     // Calculate the distance
     const distance = earthRadius * c;
 
     return distance;
-};
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -119,6 +160,11 @@ const Main = props => {
         <TouchableOpacity onPress={onMenuPressed}>
           <View style={styles.hamburgerMenu}>
             <Icon name="menu" size={30} color="black" />
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onSearchPressed}>
+          <View style={styles.searchButton}>
+            <Icon name="search" size={30} color="black" />
           </View>
         </TouchableOpacity>
       </View>
@@ -150,6 +196,15 @@ const Main = props => {
           <Icon name="my-location" size={30} color="black" />
         </TouchableOpacity>
       </View>
+
+      {searchVisible && (
+        <Animated.View style={[styles.searchBox, {height: searchBoxHeight}]}>
+          <TouchableOpacity onPress={hideSearchBox} style={styles.closeButton}>
+            <Icon name="close" size={30} color="black" />
+          </TouchableOpacity>
+          <TextInput style={styles.searchInput} placeholder="Search Location" />
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 };
@@ -168,8 +223,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 20,
     left: 20,
+    right: 20,
     zIndex: 999,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   hamburgerMenu: {
@@ -180,6 +237,15 @@ const styles = StyleSheet.create({
     height: screenHeight * 0.061,
     borderRadius: 10,
     marginRight: 10,
+  },
+  searchButton: {
+    backgroundColor: '#e4e9f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: screenWidth * 0.112,
+    height: screenHeight * 0.061,
+    borderRadius: 10,
+    marginLeft: 10,
   },
   mapContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -211,5 +277,31 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
+  },
+
+
+  searchBox: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    zIndex: 1000,
+  },
+  searchInput: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    marginTop: 30,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
 });
