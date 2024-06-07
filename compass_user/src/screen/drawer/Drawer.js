@@ -14,18 +14,36 @@ import auth from '@react-native-firebase/auth';
 
 import {IMAGES, ROUTES} from '../../constants';
 
+// Google
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+
 const Drawer = props => {
   const {navigation} = props;
 
   const onLogoutPressed = () => {
+    const currentUser = auth().currentUser;
     Alert.alert('Alert', 'Confirm Logout?', [
       {
         text: 'Logout',
-        onPress: () => {
+        onPress: async () => {
           console.log('Sign out');
           auth()
             .signOut()
             .then(() => console.log('User signed out'));
+          // Check if the user is signed in using google
+          if (
+            currentUser &&
+            currentUser.providerData.some(
+              provider => provider.providerId === 'google.com',
+            )
+          ) {
+            try {
+              await GoogleSignin.revokeAccess();
+              console.log('Google sign out successfully');
+            } catch (error) {
+              console.error('Google sign out error: ', error);
+            }
+          }
         },
       },
       {
@@ -44,7 +62,7 @@ const Drawer = props => {
     const getUserDisplayName = async () => {
       const user = auth().currentUser;
 
-      if(user) {
+      if (user) {
         setUserDisplayName(user.displayName);
       }
     };
@@ -52,14 +70,13 @@ const Drawer = props => {
     getUserDisplayName();
   }, []);
 
-
   const onProfilePress = () => {
-    navigation.navigate(ROUTES.PROFILE)
-  }
+    navigation.navigate(ROUTES.PROFILE);
+  };
 
   const onSettingsPressed = () => {
-    navigation.navigate(ROUTES.SETTINGS)
-  }
+    navigation.navigate(ROUTES.SETTINGS);
+  };
 
   return (
     <SafeAreaView style={styles.main}>
@@ -68,7 +85,9 @@ const Drawer = props => {
           <View style={styles.profileContent}>
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
-              <Text style={styles.text}>{userDisplayName || 'John Eldenring'}</Text>
+              <Text style={styles.text}>
+                {userDisplayName || 'John Eldenring'}
+              </Text>
               {/* Profile */}
               <TouchableOpacity
                 onPress={onProfilePress}

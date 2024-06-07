@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
   Alert,
   ActivityIndicator,
-  Pressable
+  Pressable,
 } from 'react-native';
 
 import IMAGES from '../../constants/images';
@@ -46,8 +46,10 @@ const Register = props => {
       // password format
 
       const MIN_PASSWORD_LENGTH = 6;
-      if(password.length < MIN_PASSWORD_LENGTH) {
-        throw new Error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
+      if (password.length < MIN_PASSWORD_LENGTH) {
+        throw new Error(
+          `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`,
+        );
       }
 
       // create the account
@@ -76,7 +78,7 @@ const Register = props => {
             text: 'OK',
             onPress: () => navigation.goBack(), // Navigate back when "OK" is pressed
           },
-        ]
+        ],
       );
 
       console.log(user);
@@ -97,8 +99,8 @@ const Register = props => {
   };
 
   const onGoogleRegisterPressed = () => {
-    console.log("google clicked");
-  }
+    console.log('google clicked');
+  };
 
   return (
     <SafeAreaView style={styles.main}>
@@ -129,6 +131,7 @@ const Register = props => {
           </>
         )}
 
+        {/*
         <View style={styles.container}>
           <View style={styles.line} />
           <View>
@@ -138,13 +141,16 @@ const Register = props => {
         </View>
 
         <View style={styles.container}>
-          <Pressable onPress={onGoogleRegisterPressed} style={[styles.socialLoginButton]}>
+          <Pressable
+            onPress={onGoogleRegisterPressed}
+            style={[styles.socialLoginButton]}>
             <Image
               source={IMAGES.google}
               style={[styles.socialLoginImage, {height: height * 0.3}]}
             />
           </Pressable>
         </View>
+        */}
 
         <View style={styles.footer}>
           <View style={styles.signUpContainer}>

@@ -113,11 +113,33 @@ const Main = props => {
   };
 
   const onMapPress = event => {
+    if (marker) {
+      Alert.alert(
+        'Marker Already Placed',
+        'There is already a marker placed. Please remove the current marker before placing a new one.',
+      );
+      return;
+    }
+
     const {coordinate} = event.nativeEvent;
     const distance = calculateDistance(currentLocation, coordinate);
 
     if (distance <= 500) {
-      setMarker(coordinate);
+      Alert.alert(
+        'Place Marker',
+        'Do you want to place a marker here?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'OK',
+            onPress: () => setMarker(coordinate),
+          },
+        ],
+        {cancelable: true},
+      );
     } else {
       Alert.alert(
         'Out of Range',
@@ -154,6 +176,24 @@ const Main = props => {
     return distance;
   };
 
+  const onMarkerPressed = () => {
+    Alert.alert(
+      'Marker',
+      'Do you want to delete this marker?',
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: () => setMarker(null),
+        },
+      ],
+      {cancelable: true},
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -185,7 +225,13 @@ const Main = props => {
           toolbarEnabled={false}
           onPress={onMapPress}>
           {/* Marker */}
-          {marker && <Marker coordinate={marker} title="Marker" />}
+          {marker && (
+            <Marker
+              coordinate={marker}
+              title="Marker"
+              onPress={onMarkerPressed}
+            />
+          )}
         </MapView>
         {/* compass button */}
         <TouchableOpacity onPress={resetRotation} style={styles.compassButton}>
@@ -278,7 +324,6 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-
 
   searchBox: {
     position: 'absolute',

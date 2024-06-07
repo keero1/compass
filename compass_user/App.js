@@ -1,6 +1,11 @@
 import React, {useState, useEffect} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
-import { PermissionsAndroid } from 'react-native';
+import {
+  PermissionsAndroid,
+  View,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 
 //firebase
 import auth from '@react-native-firebase/auth';
@@ -14,14 +19,14 @@ export default function App() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState();
 
-  // Handle user state changes
-  function onAuthStateChanged(user) {
-    setUser(user);
-    if (initializing) setInitializing(false);
-  }
-
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+    const subscriber = auth().onAuthStateChanged(user => {
+      setUser(user);
+      setTimeout(() => {
+        setInitializing(false); // Set initializing to false after 1 second
+      }, 1000); // 1000 milliseconds = 1 second
+    });
+
     return subscriber; // unsubscribe on unmount
   }, []);
 
@@ -52,7 +57,14 @@ export default function App() {
     requestLocationPermission(); // Request location permission when component mounts
   }, []);
 
-  if (initializing) return null;
+  // TODO : Add a loading design
+  if (initializing) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
@@ -60,3 +72,11 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

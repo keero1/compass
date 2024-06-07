@@ -35,6 +35,9 @@ function AuthNavigator() {
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',
           title: false,
+          headerStyle: {
+            backgroundColor: COLORS.colorPrimary,
+          }
         }}
       />
       
