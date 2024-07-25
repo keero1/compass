@@ -38,8 +38,14 @@ const Drawer = props => {
             )
           ) {
             try {
-              await GoogleSignin.revokeAccess();
-              console.log('Google sign out successfully');
+              const isSignedIn = await GoogleSignin.isSignedIn();
+              if (isSignedIn) {
+                await GoogleSignin.revokeAccess();
+                await GoogleSignin.signOut();
+                console.log('Google sign out successfully');
+              } else {
+                console.log('Google sign out: No user is signed in');
+              }
             } catch (error) {
               console.error('Google sign out error: ', error);
             }
