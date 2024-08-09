@@ -19,9 +19,16 @@ import ROUTES from '../../constants/routes';
 import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
+// firebase
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+
 const Main = props => {
   const {navigation} = props;
   const mapRef = useRef(MapView);
+
+  // user id
+  const userID = auth().currentUser.uid;
 
   // user current location
   const [initialRegion, setInitialRegion] = useState(null);
@@ -135,7 +142,27 @@ const Main = props => {
           },
           {
             text: 'OK',
-            onPress: () => setMarker(coordinate),
+            onPress: async () => {
+              setMarker(coordinate);
+
+              try {
+                await firestore()
+                  .collection('users')
+                  .doc(userID)
+                  .update({
+                    coordinates: new firestore.GeoPoint(
+                      coordinate.latitude,
+                      coordinate.longitude,
+                    ),
+                  });
+              } catch (error) {
+                console.error('Error updating Firestore document: ', error);
+                Alert.alert(
+                  'Update Failed',
+                  'Failed to update marker location.',
+                );
+              }
+            },
           },
         ],
         {cancelable: true},
@@ -187,7 +214,18 @@ const Main = props => {
         },
         {
           text: 'Delete',
-          onPress: () => setMarker(null),
+          onPress: async () => {
+            setMarker(null);
+
+            try {
+              await firestore().collection('users').doc(userID).update({
+                coordinates: null,
+              });
+            } catch (error) {
+              console.error('Error updating Firestore document:', error);
+              Alert.alert('Update Failed', 'Failed to update marker location.');
+            }
+          },
         },
       ],
       {cancelable: true},

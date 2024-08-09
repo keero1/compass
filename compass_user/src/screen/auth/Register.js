@@ -4,21 +4,19 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
-  Image,
   TouchableOpacity,
   useWindowDimensions,
   Alert,
   ActivityIndicator,
-  Pressable,
 } from 'react-native';
-
-import IMAGES from '../../constants/images';
 
 import AuthInput from '../../components/auth/AuthInput';
 
 import AuthButton from '../../components/auth/AuthButton';
 
 import auth from '@react-native-firebase/auth';
+
+import firestore from '@react-native-firebase/firestore';
 
 const Register = props => {
   const {navigation} = props;
@@ -52,6 +50,17 @@ const Register = props => {
 
   const isPasswordValid = Object.values(passwordValid).every(Boolean);
 
+  const generateRandomString = length => {
+    const charset =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomString = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      randomString += charset[randomIndex];
+    }
+    return randomString;
+  };
+
   const onRegisterPressed = async () => {
     setLoading(true);
 
@@ -67,16 +76,6 @@ const Register = props => {
       if (password !== confirmPassword) {
         throw new Error('Password does not match.');
       }
-      // password format
-      const passwordRegex =
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d|.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
-
-      if (!passwordRegex.test(password)) {
-        throw new Error(
-          'Password must be at least 8 characters long and include at least one lowercase letter, one uppercase letter, and one number or symbol.',
-        );
-      }
-
       // create the account
 
       const {user} = await auth().createUserWithEmailAndPassword(
@@ -84,11 +83,21 @@ const Register = props => {
         password,
       );
 
+      // user name
+      const username = `compass_${generateRandomString(8)}`;
+
       // set default display name
 
       await user.updateProfile({
         displayName: 'ComPass User',
       });
+
+      // create user document
+
+      await firestore().collection('users').doc(user.uid).set({
+        username: username,
+        coordinates: null,
+      })
 
       await user.sendEmailVerification();
       auth().signOut();
@@ -136,43 +145,45 @@ const Register = props => {
           autoCapitalize={'none'}
         />
 
-        <View style={styles.passwordRequirementsContainer}>
-          <Text
-            style={[
-              styles.passwordRequirement,
-              {color: passwordValid.length ? 'green' : 'red'},
-            ]}>
-            At least 8 characters
-          </Text>
-          <Text
-            style={[
-              styles.passwordRequirement,
-              {color: passwordValid.uppercase ? 'green' : 'red'},
-            ]}>
-            At least 1 uppercase letter (A-Z)
-          </Text>
-          <Text
-            style={[
-              styles.passwordRequirement,
-              {color: passwordValid.lowercase ? 'green' : 'red'},
-            ]}>
-            At least 1 lowercase letter (a-z)
-          </Text>
-          <Text
-            style={[
-              styles.passwordRequirement,
-              {color: passwordValid.number ? 'green' : 'red'},
-            ]}>
-            At least 1 number (0-9)
-          </Text>
-          <Text
-            style={[
-              styles.passwordRequirement,
-              {color: passwordValid.symbol ? 'green' : 'red'},
-            ]}>
-            At least 1 symbol (!@#$%^&*)
-          </Text>
-        </View>
+        {password.length > 0 && (
+          <View style={styles.passwordRequirementsContainer}>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.length ? 'green' : 'red'},
+              ]}>
+              At least 8 characters
+            </Text>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.uppercase ? 'green' : 'red'},
+              ]}>
+              At least 1 uppercase letter (A-Z)
+            </Text>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.lowercase ? 'green' : 'red'},
+              ]}>
+              At least 1 lowercase letter (a-z)
+            </Text>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.number ? 'green' : 'red'},
+              ]}>
+              At least 1 number (0-9)
+            </Text>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.symbol ? 'green' : 'red'},
+              ]}>
+              At least 1 symbol (!@#$%^&*)
+            </Text>
+          </View>
+        )}
 
         <AuthInput
           placeholder="Confirm Password"

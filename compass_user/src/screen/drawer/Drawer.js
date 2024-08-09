@@ -92,7 +92,7 @@ const Drawer = props => {
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
               <Text style={styles.text}>
-                {userDisplayName || 'John Eldenring'}
+                {userDisplayName}
               </Text>
               {/* Profile */}
               <TouchableOpacity
@@ -111,9 +111,9 @@ const Drawer = props => {
         <TouchableOpacity onPress={onSettingsPressed}>
           <Text style={styles.menuItem}>Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity>
+        {/* <TouchableOpacity>
           <Text style={styles.menuItem}>Feedback</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity onPress={onLogoutPressed}>
           <Text style={styles.menuItem}>Logout</Text>
         </TouchableOpacity>
