@@ -12,7 +12,20 @@
           "package_name": "com.compass_user"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "47001508674-n24b1opaogvupdfbrdf1gmrtsi15bik7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.compass_user",
+            "certificate_hash": "305382b31c6d0a68b1a2969e5dda47218b875c3c"
+          }
+        },
+        {
+          "client_id": "47001508674-jp3tfr2gts64d7mtts3jqpoeng0rg32r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCU243GLJ9BiEfg4PVZR4CUtobHuPh3Fto"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "47001508674-jp3tfr2gts64d7mtts3jqpoeng0rg32r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

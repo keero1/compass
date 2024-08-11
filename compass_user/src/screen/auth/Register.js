@@ -1,24 +1,22 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
-  Image,
   TouchableOpacity,
   useWindowDimensions,
   Alert,
   ActivityIndicator,
-  Pressable
 } from 'react-native';
-
-import IMAGES from '../../constants/images';
 
 import AuthInput from '../../components/auth/AuthInput';
 
 import AuthButton from '../../components/auth/AuthButton';
 
 import auth from '@react-native-firebase/auth';
+
+import firestore from '@react-native-firebase/firestore';
 
 const Register = props => {
   const {navigation} = props;
@@ -31,6 +29,38 @@ const Register = props => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // password requirement
+  const [passwordValid, setPasswordValid] = useState({
+    length: false,
+    lowercase: false,
+    uppercase: false,
+    numberOrSymbol: false,
+  });
+
+  useEffect(() => {
+    const MIN_PASSWORD_LENGTH = 8;
+    setPasswordValid({
+      length: password.length >= MIN_PASSWORD_LENGTH,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      number: /[0-9]/.test(password),
+      symbol: /[!@#$%^&*]/.test(password),
+    });
+  }, [password]);
+
+  const isPasswordValid = Object.values(passwordValid).every(Boolean);
+
+  const generateRandomString = length => {
+    const charset =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomString = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      randomString += charset[randomIndex];
+    }
+    return randomString;
+  };
+
   const onRegisterPressed = async () => {
     setLoading(true);
 
@@ -39,17 +69,13 @@ const Register = props => {
         throw new Error('Email and Password must not be empty.');
       }
 
+      if (!isPasswordValid) {
+        return;
+      }
+
       if (password !== confirmPassword) {
         throw new Error('Password does not match.');
       }
-
-      // password format
-
-      const MIN_PASSWORD_LENGTH = 6;
-      if(password.length < MIN_PASSWORD_LENGTH) {
-        throw new Error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
-      }
-
       // create the account
 
       const {user} = await auth().createUserWithEmailAndPassword(
@@ -57,11 +83,21 @@ const Register = props => {
         password,
       );
 
+      // user name
+      const username = `compass_${generateRandomString(8)}`;
+
       // set default display name
 
       await user.updateProfile({
         displayName: 'ComPass User',
       });
+
+      // create user document
+
+      await firestore().collection('users').doc(user.uid).set({
+        username: username,
+        coordinates: null,
+      })
 
       await user.sendEmailVerification();
       auth().signOut();
@@ -76,7 +112,7 @@ const Register = props => {
             text: 'OK',
             onPress: () => navigation.goBack(), // Navigate back when "OK" is pressed
           },
-        ]
+        ],
       );
 
       console.log(user);
@@ -96,10 +132,6 @@ const Register = props => {
     navigation.goBack();
   };
 
-  const onGoogleRegisterPressed = () => {
-    console.log("google clicked");
-  }
-
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
@@ -112,6 +144,46 @@ const Register = props => {
           secureTextEntry
           autoCapitalize={'none'}
         />
+
+        {password.length > 0 && (
+          <View style={styles.passwordRequirementsContainer}>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.length ? 'green' : 'red'},
+              ]}>
+              At least 8 characters
+            </Text>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.uppercase ? 'green' : 'red'},
+              ]}>
+              At least 1 uppercase letter (A-Z)
+            </Text>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.lowercase ? 'green' : 'red'},
+              ]}>
+              At least 1 lowercase letter (a-z)
+            </Text>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.number ? 'green' : 'red'},
+              ]}>
+              At least 1 number (0-9)
+            </Text>
+            <Text
+              style={[
+                styles.passwordRequirement,
+                {color: passwordValid.symbol ? 'green' : 'red'},
+              ]}>
+              At least 1 symbol (!@#$%^&*)
+            </Text>
+          </View>
+        )}
 
         <AuthInput
           placeholder="Confirm Password"
@@ -128,23 +200,6 @@ const Register = props => {
             <AuthButton text="Register" onPress={onRegisterPressed} />
           </>
         )}
-
-        <View style={styles.container}>
-          <View style={styles.line} />
-          <View>
-            <Text style={styles.lineText}>or sign up using</Text>
-          </View>
-          <View style={styles.line} />
-        </View>
-
-        <View style={styles.container}>
-          <Pressable onPress={onGoogleRegisterPressed} style={[styles.socialLoginButton]}>
-            <Image
-              source={IMAGES.google}
-              style={[styles.socialLoginImage, {height: height * 0.3}]}
-            />
-          </Pressable>
-        </View>
 
         <View style={styles.footer}>
           <View style={styles.signUpContainer}>
@@ -208,40 +263,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  //social footer
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  lineText: {
-    margin: 10,
-    textAlign: 'center',
-  },
-
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#DFDFDF',
-  },
-  socialLoginButton: {
-    padding: 10,
-
-    width: '100%',
-    maxWidth: 80,
-    maxHeight: 100,
-
-    borderRadius: 20,
-    alignItems: 'center',
-
-    backgroundColor: '#e4e9f6',
-  },
-
-  socialLoginImage: {
-    width: '100%',
-    maxWidth: 50,
-    maxHeight: 50,
-  },
+  // Footer
 
   footer: {
     flex: 1,
@@ -255,6 +277,16 @@ const styles = StyleSheet.create({
 
   signUp: {
     color: '#176B87',
+  },
+
+  passwordRequirementsContainer: {
+    width: '90%',
+    marginVertical: 5,
+    alignItems: 'flex-start', // Align items to the start (left)
+  },
+
+  passwordRequirement: {
+    textAlign: 'left', // Ensure text is aligned to the left
   },
 });
 

@@ -9,23 +9,51 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
+import {useIsFocused} from '@react-navigation/native';
+
 //firebase
 import auth from '@react-native-firebase/auth';
 
 import {IMAGES, ROUTES} from '../../constants';
 
+// Google
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+
 const Drawer = props => {
   const {navigation} = props;
 
+  const focus = useIsFocused();
+
   const onLogoutPressed = () => {
+    const currentUser = auth().currentUser;
     Alert.alert('Alert', 'Confirm Logout?', [
       {
         text: 'Logout',
-        onPress: () => {
+        onPress: async () => {
           console.log('Sign out');
           auth()
             .signOut()
             .then(() => console.log('User signed out'));
+          // Check if the user is signed in using google
+          if (
+            currentUser &&
+            currentUser.providerData.some(
+              provider => provider.providerId === 'google.com',
+            )
+          ) {
+            try {
+              const isSignedIn = await GoogleSignin.isSignedIn();
+              if (isSignedIn) {
+                await GoogleSignin.revokeAccess();
+                await GoogleSignin.signOut();
+                console.log('Google sign out successfully');
+              } else {
+                console.log('Google sign out: No user is signed in');
+              }
+            } catch (error) {
+              console.error('Google sign out error: ', error);
+            }
+          }
         },
       },
       {
@@ -44,22 +72,23 @@ const Drawer = props => {
     const getUserDisplayName = async () => {
       const user = auth().currentUser;
 
-      if(user) {
+      if (user) {
         setUserDisplayName(user.displayName);
       }
     };
 
-    getUserDisplayName();
-  }, []);
-
+    if (focus == true) {
+      getUserDisplayName();
+    }
+  }, [focus]);
 
   const onProfilePress = () => {
-    navigation.navigate(ROUTES.PROFILE)
-  }
+    navigation.navigate(ROUTES.PROFILE);
+  };
 
   const onSettingsPressed = () => {
-    navigation.navigate(ROUTES.SETTINGS)
-  }
+    navigation.navigate(ROUTES.SETTINGS);
+  };
 
   return (
     <SafeAreaView style={styles.main}>
@@ -68,7 +97,7 @@ const Drawer = props => {
           <View style={styles.profileContent}>
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
-              <Text style={styles.text}>{userDisplayName || 'John Eldenring'}</Text>
+              <Text style={styles.text}>{userDisplayName}</Text>
               {/* Profile */}
               <TouchableOpacity
                 onPress={onProfilePress}
@@ -86,9 +115,9 @@ const Drawer = props => {
         <TouchableOpacity onPress={onSettingsPressed}>
           <Text style={styles.menuItem}>Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity>
+        {/* <TouchableOpacity>
           <Text style={styles.menuItem}>Feedback</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity onPress={onLogoutPressed}>
           <Text style={styles.menuItem}>Logout</Text>
         </TouchableOpacity>

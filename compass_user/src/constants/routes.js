@@ -12,4 +12,6 @@ export default {
     //DRAWER CHILD
 
     PROFILE: 'Profile',
+
+    EDITPROFILE: 'EditProfile',
 }

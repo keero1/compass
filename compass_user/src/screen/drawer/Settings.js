@@ -11,7 +11,7 @@ const Settings = () => {
             alignItems: 'center',
             backgroundColor: COLORS.colorPrimary,
         }}>
-            <Text>Forgor</Text>
+            <Text>Settings!!</Text>
         </View>
     );
 }

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,9 @@ import AuthButton from '../../components/auth/AuthButton';
 import auth from '@react-native-firebase/auth';
 import {useNavigation} from '@react-navigation/native';
 
+// GOOGLE
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+
 const Login = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
@@ -33,17 +36,24 @@ const Login = () => {
 
   const {height} = useWindowDimensions();
 
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId:
+        '47001508674-jp3tfr2gts64d7mtts3jqpoeng0rg32r.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true, 
+    });
+  }, []);
+
   // LOGIN
 
   const onLoginPressed = async () => {
     setLoading(true);
 
     try {
-
       //trim email
       const trimmedEmail = email.trim();
 
-      if(!trimmedEmail){
+      if (!trimmedEmail) {
         throw new Error();
       }
 
@@ -51,7 +61,10 @@ const Login = () => {
         throw new Error();
       }
 
-      const response = await auth().signInWithEmailAndPassword(trimmedEmail, password);
+      const response = await auth().signInWithEmailAndPassword(
+        trimmedEmail,
+        password,
+      );
       const user = response.user;
 
       if (!user.emailVerified) {
@@ -60,14 +73,15 @@ const Login = () => {
       }
       console.log(response);
 
-      if(Platform.OS == 'android'){
+      if (Platform.OS == 'android') {
         ToastAndroid.show('Successfully logged in', ToastAndroid.SHORT);
       }
-
     } catch (error) {
       console.log(error);
 
-      if (error.message === 'Email is not verified. Please verify your email.') {
+      if (
+        error.message === 'Email is not verified. Please verify your email.'
+      ) {
         Alert.alert('Alert!', error.message);
       } else {
         Alert.alert(
@@ -90,9 +104,30 @@ const Login = () => {
 
   // social login
 
-  const onGoogleLoginPressed = () => {
-    console.log("google clicked");
-  }
+  const onGoogleLoginPressed = async () => {
+    console.log('google clicked');
+
+    try {
+      // Check if your device supports Google Play
+      await GoogleSignin.hasPlayServices({showPlayServicesUpdateDialog: true});
+      // Get the users ID token
+      const {idToken} = await GoogleSignin.signIn();
+
+      // Create a Google credential with the token
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+
+      // Sign-in the user with the credential
+      await auth().signInWithCredential(googleCredential);
+
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Successfully logged in', ToastAndroid.SHORT);
+      }
+    } catch (error) {
+      console.log(error);
+
+      Alert.alert('Error', 'Failed to sign in with Google');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.main}>
@@ -135,7 +170,9 @@ const Login = () => {
         </View>
 
         <View style={styles.container}>
-          <Pressable onPress={onGoogleLoginPressed} style={[styles.socialLoginButton]}>
+          <Pressable
+            onPress={onGoogleLoginPressed}
+            style={[styles.socialLoginButton]}>
             <Image
               source={IMAGES.google}
               style={[styles.socialLoginImage, {height: height * 0.3}]}
