@@ -131,7 +131,7 @@ const Main = props => {
     const {coordinate} = event.nativeEvent;
     const distance = calculateDistance(currentLocation, coordinate);
 
-    if (distance <= 500) {
+    if (distance <= 100) {
       Alert.alert(
         'Place Marker',
         'Do you want to place a marker here?',
@@ -147,13 +147,14 @@ const Main = props => {
 
               try {
                 await firestore()
-                  .collection('users')
+                  .collection('markers')
                   .doc(userID)
-                  .update({
-                    coordinates: new firestore.GeoPoint(
-                      coordinate.latitude,
-                      coordinate.longitude,
-                    ),
+                  .set({
+                    coordinates: {
+                      latitude: coordinate.latitude,
+                      longitude: coordinate.longitude,
+                    },
+                    timestamp: firestore.FieldValue.serverTimestamp(),
                   });
               } catch (error) {
                 console.error('Error updating Firestore document: ', error);
@@ -170,11 +171,39 @@ const Main = props => {
     } else {
       Alert.alert(
         'Out of Range',
-        'Marker can only be placed within 500 meters from your current location.',
+        'Marker can only be placed within 100 meters from your current location.',
       );
     }
   };
 
+  const onMarkerPressed = () => {
+    Alert.alert(
+      'Marker',
+      'Do you want to delete this marker?',
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            setMarker(null);
+
+            try {
+              await firestore().collection('markers').doc(userID).delete();
+            } catch (error) {
+              console.error('Error updating Firestore document:', error);
+              Alert.alert('Update Failed', 'Failed to update marker location.');
+            }
+          },
+        },
+      ],
+      {cancelable: true},
+    );
+  };
+
+  // limit distance
   const calculateDistance = (coord1, coord2) => {
     // Radius of the Earth in meters
     const earthRadius = 6371e3;
@@ -201,35 +230,6 @@ const Main = props => {
     const distance = earthRadius * c;
 
     return distance;
-  };
-
-  const onMarkerPressed = () => {
-    Alert.alert(
-      'Marker',
-      'Do you want to delete this marker?',
-      [
-        {
-          text: 'No',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          onPress: async () => {
-            setMarker(null);
-
-            try {
-              await firestore().collection('users').doc(userID).update({
-                coordinates: null,
-              });
-            } catch (error) {
-              console.error('Error updating Firestore document:', error);
-              Alert.alert('Update Failed', 'Failed to update marker location.');
-            }
-          },
-        },
-      ],
-      {cancelable: true},
-    );
   };
 
   return (

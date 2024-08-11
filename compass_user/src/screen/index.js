@@ -14,4 +14,6 @@ export { default as Settings } from './drawer/Settings';
 
 // drawer child
 
-export { default as Profile } from './drawer/profile/Profile'
+export { default as Profile } from './drawer/profile/Profile';
+
+export { default as EditProfile } from './drawer/profile/EditProfile';

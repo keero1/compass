@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
+import {useIsFocused} from '@react-navigation/native';
+
 //firebase
 import auth from '@react-native-firebase/auth';
 
@@ -19,6 +21,8 @@ import {GoogleSignin} from '@react-native-google-signin/google-signin';
 
 const Drawer = props => {
   const {navigation} = props;
+
+  const focus = useIsFocused();
 
   const onLogoutPressed = () => {
     const currentUser = auth().currentUser;
@@ -73,8 +77,10 @@ const Drawer = props => {
       }
     };
 
-    getUserDisplayName();
-  }, []);
+    if (focus == true) {
+      getUserDisplayName();
+    }
+  }, [focus]);
 
   const onProfilePress = () => {
     navigation.navigate(ROUTES.PROFILE);
@@ -91,9 +97,7 @@ const Drawer = props => {
           <View style={styles.profileContent}>
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
-              <Text style={styles.text}>
-                {userDisplayName}
-              </Text>
+              <Text style={styles.text}>{userDisplayName}</Text>
               {/* Profile */}
               <TouchableOpacity
                 onPress={onProfilePress}

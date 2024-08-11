@@ -9,13 +9,16 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
+import {useIsFocused} from '@react-navigation/native';
+
 import {COLORS} from '../../../constants';
 import IMAGES from '../../../constants/images';
 
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
-const Profile = () => {
+const Profile = props => {
+  const {navigation} = props;
   const {height} = useWindowDimensions();
 
   // get the name
@@ -23,6 +26,8 @@ const Profile = () => {
   const [userFullName, setUserFullName] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
   const [userName, setUserName] = useState(null);
+
+  const focus = useIsFocused();
 
   useEffect(() => {
     const getUserInfo = async () => {
@@ -51,8 +56,17 @@ const Profile = () => {
       }
     };
 
-    getUserInfo();
-  }, []);
+    if (focus == true) {
+      getUserInfo();
+    }
+  }, [focus]);
+  
+
+  // edit profile
+
+  const EditProfilePressed = type => {
+    navigation.navigate('EditProfile', {profileDataType: type});
+  };
 
   return (
     <SafeAreaView style={styles.main}>
@@ -68,7 +82,9 @@ const Profile = () => {
             <Text style={styles.sectionTitle}>Account Details</Text>
 
             <View style={styles.detailBox}>
-              <TouchableOpacity style={styles.detailItem}>
+              <TouchableOpacity
+                style={styles.detailItem}
+                onPress={() => EditProfilePressed('Full Name')}>
                 <Text style={styles.detailTitle}>Full Name</Text>
                 <Text style={styles.detailText}>{userFullName}</Text>
               </TouchableOpacity>
@@ -79,18 +95,32 @@ const Profile = () => {
             <Text style={styles.sectionTitle}>Login Details</Text>
 
             <View style={styles.detailBox}>
-              <TouchableOpacity style={styles.detailItem}>
+              <View style={styles.detailItem}>
                 <Text style={styles.detailTitle}>Email</Text>
                 <Text style={styles.detailText}>{userEmail}</Text>
-              </TouchableOpacity>
+              </View>
               <View style={styles.separator} />
-              <TouchableOpacity style={styles.detailItem}>
+              <TouchableOpacity
+                style={styles.detailItem}
+                onPress={() => EditProfilePressed('User Name')}>
                 <Text style={styles.detailTitle}>Username</Text>
-                <Text style={styles.detailText}>{userName || "user name"}</Text>
+                <Text style={styles.detailText}>{userName || 'user name'}</Text>
               </TouchableOpacity>
               <View style={styles.separator} />
-              <TouchableOpacity style={styles.detailItemX}>
+              <TouchableOpacity
+                style={styles.detailItemX}
+                onPress={() => EditProfilePressed('Password')}>
                 <Text style={styles.detailTitle}>Password</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Advanced</Text>
+
+            <View style={styles.detailBox}>
+              <TouchableOpacity style={styles.detailItemX}>
+                <Text style={styles.deleteAccounText}>Delete Account</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -148,6 +178,11 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 16,
+  },
+
+  deleteAccounText: {
+    fontSize: 16,
+    color: '#FF0000',
   },
 
   separator: {
