@@ -1,0 +1,9 @@
+// authentication
+
+export { default as Login } from './auth/Login';
+
+export { default as Forgot } from './auth/Forgot'
+
+// home
+
+export { default as Main} from './home/Main';
