@@ -1,0 +1,92 @@
+{
+  "project_info": {
+    "project_number": "47001508674",
+    "project_id": "compass-application",
+    "storage_bucket": "compass-application.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:47001508674:android:fc90683fb46238845c46db",
+        "android_client_info": {
+          "package_name": "com.compass_main"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "47001508674-7ufdvnnsnekbnl9irliit98enqmoeju2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.compass_main",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "47001508674-jp3tfr2gts64d7mtts3jqpoeng0rg32r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU243GLJ9BiEfg4PVZR4CUtobHuPh3Fto"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "47001508674-jp3tfr2gts64d7mtts3jqpoeng0rg32r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:47001508674:android:133cf3130f9147f85c46db",
+        "android_client_info": {
+          "package_name": "com.compass_user"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "47001508674-mhn4o6fco1ee5gr0603bn6fji5lnleea.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.compass_user",
+            "certificate_hash": "bcfb68c63a5f80392f030bd1e828ef3bd1266cd4"
+          }
+        },
+        {
+          "client_id": "47001508674-n24b1opaogvupdfbrdf1gmrtsi15bik7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.compass_user",
+            "certificate_hash": "305382b31c6d0a68b1a2969e5dda47218b875c3c"
+          }
+        },
+        {
+          "client_id": "47001508674-jp3tfr2gts64d7mtts3jqpoeng0rg32r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU243GLJ9BiEfg4PVZR4CUtobHuPh3Fto"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "47001508674-jp3tfr2gts64d7mtts3jqpoeng0rg32r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
