@@ -21,11 +21,15 @@ import {useNavigation} from '@react-navigation/native';
 
 const Login = () => {
   const navigation = useNavigation();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const {height} = useWindowDimensions();
+
+  const onLoginPressed = () => {
+    
+  }
 
   const onForgotPasswordPressed = () => {
     navigation.navigate(ROUTES.FORGOT);
@@ -40,7 +44,7 @@ const Login = () => {
           resizeMode="contain"
         />
 
-        <CustomInput placeholder="Email" value={email} setValue={setEmail} />
+        <CustomInput placeholder="Username" value={username} setValue={setUsername} />
 
         <CustomInput
           placeholder="Password"
@@ -58,7 +62,7 @@ const Login = () => {
           <ActivityIndicator size="large" color="#0000FF" />
         ) : (
           <>
-            <CustomButton text="Login" />
+            <CustomButton text="Login" onPress={onLoginPressed} />
           </>
         )}
 

@@ -12,7 +12,6 @@ import auth from '@react-native-firebase/auth';
 
 //navigator
 import AuthNavigator from './src/navigations/AuthNavigator';
-import HomeNavigator from './src/navigations/HomeNavigator';
 
 export default function App() {
   // Set an initializing state whilst Firebase connects

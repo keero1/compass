@@ -4,4 +4,6 @@ export default {
     FORGOT: 'Forgot',
 
     MAIN: 'Main',
+
+    DRAWER: 'Drawer',
 }

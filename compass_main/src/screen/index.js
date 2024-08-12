@@ -7,3 +7,6 @@ export { default as Forgot } from './auth/Forgot'
 // home
 
 export { default as Main} from './home/Main';
+
+// drawer
+export { default as Drawer } from './drawer/Drawer';
