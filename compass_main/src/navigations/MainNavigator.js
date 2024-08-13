@@ -28,6 +28,16 @@ function HomeNavigator() {
           headerTransparent: true,
         })}
       />
+      <InsideStack.Screen
+        name={ROUTES.PROFILE}
+        component={Profile}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTransparent: true,
+        })}
+      />
     </InsideStack.Navigator>
   );
 }

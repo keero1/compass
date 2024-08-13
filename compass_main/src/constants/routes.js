@@ -6,4 +6,6 @@ export default {
     MAIN: 'Main',
 
     DRAWER: 'Drawer',
+
+    PROFILE: 'Profile',
 }

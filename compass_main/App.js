@@ -58,18 +58,17 @@ export default function App() {
   }, []);
 
   // TODO : Add a loading design
-  // if (initializing) {
-  //   return (
-  //     <View style={styles.container}>
-  //       <ActivityIndicator size="large" color="#0000ff" />
-  //     </View>
-  //   );
-  // }
+  if (initializing) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
-      {/* {!user || !user.emailVerified ? <MainNavigator /> : <AuthNavigator />} */}
-      <MainNavigator />
+      {!user ? <AuthNavigator /> : <MainNavigator />}
     </NavigationContainer>
   );
 }

@@ -58,13 +58,9 @@ const Drawer = props => {
     }
   }, [focus]);
 
-  // const onProfilePress = () => {
-  //   navigation.navigate(ROUTES.PROFILE);
-  // };
-
-  // const onSettingsPressed = () => {
-  //   navigation.navigate(ROUTES.SETTINGS);
-  // };
+  const onProfilePress = () => {
+    navigation.navigate(ROUTES.PROFILE);
+  };
 
   return (
     <SafeAreaView style={styles.main}>
@@ -75,7 +71,7 @@ const Drawer = props => {
             <View style={styles.textContainer}>
               <Text style={styles.text}>{userDisplayName}</Text>
               {/* Profile */}
-              <TouchableOpacity style={styles.viewProfileButton}>
+              <TouchableOpacity style={styles.viewProfileButton} onPress={onProfilePress}>
                 <Text style={styles.viewProfileButtonText}>View Profile</Text>
               </TouchableOpacity>
             </View>
@@ -92,9 +88,6 @@ const Drawer = props => {
         <TouchableOpacity>
           <Text style={styles.menuItem}>Settings</Text>
         </TouchableOpacity>
-        {/* <TouchableOpacity>
-          <Text style={styles.menuItem}>Feedback</Text>
-        </TouchableOpacity> */}
         <TouchableOpacity onPress={onLogoutPressed}>
           <Text style={styles.menuItem}>Logout</Text>
         </TouchableOpacity>

@@ -1,13 +1,15 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
   Image,
   StyleSheet,
   useWindowDimensions,
-  TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  Alert,
+  ToastAndroid,
+  Platform,
 } from 'react-native';
 
 import IMAGES from '../../constants/images';
@@ -19,6 +21,10 @@ import CustomButton from '../../components/inputs/CustomButton';
 
 import {useNavigation} from '@react-navigation/native';
 
+// firebase
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+
 const Login = () => {
   const navigation = useNavigation();
   const [username, setUsername] = useState('');
@@ -27,9 +33,45 @@ const Login = () => {
 
   const {height} = useWindowDimensions();
 
-  const onLoginPressed = () => {
-    
-  }
+  const onLoginPressed = async () => {
+    setLoading(true);
+    try {
+      // trim the username to avoid whitespace
+      const trimmedUsername = username.trim();
+
+      if (!trimmedUsername || !password) {
+        throw new Error();
+      }
+
+      const querySnapshot = await firestore().collection('buses').get();
+      const userDocs = querySnapshot.docs.filter(
+        doc => doc.data().username === trimmedUsername,
+      );
+
+      if (userDocs.length < 1) {
+        Alert.alert('Sign In Failed!', 'No user found with this username.');
+        return;
+      }
+      const userDoc = userDocs[0].data();
+      const email = userDoc.email;
+
+      await auth().signInWithEmailAndPassword(email, password);
+
+      if (Platform.OS == 'android') {
+        ToastAndroid.show('Successfully logged in', ToastAndroid.SHORT);
+      }
+    } catch (error) {
+      console.log(error);
+      Alert.alert(
+        'Sign In Failed!',
+        "Please check your username and password and try again. If you've forgotten your password, you can reset it using the 'Forgot Password?'",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // forgot password
 
   const onForgotPasswordPressed = () => {
     navigation.navigate(ROUTES.FORGOT);
@@ -44,13 +86,18 @@ const Login = () => {
           resizeMode="contain"
         />
 
-        <CustomInput placeholder="Username" value={username} setValue={setUsername} />
+        <CustomInput
+          placeholder="Username"
+          value={username}
+          setValue={setUsername}
+        />
 
         <CustomInput
           placeholder="Password"
           value={password}
           setValue={setPassword}
           secureTextEntry
+          onSubmitEditing={onLoginPressed}
           autoCapitalize={'none'}
         />
 
