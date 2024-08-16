@@ -8,4 +8,6 @@ export default {
     DRAWER: 'Drawer',
 
     PROFILE: 'Profile',
+
+    WALLET: 'Wallet',
 }

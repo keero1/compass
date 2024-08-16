@@ -13,3 +13,4 @@ export { default as Drawer } from './drawer/Drawer';
 
 // child of drawer
 export { default as Profile } from './drawer/profile/Profile';
+export { default as Wallet } from './drawer/wallet/Wallet';

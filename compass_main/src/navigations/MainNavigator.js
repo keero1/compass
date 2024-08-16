@@ -2,7 +2,7 @@ import React from 'react';
 
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 
-import {Main, Drawer, Settings, Profile, EditProfile} from '../screen';
+import {Main, Drawer, Settings, Profile, EditProfile, Wallet} from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/inputs/CustomBack';
 
@@ -31,6 +31,16 @@ function HomeNavigator() {
       <InsideStack.Screen
         name={ROUTES.PROFILE}
         component={Profile}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTransparent: true,
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.WALLET}
+        component={Wallet}
         options={() => ({
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',
