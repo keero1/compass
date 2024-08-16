@@ -38,6 +38,9 @@ const Main = props => {
   // marker
   const [marker, setMarker] = useState(null);
 
+  // bus location
+  const [busMarkers, setBusMarkers] = useState([]);
+
   // search boc
 
   const [searchVisible, setSearchVisible] = useState(false);
@@ -62,6 +65,32 @@ const Main = props => {
       },
       {enableHighAccuracy: true, timeout: 20000},
     );
+
+    // Fetch bus locations
+    const unsubscribe = firestore()
+      .collection('busLocation')
+      .onSnapshot(querySnapshot => {
+        const buses = [];
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          const lastSeen = data.timestamp.toDate();
+          const currentTime = new Date();
+          const diffInSeconds = (currentTime - lastSeen) / 1000;
+          // do not include offline buses
+          if (diffInSeconds <= 30) {
+            buses.push({
+              id: doc.id,
+              coordinate: {
+                latitude: data.coordinates.latitude,
+                longitude: data.coordinates.longitude,
+              },
+            });
+          }
+        });
+      });
+
+    // Clean up the subscription
+    return () => unsubscribe();
   }, []); // Empty dependency array to run only on mount
 
   // hamburger menu
@@ -270,6 +299,17 @@ const Main = props => {
               onPress={onMarkerPressed}
             />
           )}
+
+          {/* Bus markers */}
+          {busMarkers.map(bus => (
+            <Marker
+              key={bus.id}
+              coordinate={bus.coordinate}
+              title="Bus"
+              // Customize your bus marker appearance
+              pinColor="blue" // Example, you can use custom images
+            />
+          ))}
         </MapView>
         {/* compass button */}
         <TouchableOpacity onPress={resetRotation} style={styles.compassButton}>
