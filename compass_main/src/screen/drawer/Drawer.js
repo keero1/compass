@@ -21,23 +21,7 @@ const Drawer = props => {
 
   const focus = useIsFocused();
 
-  const onLogoutPressed = () => {
-    Alert.alert('Alert', 'Confirm Logout?', [
-      {
-        text: 'Logout',
-        onPress: async () => {
-          console.log('Sign out');
-          auth()
-            .signOut()
-            .then(() => console.log('User signed out'));
-        },
-      },
-      {
-        text: 'No',
-        onPress: () => console.log('Cancelled'),
-        style: 'cancel',
-      },
-    ]);
+  const onShutdownPressed = () => {
   };
 
   // get the name
@@ -88,8 +72,8 @@ const Drawer = props => {
         <TouchableOpacity>
           <Text style={styles.menuItem}>Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onLogoutPressed}>
-          <Text style={styles.menuItem}>Logout</Text>
+        <TouchableOpacity onPress={onShutdownPressed}>
+          <Text style={styles.menuItem}>Shutdown</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

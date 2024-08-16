@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   Text,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 
 import {useIsFocused} from '@react-navigation/native';
@@ -65,6 +66,25 @@ const Profile = props => {
     // navigation.navigate('EditProfile', {profileDataType: type});
   };
 
+  const onLogoutPressed = () => {
+    Alert.alert('Alert', 'Confirm Logout?', [
+      {
+        text: 'Logout',
+        onPress: async () => {
+          console.log('Sign out');
+          auth()
+            .signOut()
+            .then(() => console.log('User signed out'));
+        },
+      },
+      {
+        text: 'No',
+        onPress: () => console.log('Cancelled'),
+        style: 'cancel',
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
@@ -106,7 +126,9 @@ const Profile = props => {
           <View style={styles.sectionBox}>
             <Text style={styles.sectionTitle}>Advanced</Text>
             <View style={styles.detailBox}>
-              <TouchableOpacity style={styles.detailItemX}>
+              <TouchableOpacity
+                style={styles.detailItemX}
+                onPress={onLogoutPressed}>
                 <Text style={styles.deleteAccounText}>Logout</Text>
               </TouchableOpacity>
             </View>
