@@ -10,6 +10,7 @@ import {
   FlatList,
   Text,
   BackHandler,
+  Platform,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -19,7 +20,11 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import ROUTES from '../../constants/routes';
 
 // MAP
-import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {
+  PROVIDER_GOOGLE,
+  Marker,
+  MarkerAnimated,
+} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 // firebase
@@ -45,6 +50,7 @@ const Main = props => {
 
   // marker
   const [marker, setMarker] = useState(null);
+  const animatedMarkersRef = useRef();
 
   // bus location
   const [busMarkers, setBusMarkers] = useState([]);
@@ -97,7 +103,7 @@ const Main = props => {
           const currentTime = new Date();
           const diffInSeconds = (currentTime - lastSeen) / 1000;
           // do not include offline buses
-          if (diffInSeconds <= 300) {
+          if (diffInSeconds > 0) {
             buses.push({
               id: doc.id,
               coordinate: {
@@ -105,6 +111,7 @@ const Main = props => {
                 longitude: data.coordinates.longitude,
               },
             });
+            animate(data.coordinates.latitude, data.coordinates.longitude);
           }
         });
 
@@ -114,6 +121,21 @@ const Main = props => {
     // Clean up the subscription
     return () => unsubscribe();
   }, []); // Empty dependency array to run only on mount
+
+  // animation
+
+  const animate = (latitude, longitude) => {
+    const newCoordinate = {latitude, longitude};
+    const duration = 5000;
+    if (Platform.OS == 'android') {
+      if (animatedMarkersRef.current) {
+        animatedMarkersRef.current.animateMarkerToCoordinate(
+          newCoordinate,
+          duration,
+        );
+      }
+    }
+  };
 
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -225,10 +247,7 @@ const Main = props => {
         );
       } else {
         // setBusMarkers(buses); // Update bus markers
-        Alert.alert(
-          'Number of buses online: '+ (buses.length),
-          'bus xd',
-        );
+        Alert.alert('Number of buses online: ' + buses.length, 'bus xd');
       }
     } catch (error) {
       console.error('Error fetching bus locations:', error);
@@ -376,7 +395,7 @@ const Main = props => {
 
     return distance;
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -418,7 +437,8 @@ const Main = props => {
 
           {/* Bus markers */}
           {busMarkers.map(bus => (
-            <Marker
+            <MarkerAnimated
+              ref={animatedMarkersRef}
               key={bus.id}
               coordinate={bus.coordinate}
               title="Bus"
