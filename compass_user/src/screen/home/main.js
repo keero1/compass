@@ -7,6 +7,9 @@ import {
   Alert,
   Animated,
   TextInput,
+  FlatList,
+  Text,
+  BackHandler,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -35,6 +38,11 @@ const Main = props => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
 
+  // search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [routes, setRoutes] = useState([]);
+  const [filteredRoutes, setFilteredRoutes] = useState([]);
+
   // marker
   const [marker, setMarker] = useState(null);
 
@@ -47,6 +55,18 @@ const Main = props => {
   const searchBoxHeight = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Fetch all routes when component mounts
+    const fetchRoutes = async () => {
+      const snapshot = await firestore().collection('routes').get();
+      const allRoutes = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setRoutes(allRoutes);
+      setFilteredRoutes(allRoutes);
+    };
+
+    fetchRoutes();
     // Fetch current location when component mounts
     Geolocation.getCurrentPosition(
       position => {
@@ -77,7 +97,7 @@ const Main = props => {
           const currentTime = new Date();
           const diffInSeconds = (currentTime - lastSeen) / 1000;
           // do not include offline buses
-          if (diffInSeconds <= 30) {
+          if (diffInSeconds <= 300) {
             buses.push({
               id: doc.id,
               coordinate: {
@@ -87,11 +107,58 @@ const Main = props => {
             });
           }
         });
+
+        setBusMarkers(buses);
       });
 
     // Clean up the subscription
     return () => unsubscribe();
   }, []); // Empty dependency array to run only on mount
+
+  useEffect(() => {
+    if (searchQuery.length > 0) {
+      const filtered = routes.filter(route =>
+        route.route_name.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      setFilteredRoutes(filtered);
+    } else {
+      setFilteredRoutes(routes);
+    }
+  }, [searchQuery, routes]);
+
+  useEffect(() => {
+    const handleBackPress = () => {
+      if (searchVisible) {
+        hideSearchBox(); // Close the search box
+        return true; // Prevent default back action (closing the app)
+      }
+      Alert.alert(
+        'Exit Search',
+        'Are you sure you want to exit?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'OK',
+            onPress: () => {
+              BackHandler.exitApp();
+            },
+          },
+        ],
+        {cancelable: true},
+      );
+      return true;
+    };
+
+    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+
+    // Cleanup the event listener on unmount
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+    };
+  }, [searchVisible]);
 
   // hamburger menu
   const onMenuPressed = () => {
@@ -100,7 +167,7 @@ const Main = props => {
     console.log('DRAWER');
   };
 
-  // search
+  /* SEARCH START */
 
   const onSearchPressed = () => {
     console.log('SEARCH');
@@ -115,12 +182,61 @@ const Main = props => {
 
   // hide search box
   const hideSearchBox = () => {
+    setSearchQuery('');
     Animated.timing(searchBoxHeight, {
       toValue: 0,
       duration: 300,
       useNativeDriver: false,
     }).start(() => setSearchVisible(false));
   };
+
+  const handleRouteItemClick = async routeId => {
+    try {
+      // Query buses that match the selected route ID
+      const snapshot = await firestore()
+        .collection('busLocation')
+        .where('route_id', '==', routeId) // Assuming each bus document has a routeId field
+        .get();
+
+      const buses = [];
+      const currentTime = new Date();
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const lastSeen = data.timestamp.toDate();
+        const diffInSeconds = (currentTime - lastSeen) / 1000;
+
+        if (diffInSeconds <= 300) {
+          // 5 minutes
+          buses.push({
+            id: doc.id,
+            coordinate: {
+              latitude: data.coordinates.latitude,
+              longitude: data.coordinates.longitude,
+            },
+          });
+        }
+      });
+
+      if (buses.length === 0) {
+        Alert.alert(
+          'No Buses Online',
+          'No bus available right now for this route.',
+        );
+      } else {
+        // setBusMarkers(buses); // Update bus markers
+        Alert.alert(
+          'Number of buses online: '+ (buses.length),
+          'bus xd',
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching bus locations:', error);
+      Alert.alert('Error', 'Failed to fetch bus locations.');
+    }
+  };
+
+  /* SEARCH END */
 
   // reset camera to north
   const resetRotation = () => {
@@ -260,7 +376,7 @@ const Main = props => {
 
     return distance;
   };
-
+  
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -326,7 +442,25 @@ const Main = props => {
           <TouchableOpacity onPress={hideSearchBox} style={styles.closeButton}>
             <Icon name="close" size={30} color="black" />
           </TouchableOpacity>
-          <TextInput style={styles.searchInput} placeholder="Search Location" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Routes"
+            onChangeText={text => setSearchQuery(text)}
+          />
+
+          {routes.length > 0 && (
+            <FlatList
+              data={filteredRoutes}
+              keyExtractor={item => item.id}
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={styles.routeItemContainer}
+                  onPress={() => handleRouteItemClick(item.id)}>
+                  <Text style={styles.routeItem}>{item.route_name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
         </Animated.View>
       )}
     </SafeAreaView>
@@ -416,15 +550,33 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
+    borderRadius: 20,
+    paddingHorizontal: 15,
     marginTop: 30,
+    marginBottom: 20,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
   },
   closeButton: {
     position: 'absolute',
     top: 10,
     right: 10,
+  },
+  routeItemContainer: {
+    padding: 15,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+    marginVertical: 5,
+    elevation: 1, // for Android shadow
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 5, // for iOS shadow
+  },
+  routeItem: {
+    fontSize: 16,
+    color: '#333',
   },
 });
