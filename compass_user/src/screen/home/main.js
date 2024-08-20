@@ -102,8 +102,8 @@ const Main = props => {
           const lastSeen = data.timestamp.toDate();
           const currentTime = new Date();
           const diffInSeconds = (currentTime - lastSeen) / 1000;
-          // do not include offline buses
-          if (diffInSeconds > 0) {
+          // do not include offline buses (5 minutes)
+          if (diffInSeconds <= 300) {
             buses.push({
               id: doc.id,
               coordinate: {
@@ -154,24 +154,7 @@ const Main = props => {
         hideSearchBox(); // Close the search box
         return true; // Prevent default back action (closing the app)
       }
-      Alert.alert(
-        'Exit Search',
-        'Are you sure you want to exit?',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'OK',
-            onPress: () => {
-              BackHandler.exitApp();
-            },
-          },
-        ],
-        {cancelable: true},
-      );
-      return true;
+      return false;
     };
 
     BackHandler.addEventListener('hardwareBackPress', handleBackPress);
