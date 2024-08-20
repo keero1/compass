@@ -16,7 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import ROUTES from '../../constants/routes';
 
 // MAP
-import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {PROVIDER_GOOGLE} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 // firebase
@@ -39,41 +39,41 @@ const Main = props => {
     // Fetch initial location
     Geolocation.getCurrentPosition(
       position => {
-        const { latitude, longitude } = position.coords;
-        setCurrentLocation({ latitude, longitude });
+        const {latitude, longitude} = position.coords;
+        setCurrentLocation({latitude, longitude});
         setInitialRegion({
           latitude,
           longitude,
           latitudeDelta: 0.001,
           longitudeDelta: 0.001,
         });
-  
+
         // Send initial location to Firestore
         updateBusLocation(latitude, longitude);
       },
       error => {
         console.error(error);
       },
-      { enableHighAccuracy: true, timeout: 20000 },
+      {enableHighAccuracy: true, timeout: 20000},
     );
-  
+
     // Set interval to update location every 5 seconds
     const intervalId = setInterval(() => {
       Geolocation.getCurrentPosition(
         position => {
-          const { latitude, longitude } = position.coords;
-          setCurrentLocation({ latitude, longitude });
-  
+          const {latitude, longitude} = position.coords;
+          setCurrentLocation({latitude, longitude});
+
           // Send updated location to Firestore
           // updateBusLocation(latitude, longitude);
         },
         error => {
           console.error(error);
         },
-        { enableHighAccuracy: true },
+        {enableHighAccuracy: true},
       );
-    }, 5000); // 5000 milliseconds = 5 seconds
-  
+    }, 10000); // 5000 milliseconds = 5 seconds
+
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
   }, []); // Empty dependency array to run only on mount
@@ -100,7 +100,7 @@ const Main = props => {
 
     console.log('DRAWER');
   };
-  
+
   // handle centering to user
   const centerToUser = () => {
     console.log('Reset Camera to User');
@@ -113,6 +113,12 @@ const Main = props => {
       });
     }
   };
+
+  const onPayPressed = () => {
+    navigation.navigate(ROUTES.WALLET);
+
+    console.log("wallet");
+  }
 
   // save the current region
   const onRegionChangeComplete = region => {
@@ -145,6 +151,10 @@ const Main = props => {
           toolbarEnabled={false}></MapView>
         <TouchableOpacity onPress={centerToUser} style={styles.centerButton}>
           <Icon name="my-location" size={30} color="black" />
+        </TouchableOpacity>
+        {/* Pay button */}
+        <TouchableOpacity onPress={onPayPressed} style={styles.payButton}>
+          <Icon name="payment" size={30} color="black" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -196,6 +206,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     left: 20,
+  },
+  payButton: {
+    backgroundColor: '#e4e9f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    position: 'absolute',
+    bottom: 20,
+    right: 10,
   },
   map: {
     ...StyleSheet.absoluteFillObject,

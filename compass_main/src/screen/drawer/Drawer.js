@@ -21,8 +21,7 @@ const Drawer = props => {
 
   const focus = useIsFocused();
 
-  const onShutdownPressed = () => {
-  };
+  const onShutdownPressed = () => {};
 
   // get the name
 
@@ -46,6 +45,10 @@ const Drawer = props => {
     navigation.navigate(ROUTES.PROFILE);
   };
 
+  const onWalletPressed = () => {
+    navigation.navigate(ROUTES.WALLET);
+  };
+
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
@@ -55,7 +58,9 @@ const Drawer = props => {
             <View style={styles.textContainer}>
               <Text style={styles.text}>{userDisplayName}</Text>
               {/* Profile */}
-              <TouchableOpacity style={styles.viewProfileButton} onPress={onProfilePress}>
+              <TouchableOpacity
+                style={styles.viewProfileButton}
+                onPress={onProfilePress}>
                 <Text style={styles.viewProfileButtonText}>View Profile</Text>
               </TouchableOpacity>
             </View>
@@ -66,7 +71,7 @@ const Drawer = props => {
         <View style={styles.separator}></View>
 
         {/* Touchable Text Components */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onWalletPressed}>
           <Text style={styles.menuItem}>Wallet</Text>
         </TouchableOpacity>
         <TouchableOpacity>
