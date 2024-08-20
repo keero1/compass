@@ -24,6 +24,7 @@ import MapView, {
   PROVIDER_GOOGLE,
   Marker,
   MarkerAnimated,
+  Callout,
 } from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
@@ -97,18 +98,29 @@ const Main = props => {
       .collection('busLocation')
       .onSnapshot(querySnapshot => {
         const buses = [];
-        querySnapshot.forEach(doc => {
+        querySnapshot.forEach(async doc => {
           const data = doc.data();
           const lastSeen = data.timestamp.toDate();
           const currentTime = new Date();
           const diffInSeconds = (currentTime - lastSeen) / 1000;
           // do not include offline buses (5 minutes)
           if (diffInSeconds <= 300) {
+            // Fetch additional bus details from the 'buses' collection
+            const busDoc = await firestore()
+              .collection('buses')
+              .doc(doc.id)
+              .get();
+
+            const busData = busDoc.data();
             buses.push({
               id: doc.id,
               coordinate: {
                 latitude: data.coordinates.latitude,
                 longitude: data.coordinates.longitude,
+              },
+              details: {
+                name: busData.name,
+                license_plate: busData.license_plate,
               },
             });
             animate(data.coordinates.latitude, data.coordinates.longitude);
@@ -424,10 +436,14 @@ const Main = props => {
               ref={animatedMarkersRef}
               key={bus.id}
               coordinate={bus.coordinate}
-              title="Bus"
               // Customize your bus marker appearance
               pinColor="blue" // Example, you can use custom images
-            />
+            >
+              <Callout>
+                <Text>Name: {bus.details.name}</Text>
+                <Text>License Plate: {bus.details.license_plate}</Text>
+              </Callout>
+            </MarkerAnimated>
           ))}
         </MapView>
         {/* compass button */}
