@@ -65,14 +65,14 @@ const Main = props => {
           setCurrentLocation({latitude, longitude});
 
           // Send updated location to Firestore
-          // updateBusLocation(latitude, longitude);
+          updateBusLocation(latitude, longitude);
         },
         error => {
           console.error(error);
         },
         {enableHighAccuracy: true},
       );
-    }, 10000); // 5000 milliseconds = 5 seconds
+    }, 10000); // 10000 milliseconds = 10 seconds
 
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
@@ -81,13 +81,23 @@ const Main = props => {
   // Function to update bus location in Firestore
   const updateBusLocation = async (latitude, longitude) => {
     try {
-      await firestore()
-        .collection('busLocation')
-        .doc(user)
-        .set({
+      const busDocRef = firestore().collection('busLocation').doc(user);
+
+      const docSnapshot = await busDocRef.get();
+      if (!docSnapshot.exists) {
+        // get the route id
+        const busInfo = (await firestore().collection('buses').doc(user).get()).data();
+        await busDocRef.set({
+          coordinates: new firestore.GeoPoint(latitude, longitude),
+          timestamp: firestore.FieldValue.serverTimestamp(),
+          route_id: busInfo.route_id,
+        });
+      } else {
+        await busDocRef.update({
           coordinates: new firestore.GeoPoint(latitude, longitude),
           timestamp: firestore.FieldValue.serverTimestamp(),
         });
+      }
       console.log('Bus location updated:', latitude, longitude);
     } catch (error) {
       console.error('Error updating bus location:', error);
@@ -117,8 +127,8 @@ const Main = props => {
   const onPayPressed = () => {
     navigation.navigate(ROUTES.WALLET);
 
-    console.log("wallet");
-  }
+    console.log('wallet');
+  };
 
   // save the current region
   const onRegionChangeComplete = region => {
