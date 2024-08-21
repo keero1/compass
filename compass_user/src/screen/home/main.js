@@ -36,9 +36,6 @@ const Main = props => {
   const {navigation} = props;
   const mapRef = useRef(MapView);
 
-  // user id
-  const userID = auth().currentUser.uid;
-
   // user current location
   const [initialRegion, setInitialRegion] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -55,6 +52,7 @@ const Main = props => {
 
   // bus location
   const [busMarkers, setBusMarkers] = useState([]);
+  const [busTimestamps, setBusTimestamps] = useState([]);
 
   // search boc
 
@@ -92,12 +90,16 @@ const Main = props => {
       },
       {enableHighAccuracy: true, timeout: 20000},
     );
+  }, []); // Empty dependency array to run only on mount
 
+  useEffect(() => {
     // Fetch bus locations
     const unsubscribe = firestore()
       .collection('busLocation')
       .onSnapshot(querySnapshot => {
         const buses = [];
+        const newTimestamps = {...busTimestamps};
+
         querySnapshot.forEach(async doc => {
           const data = doc.data();
           const lastSeen = data.timestamp.toDate();
@@ -105,6 +107,8 @@ const Main = props => {
           const diffInSeconds = (currentTime - lastSeen) / 1000;
           // do not include offline buses (5 minutes)
           if (diffInSeconds <= 300) {
+            newTimestamps[doc.id] = lastSeen;
+
             // Fetch additional bus details from the 'buses' collection
             const busDoc = await firestore()
               .collection('buses')
@@ -123,16 +127,32 @@ const Main = props => {
                 license_plate: busData.license_plate,
               },
             });
+
             animate(data.coordinates.latitude, data.coordinates.longitude);
           }
         });
 
+        setBusTimestamps(newTimestamps);
         setBusMarkers(buses);
       });
 
-    // Clean up the subscription
-    return () => unsubscribe();
-  }, []); // Empty dependency array to run only on mount
+    // Interval to check for offline buses
+    const intervalId = setInterval(() => {
+      const currentTime = new Date();
+      const updatedBuses = busMarkers.filter(bus => {
+        const lastSeen = busTimestamps[bus.id];
+        const diffInSeconds = (currentTime - lastSeen) / 1000;
+        return diffInSeconds <= 300; // Keep only online buses
+      });
+
+      setBusMarkers(updatedBuses);
+    }, 30000); // Check every 30 seconds (adjust as needed)
+
+    return () => {
+      clearInterval(intervalId);
+      unsubscribe();
+    };
+  }, [busMarkers, busTimestamps]);
 
   // animation
 
@@ -279,6 +299,8 @@ const Main = props => {
   };
 
   const onMapPress = event => {
+    // user id
+    const userID = auth().currentUser.uid;
     if (marker) {
       Alert.alert(
         'Marker Already Placed',
@@ -336,6 +358,8 @@ const Main = props => {
   };
 
   const onMarkerPressed = () => {
+    // user id
+    const userID = auth().currentUser.uid;
     Alert.alert(
       'Marker',
       'Do you want to delete this marker?',
