@@ -25,12 +25,15 @@ import MapView, {
   Marker,
   MarkerAnimated,
   Callout,
+  Polyline,
 } from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 // firebase
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+
+import {getRoute} from '../../components/utils/RoutesUtils';
 
 const Main = props => {
   const {navigation} = props;
@@ -52,7 +55,6 @@ const Main = props => {
 
   // bus location
   const [busMarkers, setBusMarkers] = useState([]);
-  const [busTimestamps, setBusTimestamps] = useState([]);
 
   // search boc
 
@@ -93,69 +95,53 @@ const Main = props => {
   }, []); // Empty dependency array to run only on mount
 
   useEffect(() => {
-    // Fetch bus locations
+    console.log('Effect triggered');
+    // Calculate timestamp for 5 minutes ago
+    const fiveMinutesAgo = new Date();
+    fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+
     const unsubscribe = firestore()
       .collection('busLocation')
-      .onSnapshot(querySnapshot => {
-        const buses = [];
-        const newTimestamps = {...busTimestamps};
+      .where('timestamp', '>=', fiveMinutesAgo) 
+      .onSnapshot(async querySnapshot => {
+        console.log('Snapshot fired');
 
-        querySnapshot.forEach(async doc => {
+        const busPromises = querySnapshot.docs.map(async doc => {
           const data = doc.data();
-          const lastSeen = data.timestamp.toDate();
-          const currentTime = new Date();
-          const diffInSeconds = (currentTime - lastSeen) / 1000;
-          // do not include offline buses (5 minutes)
-          if (diffInSeconds <= 300) {
-            newTimestamps[doc.id] = lastSeen;
+          const busDoc = await firestore()
+            .collection('buses')
+            .doc(doc.id)
+            .get();
+          const busData = busDoc.data();
 
-            // Fetch additional bus details from the 'buses' collection
-            const busDoc = await firestore()
-              .collection('buses')
-              .doc(doc.id)
-              .get();
-
-            const busData = busDoc.data();
-            buses.push({
-              id: doc.id,
-              coordinate: {
-                latitude: data.coordinates.latitude,
-                longitude: data.coordinates.longitude,
-              },
-              details: {
-                name: busData.name,
-                license_plate: busData.license_plate,
-              },
-            });
-
-            animate(data.coordinates.latitude, data.coordinates.longitude);
-          }
+          return {
+            id: doc.id,
+            coordinate: {
+              latitude: data.coordinates.latitude,
+              longitude: data.coordinates.longitude,
+            },
+            details: {
+              name: busData.name,
+              license_plate: busData.license_plate,
+              route_id: data.route_id,
+            },
+          };
         });
 
-        setBusTimestamps(newTimestamps);
-        setBusMarkers(buses);
-      });
+        const busesData = await Promise.all(busPromises);
 
-    // Interval to check for offline buses
-    const intervalId = setInterval(() => {
-      const currentTime = new Date();
-      const updatedBuses = busMarkers.filter(bus => {
-        const lastSeen = busTimestamps[bus.id];
-        const diffInSeconds = (currentTime - lastSeen) / 1000;
-        return diffInSeconds <= 300; // Keep only online buses
-      });
+        setBusMarkers(busesData);
 
-      setBusMarkers(updatedBuses);
-    }, 30000); // Check every 30 seconds (adjust as needed)
+        // Call animate or map update logic after state is set
+        busesData.forEach(bus => {
+          animate(bus.coordinate.latitude, bus.coordinate.longitude);
+        });
+      });
 
     return () => {
-      clearInterval(intervalId);
       unsubscribe();
     };
-  }, [busMarkers, busTimestamps]);
-
-  // animation
-
+  }, []); // Only run once on mount
   const animate = (latitude, longitude) => {
     const newCoordinate = {latitude, longitude};
     const duration = 5000;
@@ -299,6 +285,11 @@ const Main = props => {
   };
 
   const onMapPress = event => {
+    if (routeCoordinates.length > 0) {
+      setRouteCoordinates([]);
+      return;
+    }
+
     // user id
     const userID = auth().currentUser.uid;
     if (marker) {
@@ -385,6 +376,40 @@ const Main = props => {
       {cancelable: true},
     );
   };
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const fetchRouteData = async routeId => {
+    try {
+      const routeDoc = await firestore()
+        .collection('routes')
+        .doc(routeId)
+        .get();
+      if (routeDoc.exists) {
+        const routeData = routeDoc.data();
+        return routeData;
+      } else {
+        throw new Error('Route not found');
+      }
+    } catch (error) {
+      console.error('Error fetching route data:', error);
+    }
+  };
+
+  const onBusMarkerPressed = async routeId => {
+    try {
+      const routeData = await fetchRouteData(routeId);
+
+      const coordinates = routeData.key_points.map(point => [
+        point.latitude,
+        point.longitude,
+      ]);
+
+      const route = await getRoute(coordinates);
+
+      setRouteCoordinates(route);
+    } catch (error) {
+      console.error('Error processing route:', error);
+    }
+  };
 
   // limit distance
   const calculateDistance = (coord1, coord2) => {
@@ -460,7 +485,7 @@ const Main = props => {
               ref={animatedMarkersRef}
               key={bus.id}
               coordinate={bus.coordinate}
-              // Customize your bus marker appearance
+              onPress={() => onBusMarkerPressed(bus.details.route_id)}
               pinColor="blue" // Example, you can use custom images
             >
               <Callout>
@@ -469,6 +494,15 @@ const Main = props => {
               </Callout>
             </MarkerAnimated>
           ))}
+
+          {/* Draw polyline */}
+          {routeCoordinates.length > 0 && (
+            <Polyline
+              coordinates={routeCoordinates}
+              strokeColor="#FF0000" // Customize the color
+              strokeWidth={2} // Customize the width
+            />
+          )}
         </MapView>
         {/* compass button */}
         <TouchableOpacity onPress={resetRotation} style={styles.compassButton}>
