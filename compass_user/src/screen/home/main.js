@@ -7,6 +7,10 @@ import {
   Alert,
   Animated,
   TextInput,
+  FlatList,
+  Text,
+  BackHandler,
+  Platform,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -16,27 +20,41 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import ROUTES from '../../constants/routes';
 
 // MAP
-import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {
+  PROVIDER_GOOGLE,
+  Marker,
+  MarkerAnimated,
+  Callout,
+  Polyline,
+} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 // firebase
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
+import {getRoute} from '../../components/utils/RoutesUtils';
+
 const Main = props => {
   const {navigation} = props;
   const mapRef = useRef(MapView);
-
-  // user id
-  const userID = auth().currentUser.uid;
 
   // user current location
   const [initialRegion, setInitialRegion] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
 
+  // search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [routes, setRoutes] = useState([]);
+  const [filteredRoutes, setFilteredRoutes] = useState([]);
+
   // marker
   const [marker, setMarker] = useState(null);
+  const animatedMarkersRef = useRef();
+
+  // bus location
+  const [busMarkers, setBusMarkers] = useState([]);
 
   // search boc
 
@@ -44,6 +62,18 @@ const Main = props => {
   const searchBoxHeight = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Fetch all routes when component mounts
+    const fetchRoutes = async () => {
+      const snapshot = await firestore().collection('routes').get();
+      const allRoutes = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setRoutes(allRoutes);
+      setFilteredRoutes(allRoutes);
+    };
+
+    fetchRoutes();
     // Fetch current location when component mounts
     Geolocation.getCurrentPosition(
       position => {
@@ -64,6 +94,95 @@ const Main = props => {
     );
   }, []); // Empty dependency array to run only on mount
 
+  useEffect(() => {
+    console.log('Effect triggered');
+    // Calculate timestamp for 5 minutes ago
+    const fiveMinutesAgo = new Date();
+    fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+
+    const unsubscribe = firestore()
+      .collection('busLocation')
+      .where('timestamp', '>=', fiveMinutesAgo) 
+      .onSnapshot(async querySnapshot => {
+        console.log('Snapshot fired');
+
+        const busPromises = querySnapshot.docs.map(async doc => {
+          const data = doc.data();
+          const busDoc = await firestore()
+            .collection('buses')
+            .doc(doc.id)
+            .get();
+          const busData = busDoc.data();
+
+          return {
+            id: doc.id,
+            coordinate: {
+              latitude: data.coordinates.latitude,
+              longitude: data.coordinates.longitude,
+            },
+            details: {
+              name: busData.name,
+              license_plate: busData.license_plate,
+              route_id: data.route_id,
+            },
+          };
+        });
+
+        const busesData = await Promise.all(busPromises);
+
+        setBusMarkers(busesData);
+
+        // Call animate or map update logic after state is set
+        busesData.forEach(bus => {
+          animate(bus.coordinate.latitude, bus.coordinate.longitude);
+        });
+      });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []); // Only run once on mount
+  const animate = (latitude, longitude) => {
+    const newCoordinate = {latitude, longitude};
+    const duration = 5000;
+    if (Platform.OS == 'android') {
+      if (animatedMarkersRef.current) {
+        animatedMarkersRef.current.animateMarkerToCoordinate(
+          newCoordinate,
+          duration,
+        );
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (searchQuery.length > 0) {
+      const filtered = routes.filter(route =>
+        route.route_name.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      setFilteredRoutes(filtered);
+    } else {
+      setFilteredRoutes(routes);
+    }
+  }, [searchQuery, routes]);
+
+  useEffect(() => {
+    const handleBackPress = () => {
+      if (searchVisible) {
+        hideSearchBox(); // Close the search box
+        return true; // Prevent default back action (closing the app)
+      }
+      return false;
+    };
+
+    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+
+    // Cleanup the event listener on unmount
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+    };
+  }, [searchVisible]);
+
   // hamburger menu
   const onMenuPressed = () => {
     navigation.navigate(ROUTES.DRAWER);
@@ -71,7 +190,7 @@ const Main = props => {
     console.log('DRAWER');
   };
 
-  // search
+  /* SEARCH START */
 
   const onSearchPressed = () => {
     console.log('SEARCH');
@@ -86,12 +205,58 @@ const Main = props => {
 
   // hide search box
   const hideSearchBox = () => {
+    setSearchQuery('');
     Animated.timing(searchBoxHeight, {
       toValue: 0,
       duration: 300,
       useNativeDriver: false,
     }).start(() => setSearchVisible(false));
   };
+
+  const handleRouteItemClick = async routeId => {
+    try {
+      // Query buses that match the selected route ID
+      const snapshot = await firestore()
+        .collection('busLocation')
+        .where('route_id', '==', routeId) // Assuming each bus document has a routeId field
+        .get();
+
+      const buses = [];
+      const currentTime = new Date();
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const lastSeen = data.timestamp.toDate();
+        const diffInSeconds = (currentTime - lastSeen) / 1000;
+
+        if (diffInSeconds <= 300) {
+          // 5 minutes
+          buses.push({
+            id: doc.id,
+            coordinate: {
+              latitude: data.coordinates.latitude,
+              longitude: data.coordinates.longitude,
+            },
+          });
+        }
+      });
+
+      if (buses.length === 0) {
+        Alert.alert(
+          'No Buses Online',
+          'No bus available right now for this route.',
+        );
+      } else {
+        // setBusMarkers(buses); // Update bus markers
+        Alert.alert('Number of buses online: ' + buses.length, 'bus xd');
+      }
+    } catch (error) {
+      console.error('Error fetching bus locations:', error);
+      Alert.alert('Error', 'Failed to fetch bus locations.');
+    }
+  };
+
+  /* SEARCH END */
 
   // reset camera to north
   const resetRotation = () => {
@@ -120,6 +285,13 @@ const Main = props => {
   };
 
   const onMapPress = event => {
+    if (routeCoordinates.length > 0) {
+      setRouteCoordinates([]);
+      return;
+    }
+
+    // user id
+    const userID = auth().currentUser.uid;
     if (marker) {
       Alert.alert(
         'Marker Already Placed',
@@ -177,6 +349,8 @@ const Main = props => {
   };
 
   const onMarkerPressed = () => {
+    // user id
+    const userID = auth().currentUser.uid;
     Alert.alert(
       'Marker',
       'Do you want to delete this marker?',
@@ -201,6 +375,40 @@ const Main = props => {
       ],
       {cancelable: true},
     );
+  };
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const fetchRouteData = async routeId => {
+    try {
+      const routeDoc = await firestore()
+        .collection('routes')
+        .doc(routeId)
+        .get();
+      if (routeDoc.exists) {
+        const routeData = routeDoc.data();
+        return routeData;
+      } else {
+        throw new Error('Route not found');
+      }
+    } catch (error) {
+      console.error('Error fetching route data:', error);
+    }
+  };
+
+  const onBusMarkerPressed = async routeId => {
+    try {
+      const routeData = await fetchRouteData(routeId);
+
+      const coordinates = routeData.key_points.map(point => [
+        point.latitude,
+        point.longitude,
+      ]);
+
+      const route = await getRoute(coordinates);
+
+      setRouteCoordinates(route);
+    } catch (error) {
+      console.error('Error processing route:', error);
+    }
   };
 
   // limit distance
@@ -270,6 +478,31 @@ const Main = props => {
               onPress={onMarkerPressed}
             />
           )}
+
+          {/* Bus markers */}
+          {busMarkers.map(bus => (
+            <MarkerAnimated
+              ref={animatedMarkersRef}
+              key={bus.id}
+              coordinate={bus.coordinate}
+              onPress={() => onBusMarkerPressed(bus.details.route_id)}
+              pinColor="blue" // Example, you can use custom images
+            >
+              <Callout>
+                <Text>Name: {bus.details.name}</Text>
+                <Text>License Plate: {bus.details.license_plate}</Text>
+              </Callout>
+            </MarkerAnimated>
+          ))}
+
+          {/* Draw polyline */}
+          {routeCoordinates.length > 0 && (
+            <Polyline
+              coordinates={routeCoordinates}
+              strokeColor="#FF0000" // Customize the color
+              strokeWidth={2} // Customize the width
+            />
+          )}
         </MapView>
         {/* compass button */}
         <TouchableOpacity onPress={resetRotation} style={styles.compassButton}>
@@ -286,7 +519,25 @@ const Main = props => {
           <TouchableOpacity onPress={hideSearchBox} style={styles.closeButton}>
             <Icon name="close" size={30} color="black" />
           </TouchableOpacity>
-          <TextInput style={styles.searchInput} placeholder="Search Location" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Routes"
+            onChangeText={text => setSearchQuery(text)}
+          />
+
+          {routes.length > 0 && (
+            <FlatList
+              data={filteredRoutes}
+              keyExtractor={item => item.id}
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={styles.routeItemContainer}
+                  onPress={() => handleRouteItemClick(item.id)}>
+                  <Text style={styles.routeItem}>{item.route_name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
         </Animated.View>
       )}
     </SafeAreaView>
@@ -376,15 +627,33 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
+    borderRadius: 20,
+    paddingHorizontal: 15,
     marginTop: 30,
+    marginBottom: 20,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
   },
   closeButton: {
     position: 'absolute',
     top: 10,
     right: 10,
+  },
+  routeItemContainer: {
+    padding: 15,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+    marginVertical: 5,
+    elevation: 1, // for Android shadow
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 5, // for iOS shadow
+  },
+  routeItem: {
+    fontSize: 16,
+    color: '#333',
   },
 });

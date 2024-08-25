@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -34,13 +34,15 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const passwordInputRef = useRef(null);
+
   const {height} = useWindowDimensions();
 
   useEffect(() => {
     GoogleSignin.configure({
       webClientId:
         '47001508674-jp3tfr2gts64d7mtts3jqpoeng0rg32r.apps.googleusercontent.com',
-      forceCodeForRefreshToken: true, 
+      forceCodeForRefreshToken: true,
     });
   }, []);
 
@@ -71,7 +73,6 @@ const Login = () => {
         auth().signOut();
         throw new Error('Email is not verified. Please verify your email.');
       }
-      console.log(response);
 
       if (Platform.OS == 'android') {
         ToastAndroid.show('Successfully logged in', ToastAndroid.SHORT);
@@ -138,7 +139,13 @@ const Login = () => {
           resizeMode="contain"
         />
 
-        <AuthInput placeholder="Email" value={email} setValue={setEmail} />
+        <AuthInput
+          placeholder="Email"
+          value={email}
+          setValue={setEmail}
+          returnKeyType="next"
+          onSubmitEditing={() => passwordInputRef.current?.focus()}
+        />
 
         <AuthInput
           placeholder="Password"
@@ -147,6 +154,7 @@ const Login = () => {
           secureTextEntry
           onSubmitEditing={onLoginPressed}
           autoCapitalize={'none'}
+          ref={passwordInputRef}
         />
 
         <Text style={styles.forgotPassword} onPress={onForgotPasswordPressed}>

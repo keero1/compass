@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,10 @@ const Register = props => {
   // password
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // input reference
+  const passwordInputRef = useRef(null);
+  const confirmPasswordInputRef = useRef(null);
 
   // password requirement
   const [passwordValid, setPasswordValid] = useState({
@@ -97,7 +101,7 @@ const Register = props => {
       await firestore().collection('users').doc(user.uid).set({
         username: username,
         coordinates: null,
-      })
+      });
 
       await user.sendEmailVerification();
       auth().signOut();
@@ -135,7 +139,13 @@ const Register = props => {
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
-        <AuthInput placeholder="Email" value={email} setValue={setEmail} />
+        <AuthInput
+          placeholder="Email"
+          value={email}
+          setValue={setEmail}
+          returnKeyType="next"
+          onSubmitEditing={() => passwordInputRef.current?.focus()}
+        />
 
         <AuthInput
           placeholder="Password"
@@ -143,6 +153,9 @@ const Register = props => {
           setValue={setPassword}
           secureTextEntry
           autoCapitalize={'none'}
+          returnKeyType="next"
+          onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+          ref={passwordInputRef}
         />
 
         {password.length > 0 && (
@@ -191,6 +204,7 @@ const Register = props => {
           setValue={setConfirmPassword}
           secureTextEntry
           autoCapitalize={'none'}
+          ref={confirmPasswordInputRef}
         />
 
         {loading ? (
