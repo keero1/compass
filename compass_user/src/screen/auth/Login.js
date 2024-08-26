@@ -23,6 +23,7 @@ import AuthButton from '../../components/auth/AuthButton';
 
 // FIREBASE
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import {useNavigation} from '@react-navigation/native';
 
 // GOOGLE
@@ -117,8 +118,27 @@ const Login = () => {
       // Create a Google credential with the token
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
 
-      // Sign-in the user with the credential
-      await auth().signInWithCredential(googleCredential);
+      // Sign in the user with the credential
+      const {user, additionalUserInfo} = await auth().signInWithCredential(
+        googleCredential,
+      );
+
+      // Check if additionalUserInfo is available
+      if (additionalUserInfo && additionalUserInfo.isNewUser) {
+        // Generate a default username
+        const username = `compass_${generateRandomString(8)}`;
+
+        // Update user profile with default display name
+        await user.updateProfile({
+          displayName: 'ComPass User',
+        });
+
+        // Create user document
+        await firestore().collection('users').doc(user.uid).set({
+          username: username,
+          coordinates: null,
+        });
+      }
 
       if (Platform.OS === 'android') {
         ToastAndroid.show('Successfully logged in', ToastAndroid.SHORT);
@@ -130,6 +150,16 @@ const Login = () => {
     }
   };
 
+  const generateRandomString = length => {
+    const charset =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomString = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      randomString += charset[randomIndex];
+    }
+    return randomString;
+  };
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>

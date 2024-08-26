@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   Text,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 
 import {useIsFocused} from '@react-navigation/native';
@@ -60,11 +61,25 @@ const Profile = props => {
       getUserInfo();
     }
   }, [focus]);
-  
 
   // edit profile
 
-  const EditProfilePressed = type => {
+  // edit profile
+  const EditProfilePressed = async type => {
+    const user = auth().currentUser;
+
+    if (type === 'Password') {
+      if (
+        user.providerData.some(provider => provider.providerId === 'google.com')
+      ) {
+        Alert.alert(
+          'Password Change Not Allowed',
+          'You cannot change the password as you are signed in with Google.',
+        );
+        return;
+      }
+    }
+
     navigation.navigate('EditProfile', {profileDataType: type});
   };
 
