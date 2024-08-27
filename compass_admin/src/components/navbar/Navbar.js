@@ -3,6 +3,8 @@ import { doSignOut } from "../../firebase/auth";
 import Frieren from "../../assets/images/frieren.png";
 import { useEffect, useState } from "react";
 
+import { useAuth } from "../../contexts/authContext";
+
 import {
   ArrowLeftStartOnRectangleIcon,
   UserIcon,
@@ -14,6 +16,8 @@ import {
 } from "@heroicons/react/24/solid";
 
 const Navbar = () => {
+  const { currentUser } = useAuth();
+
   const navigate = useNavigate();
   const [theme, setTheme] = useState(
     localStorage.getItem("theme") || "cupcake"
@@ -154,6 +158,16 @@ const Navbar = () => {
                 tabIndex={0}
                 className="menu menu-lg dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-27 p-2 shadow"
               >
+                {currentUser && (
+                  <div className="p-2 border-b border-gray-300">
+                    <div className="text-lg font-semibold">
+                      {currentUser.displayName || "name"}
+                    </div>
+                    <div className="text-sm">
+                      {currentUser.email || "email"}
+                    </div>
+                  </div>
+                )}
                 <li>
                   <Link to="profile">
                     <UserIcon className="size-6" />
