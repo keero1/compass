@@ -17,3 +17,9 @@ code {
 } */
 
 /* Add this to your global CSS */
+
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+/* .drawer-side::-webkit-scrollbar {
+  display: none;
+} */

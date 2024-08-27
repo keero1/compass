@@ -66,7 +66,7 @@ const Navbar = () => {
         onChange={() => setIsSidebarOpen((prev) => !prev)}
       />
       <div className="drawer-content">
-        <div className="navbar bg-base-100">
+        <div className="navbar bg-base-200">
           <div className="flex-none">
             <label
               htmlFor="my-drawer"
@@ -194,7 +194,8 @@ const Navbar = () => {
             </div>
           </div>
         </div>
-        <main className={`flex-1 ${isSidebarOpen ? "ml-10" : "ml-10"}`}>
+        {/* <main className={`flex-1 ${isSidebarOpen ? "m-5" : "ml-5"}`}> */}
+        <main className="flex-1">
           <Outlet />
         </main>
       </div>
@@ -218,7 +219,7 @@ const Navbar = () => {
           </li>
 
           <li>
-            <Link to="/home">
+            <Link to="/">
               <HomeIcon className="size-6" />
               Home
             </Link>
