@@ -1,0 +1,161 @@
+/* Scoped Container for the entire login page */
+.login-page .login-container {
+    display: flex;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    flex-direction: column-reverse;
+}
+
+/* Background covering center to left */
+.login-page .login-background {
+    flex: 2;
+    background-size: cover;
+    background-position: center;
+    display: none;
+}
+
+/* Sidebar for the login form */
+.login-page .login-sidebar {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+/* Login box styling */
+.login-page .login-box {
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.login-page .login-box h3 {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333;
+}
+
+.login-page .input-group {
+    margin-bottom: 15px;
+}
+
+.login-page .input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+    padding-left: 10px;
+}
+
+.login-page .input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    box-sizing: border-box;
+}
+
+.login-page .error-message {
+    display: block;
+    margin-bottom: 10px;
+    color: red;
+    font-weight: bold;
+    text-align: center;
+}
+
+.login-page button {
+    width: 100%;
+    padding: 10px;
+    background-color: #176B87;
+    border: none;
+    border-radius: 20px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.login-page button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.login-page p {
+    text-align: center;
+    margin-top: 15px;
+    color: #777;
+}
+
+.login-page p a {
+    color: #4CAF50;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.login-page p a:hover {
+    text-decoration: underline;
+}
+
+/* Password */
+.login-page .password-group {
+    position: relative;
+}
+
+.login-page .password-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.login-page .password-wrapper input {
+    width: 100%;
+    padding: 10px;
+    padding-right: 30px; /* Make room for the icon */
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    box-sizing: border-box;
+}
+
+.login-page .password-toggle {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    color: #555;
+    font-size: 18px;
+}
+
+.login-page .password-toggle:hover {
+    color: #176b87;
+}
+
+/* Additional styles for forgot password link */
+.login-page .forgot-password {
+    margin-top: -10px; /* Add space above the link */
+    text-align: right; /* Align the link to the right */
+    cursor: pointer;
+    padding-bottom: 10px;
+    font-size: 14px;
+}
+
+.login-page .forgot-password a {
+    color: #176B87; /* Set link color */
+    text-decoration: none; /* Remove underline */
+}
+
+.login-page .forgot-password a:hover {
+    text-decoration: underline; /* Add underline on hover */
+}
+
+/* Responsive Design */
+@media (min-width: 1080px) {
+    .login-page .login-container {
+        flex-direction: row;
+    }
+
+    .login-page .login-background {
+        display: block;
+    }
+}
