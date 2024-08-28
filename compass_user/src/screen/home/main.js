@@ -96,24 +96,36 @@ const Main = props => {
 
   useEffect(() => {
     console.log('Effect triggered');
-    // Calculate timestamp for 5 minutes ago
     const fiveMinutesAgo = new Date();
     fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
-
+  
     const unsubscribe = firestore()
       .collection('busLocation')
-      .where('timestamp', '>=', fiveMinutesAgo) 
+      .where('timestamp', '>=', fiveMinutesAgo)
       .onSnapshot(async querySnapshot => {
         console.log('Snapshot fired');
-
+  
         const busPromises = querySnapshot.docs.map(async doc => {
+          console.log("Processing document:", doc.id);
           const data = doc.data();
+          
+          // Ensure data and doc.id are valid
+          if (!data || !doc.id) {
+            console.error("Invalid data or document ID");
+            return null; // Skip this document
+          }
+  
           const busDoc = await firestore()
             .collection('buses')
             .doc(doc.id)
             .get();
+          
           const busData = busDoc.data();
-
+          if (!busData) {
+            console.error("Bus data not found for document:", doc.id);
+            return null; // Skip this document
+          }
+  
           return {
             id: doc.id,
             coordinate: {
@@ -124,29 +136,60 @@ const Main = props => {
               name: busData.name,
               license_plate: busData.license_plate,
               route_id: data.route_id,
+              timestamp: data.timestamp,
             },
           };
         });
-
+  
         const busesData = await Promise.all(busPromises);
-
-        setBusMarkers(busesData);
-
+  
+        // Filter out null results
+        const validBusesData = busesData.filter(bus => bus !== null);
+  
+        setBusMarkers(validBusesData);
+  
         // Call animate or map update logic after state is set
-        busesData.forEach(bus => {
-          animate(bus.coordinate.latitude, bus.coordinate.longitude);
+        validBusesData.forEach(bus => {
+          if (bus.coordinate) {
+            animate(bus.coordinate.latitude, bus.coordinate.longitude);
+          }
         });
       });
-
+  
     return () => {
       unsubscribe();
     };
-  }, []); // Only run once on mount
+  }, []);
+  
+
+  // remove offline bus
+  useEffect(() => {
+    // Interval to check if buses are offline
+    const checkBusOfflineStatus = () => {
+      console.log('offline bus check');
+      const currentTime = new Date();
+      const updatedBusMarkers = busMarkers.filter(bus => {
+        const lastSeen = new Date(bus.details.timestamp.toDate());
+        const diffInSeconds = (currentTime - lastSeen) / 1000;
+        return diffInSeconds <= 300; // Consider buses offline after 5 minutes
+      });
+
+      if (updatedBusMarkers.length !== busMarkers.length) {
+        console.log('remove bus');
+        setBusMarkers(updatedBusMarkers); // Remove offline buses from state
+      }
+    };
+
+    const intervalId = setInterval(checkBusOfflineStatus, 60000); // Run every minute
+
+    return () => clearInterval(intervalId); // Clean up on unmount
+  }, [busMarkers]);
+
   const animate = (latitude, longitude) => {
     const newCoordinate = {latitude, longitude};
     const duration = 5000;
-    if (Platform.OS == 'android') {
-      if (animatedMarkersRef.current) {
+    if (Platform.OS === 'android' && animatedMarkersRef.current) {
+      if (animatedMarkersRef.current.animateMarkerToCoordinate) {
         animatedMarkersRef.current.animateMarkerToCoordinate(
           newCoordinate,
           duration,
@@ -491,6 +534,7 @@ const Main = props => {
               <Callout>
                 <Text>Name: {bus.details.name}</Text>
                 <Text>License Plate: {bus.details.license_plate}</Text>
+                <Text>Last Update: {bus.details.timestamp.toDate().toLocaleString()}</Text>
               </Callout>
             </MarkerAnimated>
           ))}
