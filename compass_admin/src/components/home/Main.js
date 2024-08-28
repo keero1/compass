@@ -8,7 +8,7 @@ import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
 
 const Main = () => {
-  const API_KEY = process.env.REACT_APP_API_KEY;
+  const API_KEY = process.env.REACT_APP_MAP_KEY;
 
   const [mapCache, setMapCache] = useState({
     center: { lat: 14.77908927, lng: 121.06667698 }, // default values
