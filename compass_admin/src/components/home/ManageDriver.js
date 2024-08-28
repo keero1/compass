@@ -10,6 +10,7 @@ const busesCollection = collection(db, "buses");
 
 const ManageDriver = () => {
   const [buses, setBuses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Fetch bus data from Firestore
   const fetchBusData = async () => {
@@ -27,6 +28,8 @@ const ManageDriver = () => {
       setBuses(fetchedBuses);
     } catch (error) {
       console.error("Error fetching bus data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,29 +67,48 @@ const ManageDriver = () => {
             </tr>
           </thead>
           <tbody>
-            {buses.map((bus) => (
-              <tr key={bus.id} className="hover">
-                <td className="text-lg">{bus.name}</td>
-                <td className="text-lg">{bus.license_plate}</td>
-                <td className="text-lg">{"0" + bus.phone_number}</td>
-                <th>
-                  <button className="btn btn-ghost btn-xs">details</button>
-                </th>
-              </tr>
-            ))}
+            {loading
+              ? Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index} className="hover">
+                    <td className="text-lg">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                    <td className="text-lg">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                    <td className="text-lg">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                    <td>
+                      <div className="skeleton h-4 w-16"></div>
+                    </td>
+                  </tr>
+                ))
+              : buses.map((bus) => (
+                  <tr key={bus.id} className="hover">
+                    <td className="text-lg">{bus.name}</td>
+                    <td className="text-lg">{bus.license_plate}</td>
+                    <td className="text-lg">{"0" + bus.phone_number}</td>
+                    <td>
+                      <button className="btn btn-ghost btn-xs">details</button>
+                    </td>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>
 
       {/* Pagination (Hardcoded) */}
-      <div className="flex justify-end items-center mt-4 space-x-8">
-        <div className="text-lg">Rows per page: {5}</div>
-        <div className="text-lg">1-5 of {buses.length}</div>
-        <div className="text-lg">
-          <span className="cursor-pointer">&lt;</span>{" "}
-          <span className="cursor-pointer mx-5">&gt;</span>
+      {!loading && (
+        <div className="flex justify-end items-center mt-4 space-x-8">
+          <div className="text-lg">Rows per page: {5}</div>
+          <div className="text-lg">1-5 of {buses.length}</div>
+          <div className="text-lg">
+            <span className="cursor-pointer">&lt;</span>{" "}
+            <span className="cursor-pointer mx-5">&gt;</span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
