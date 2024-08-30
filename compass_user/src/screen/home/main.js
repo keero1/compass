@@ -98,34 +98,34 @@ const Main = props => {
     console.log('Effect triggered');
     const fiveMinutesAgo = new Date();
     fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
-  
+
     const unsubscribe = firestore()
       .collection('busLocation')
       .where('timestamp', '>=', fiveMinutesAgo)
       .onSnapshot(async querySnapshot => {
         console.log('Snapshot fired');
-  
+
         const busPromises = querySnapshot.docs.map(async doc => {
-          console.log("Processing document:", doc.id);
+          console.log('Processing document:', doc.id);
           const data = doc.data();
-          
+
           // Ensure data and doc.id are valid
           if (!data || !doc.id) {
-            console.error("Invalid data or document ID");
+            console.error('Invalid data or document ID');
             return null; // Skip this document
           }
-  
+
           const busDoc = await firestore()
             .collection('buses')
             .doc(doc.id)
             .get();
-          
+
           const busData = busDoc.data();
           if (!busData) {
-            console.error("Bus data not found for document:", doc.id);
+            console.error('Bus data not found for document:', doc.id);
             return null; // Skip this document
           }
-  
+
           return {
             id: doc.id,
             coordinate: {
@@ -140,14 +140,14 @@ const Main = props => {
             },
           };
         });
-  
+
         const busesData = await Promise.all(busPromises);
-  
+
         // Filter out null results
         const validBusesData = busesData.filter(bus => bus !== null);
-  
+
         setBusMarkers(validBusesData);
-  
+
         // Call animate or map update logic after state is set
         validBusesData.forEach(bus => {
           if (bus.coordinate) {
@@ -155,12 +155,11 @@ const Main = props => {
           }
         });
       });
-  
+
     return () => {
       unsubscribe();
     };
   }, []);
-  
 
   // remove offline bus
   useEffect(() => {
@@ -441,7 +440,7 @@ const Main = props => {
     try {
       const routeData = await fetchRouteData(routeId);
 
-      const coordinates = routeData.key_points.map(point => [
+      const coordinates = routeData.keypoints.map(point => [
         point.latitude,
         point.longitude,
       ]);
@@ -534,7 +533,9 @@ const Main = props => {
               <Callout>
                 <Text>Name: {bus.details.name}</Text>
                 <Text>License Plate: {bus.details.license_plate}</Text>
-                <Text>Last Update: {bus.details.timestamp.toDate().toLocaleString()}</Text>
+                <Text>
+                  Last Update: {bus.details.timestamp.toDate().toLocaleString()}
+                </Text>
               </Callout>
             </MarkerAnimated>
           ))}
