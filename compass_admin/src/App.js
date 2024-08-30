@@ -20,6 +20,8 @@ import ManageRoute from "./components/home/ManageRoute";
 import Profile from "./components/home/Profile";
 
 import RouteView from "./components/route/RouteView";
+import BusCreate from "./components/bus/BusCreate";
+
 import { PrivateRouteButOutsideMainRoute } from "./components/auth/private/PrivateRouteButOutsideMainRoute";
 
 function App() {
@@ -38,10 +40,14 @@ function App() {
             <Route path="/profile" element={<Profile />} />
           </Route>
           <Route path="/" element={<PrivateRouteButOutsideMainRoute />}>
-            {/* route management pages */}
+            {/* no navbar pages */}
             <Route
               path="/manage-route/route-view/:routeId"
               element={<RouteView />}
+            />
+            <Route
+              path="/manage-driver/create-bus"
+              element={<BusCreate />}
             />
           </Route>
           {/* error 404*/}
