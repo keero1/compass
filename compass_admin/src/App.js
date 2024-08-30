@@ -19,6 +19,9 @@ import ManageRoute from "./components/home/ManageRoute";
 // import NotFound from "./components/pages/NotFound";
 import Profile from "./components/home/Profile";
 
+import RouteView from "./components/route/RouteView";
+import { PrivateRouteButOutsideMainRoute } from "./components/auth/private/PrivateRouteButOutsideMainRoute";
+
 function App() {
   return (
     <AuthProvider>
@@ -29,9 +32,17 @@ function App() {
             <Route index element={<Home />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/manage-driver" element={<ManageDriver />} />
+            {/* route */}
             <Route path="/manage-route" element={<ManageRoute />} />
             {/* Profile */}
             <Route path="/profile" element={<Profile />} />
+          </Route>
+          <Route path="/" element={<PrivateRouteButOutsideMainRoute />}>
+            {/* route management pages */}
+            <Route
+              path="/manage-route/route-view/:routeId"
+              element={<RouteView />}
+            />
           </Route>
           {/* error 404*/}
           <Route path="*" element={<Navigate to="/" />} />

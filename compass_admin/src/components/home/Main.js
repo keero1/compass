@@ -178,6 +178,7 @@ const Main = () => {
             gestureHandling={"greedy"}
             disableDefaultUI={true}
             onLoad={handleMapLoad}
+            keyboardShortcuts={false}
             options={{
               styles: noLandMarkStyle,
             }}
