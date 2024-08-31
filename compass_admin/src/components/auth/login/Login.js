@@ -104,9 +104,9 @@ const Login = () => {
               </div>
 
               <div className="mb-4 text-right">
-                <a href="#" className="text-primary hover:underline">
+                <div className="text-primary hover:underline">
                   Forgot Password?
-                </a>
+                </div>
               </div>
 
               <button

@@ -130,8 +130,6 @@ const ManageRoute = () => {
             <tr>
               <th className="text-left text-xl">Route Name</th>
               <th className="text-left text-xl">Route Description</th>
-              <th></th> {/* Column for action buttons */}
-              <th></th> {/* Column for delete icon */}
             </tr>
           </thead>
           <tbody>

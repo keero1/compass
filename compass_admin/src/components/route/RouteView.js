@@ -343,7 +343,7 @@ const RouteView = () => {
               icon={getMarkerIcon(index)}
             />
           ))}
-          <Polyline path={routeCoordinates} />
+          {!isEditing && <Polyline path={routeCoordinates} />}
         </Map>
         <button
           className="absolute top-5 left-5 btn btn-primary"
