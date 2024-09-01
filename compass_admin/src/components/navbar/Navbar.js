@@ -175,7 +175,7 @@ const Navbar = () => {
                   </Link>
                 </li>
                 <li>
-                  <a
+                  <button
                     className="text-red-500"
                     onClick={() => {
                       doSignOut().then(() => {
@@ -185,7 +185,7 @@ const Navbar = () => {
                   >
                     <ArrowLeftStartOnRectangleIcon className="size-6" />
                     Logout
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -240,10 +240,10 @@ const Navbar = () => {
             </Link>
           </li>
           <li>
-            <a>
+            <button>
               <Cog6ToothIcon className="size-6" />
               Settings
-            </a>
+            </button>
           </li>
         </ul>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -22,9 +22,7 @@ const RouteView = () => {
   const navigate = useNavigate();
   const { routeId } = useParams(); // Extract routeId from URL
 
-  const mapRef = useRef(null);
-
-  const [mapCache, setMapCache] = useState({
+  const [mapDefault] = useState({
     center: { lat: 14.703238, lng: 121.096888 },
     zoom: 10,
   });
@@ -32,7 +30,6 @@ const RouteView = () => {
   const [routeData, setRouteData] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [routeDataCopy, setRouteDataCopy] = useState();
-  const [savedPolyline, setSavedPolyline] = useState([]);
 
   // dialogue text
   const [title, setTitle] = useState(null);
@@ -72,7 +69,6 @@ const RouteView = () => {
             }));
 
             setRouteCoordinates(routeCoordinates);
-            setSavedPolyline(routeCoordinates);
             // get middle marker coordinate
 
             // const middleIndex = Math.floor(routeCoordinates.length / 2);
@@ -89,6 +85,7 @@ const RouteView = () => {
     }
   }, [routeId]);
 
+
   // toast
   useEffect(() => {
     if (showToast) {
@@ -96,42 +93,6 @@ const RouteView = () => {
       return () => clearTimeout(timer);
     }
   }, [showToast]);
-
-  useEffect(() => {
-    const loadMapCache = () => {
-      if (mapRef.current) {
-        mapRef.current.setCenter(mapCache.center);
-        mapRef.current.setZoom(mapCache.zoom);
-      }
-    };
-
-    loadMapCache();
-  }, [mapCache]);
-
-  const handleMapLoad = (mapInstance) => {
-    mapRef.current = mapInstance;
-
-    mapInstance.setCenter(mapCache.center);
-    mapInstance.setZoom(mapCache.zoom);
-
-    mapInstance.setOptions({ styles: noLandMarkStyle });
-
-    mapInstance.addListener("center_changed", () => {
-      const center = mapInstance.getCenter();
-      setMapCache((prevCache) => ({
-        ...prevCache,
-        center: { lat: center.lat(), lng: center.lng() },
-      }));
-    });
-
-    mapInstance.addListener("zoom_changed", () => {
-      const zoom = mapInstance.getZoom();
-      setMapCache((prevCache) => ({
-        ...prevCache,
-        zoom,
-      }));
-    });
-  };
 
   const onMapClick = (event) => {
     if (!isEditing) return;
@@ -165,11 +126,12 @@ const RouteView = () => {
   };
 
   const handleMarkerClick = (index) => {
+    console.log(`Marker ${index + 1} clicked`);
+
     if (!isEditing) {
       return;
     }
 
-    console.log(`Marker ${index + 1} clicked`);
     setSelectedMarkerIndex(index);
     document.getElementById("marker_delete_modal").showModal();
   };
@@ -250,17 +212,6 @@ const RouteView = () => {
     setSelectedMarkerIndex(null);
   };
 
-  // Ensure polyline is drawn when not in editing mode
-  useEffect(() => {
-    if (mapRef.current && !isEditing && savedPolyline.length > 0) {
-      const newRoute = savedPolyline.map((coord) => ({
-        lat: coord.latitude,
-        lng: coord.longitude,
-      }));
-      setRouteCoordinates(newRoute);
-    }
-  }, [isEditing, savedPolyline]);
-
   // save form
   const [inputValue, setInputValue] = useState("");
   const handleSave = (e) => {
@@ -322,13 +273,12 @@ const RouteView = () => {
       <div className="relative h-screen">
         <Map
           style={{ width: "100%", height: "100%" }}
-          defaultCenter={mapCache.center}
-          defaultZoom={mapCache.zoom}
+          defaultCenter={mapDefault.center}
+          defaultZoom={mapDefault.zoom}
           maxZoom={20}
           minZoom={12}
           gestureHandling={"greedy"}
           disableDefaultUI={true}
-          onLoad={handleMapLoad}
           keyboardShortcuts={false}
           onClick={onMapClick}
           options={{
