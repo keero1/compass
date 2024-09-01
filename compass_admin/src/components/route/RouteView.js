@@ -27,6 +27,8 @@ const RouteView = () => {
     zoom: 10,
   });
 
+  const [mapCenter, setMapCenter] = useState(null);
+
   const [routeData, setRouteData] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [routeDataCopy, setRouteDataCopy] = useState();
@@ -85,7 +87,6 @@ const RouteView = () => {
     }
   }, [routeId]);
 
-
   // toast
   useEffect(() => {
     if (showToast) {
@@ -93,6 +94,8 @@ const RouteView = () => {
       return () => clearTimeout(timer);
     }
   }, [showToast]);
+
+  // click events
 
   const onMapClick = (event) => {
     if (!isEditing) return;
@@ -125,8 +128,12 @@ const RouteView = () => {
     setPlaceholder_text(routeDataCopy.description);
   };
 
-  const handleMarkerClick = (index) => {
+  const handleMarkerClick = (index, position) => {
     console.log(`Marker ${index + 1} clicked`);
+
+    setMapCenter({ lat: position.latitude, lng: position.longitude });
+
+    setTimeout(() => setMapCenter(null));
 
     if (!isEditing) {
       return;
@@ -275,6 +282,7 @@ const RouteView = () => {
           style={{ width: "100%", height: "100%" }}
           defaultCenter={mapDefault.center}
           defaultZoom={mapDefault.zoom}
+          center={mapCenter}
           maxZoom={20}
           minZoom={12}
           gestureHandling={"greedy"}
@@ -289,11 +297,11 @@ const RouteView = () => {
             <Marker
               key={index}
               position={{ lat: point.latitude, lng: point.longitude }}
-              onClick={() => handleMarkerClick(index)}
+              onClick={() => handleMarkerClick(index, point)}
               icon={getMarkerIcon(index)}
             />
           ))}
-          {!isEditing && <Polyline path={routeCoordinates} />}
+          {!isEditing && <Polyline path={routeCoordinates} strokeColor={'#001bff'} />}
         </Map>
         <button
           className="absolute top-5 left-5 btn btn-primary"
@@ -358,7 +366,7 @@ const RouteView = () => {
                 {routeDataCopy.keypoints.map((point, index) => (
                   <li
                     key={index}
-                    onClick={() => handleMarkerClick(index)}
+                    onClick={() => handleMarkerClick(index, point)}
                     className="cursor-pointer hover:bg-base-300 px-2 rounded-lg mt-1"
                   >
                     {`Marker ${index + 1}`}
