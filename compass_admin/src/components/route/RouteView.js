@@ -219,6 +219,24 @@ const RouteView = () => {
       setIsChangedMarker(false);
       setIsChangedX(false);
       setIsEditing(false);
+
+      // recalculate the route polyline after saving
+      const coordinates = routeDataCopy.keypoints.map((point) => [
+        point.latitude,
+        point.longitude,
+      ]);
+
+      if (coordinates.length === 0) {
+        setRouteCoordinates([]);
+        return;
+      }
+      const route = await getRoute(coordinates);
+      const routeCoords = route.map((coord) => ({
+        lat: coord.latitude,
+        lng: coord.longitude,
+      }));
+
+      setRouteCoordinates(routeCoords);
     } catch (error) {
       console.error("Error updating route:", error);
     }
