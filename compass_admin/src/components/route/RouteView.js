@@ -1,26 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 import { useNavigate, useParams } from "react-router-dom";
-
-//polyline
 import { Polyline } from "./components/polyline.tsx";
-
-// firebase
+import GeocodeComponent from "./components/GeocodeComponent.js";
 import { db } from "../../firebase/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
-
-// calculate the route for polyline
 import { getRoute } from "./components/RoutesUtils.js";
-
 import redMarker from "../../assets/images/pins/pin_red.png";
 import blueMarker from "../../assets/images/pins/pin_blue.png";
 
 const RouteView = () => {
   const API_KEY = process.env.REACT_APP_MAP_KEY;
   const navigate = useNavigate();
-  const { routeId } = useParams(); // Extract routeId from URL
+  const { routeId } = useParams();
 
   const [mapDefault] = useState({
     center: { lat: 14.703238, lng: 121.096888 },
@@ -28,20 +21,17 @@ const RouteView = () => {
   });
 
   const [mapCenter, setMapCenter] = useState(null);
-
   const [routeData, setRouteData] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [routeDataCopy, setRouteDataCopy] = useState();
 
-  // dialogue text
+  const [placePosition, setPlacePosition] = useState(null);
+
   const [title, setTitle] = useState(null);
   const [placeholder_text, setPlaceholder_text] = useState(null);
 
-  // data
   const [isChangedX, setIsChangedX] = useState(false);
   const [isChangedMarker, setIsChangedMarker] = useState(false);
-
-  // edit markers
   const [isEditing, setIsEditing] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [selectedMarkerIndex, setSelectedMarkerIndex] = useState(null);
@@ -51,60 +41,62 @@ const RouteView = () => {
     "Are you sure you want to cancel? Your changes will not be saved.";
 
   useEffect(() => {
-    if (routeId) {
-      const fetchRouteData = async () => {
-        try {
-          const routeDocRef = doc(db, "routes", routeId);
-          const routeDoc = await getDoc(routeDocRef);
+    if (!routeId) return;
 
-          if (routeDoc.exists()) {
-            setRouteData(routeDoc.data());
-            setRouteDataCopy(routeDoc.data());
-            const coordinates = routeDoc
-              .data()
-              .keypoints.map((point) => [point.latitude, point.longitude]);
+    const fetchRouteData = async () => {
+      try {
+        const routeDocRef = doc(db, "routes", routeId);
+        const routeDoc = await getDoc(routeDocRef);
 
-            const route = await getRoute(coordinates);
-            const routeCoordinates = route.map((coord) => ({
-              lat: coord.latitude,
-              lng: coord.longitude,
-            }));
-
-            setRouteCoordinates(routeCoordinates);
-            // get middle marker coordinate
-
-            // const middleIndex = Math.floor(routeCoordinates.length / 2);
-            // const middleMarker = routeCoordinates[middleIndex];
-          } else {
-            console.log("No such document!");
-          }
-        } catch (error) {
-          console.error("Error processing route:", error);
+        if (!routeDoc.exists()) {
+          console.log("No such document!");
+          return;
         }
-      };
 
-      fetchRouteData();
-    }
+        const data = routeDoc.data();
+        setRouteData(data);
+        setRouteDataCopy(data);
+
+        const coordinates = data.keypoints.map((point) => [
+          point.latitude,
+          point.longitude,
+        ]);
+
+        if (coordinates.length === 0) {
+          setRouteCoordinates([]);
+          return;
+        }
+
+        const route = await getRoute(coordinates);
+        const routeCoordinates = route.map((coord) => ({
+          lat: coord.latitude,
+          lng: coord.longitude,
+        }));
+
+        setRouteCoordinates(routeCoordinates);
+      } catch (error) {
+        console.error("Error processing route:", error);
+      }
+    };
+
+    fetchRouteData();
   }, [routeId]);
 
-  // toast
   useEffect(() => {
     if (showToast) {
-      const timer = setTimeout(() => setShowToast(false), 5000); // Hide after 5 seconds
+      const timer = setTimeout(() => setShowToast(false), 5000);
       return () => clearTimeout(timer);
     }
   }, [showToast]);
 
-  // click events
-
   const onMapClick = (event) => {
     if (!isEditing) return;
 
-    console.log(isChangedMarker);
-
     const lat = event.detail.latLng.lat;
     const lng = event.detail.latLng.lng;
-    const newMarker = { latitude: lat, longitude: lng };
+    const newMarker = { latitude: lat, longitude: lng, placeName: null };
+
+    setPlacePosition(newMarker);
 
     setRouteDataCopy((prevData) => {
       const updatedKeypoints = [...prevData.keypoints, newMarker];
@@ -112,25 +104,20 @@ const RouteView = () => {
       return { ...prevData, keypoints: updatedKeypoints };
     });
   };
-  const handleNameClick = () => {
-    console.log("name click");
-    document.getElementById("modal_route_view").showModal();
 
+  const handleNameClick = () => {
+    document.getElementById("modal_route_view").showModal();
     setTitle("Route Name");
     setPlaceholder_text(routeDataCopy.route_name);
   };
 
   const handleDescriptionClick = () => {
-    console.log("description click");
     document.getElementById("modal_route_view").showModal();
-
     setTitle("Description");
     setPlaceholder_text(routeDataCopy.description);
   };
 
   const handleMarkerClick = (index, position) => {
-    console.log(`Marker ${index + 1} clicked`);
-
     setMapCenter({ lat: position.latitude, lng: position.longitude });
 
     setTimeout(() => setMapCenter(null));
@@ -172,9 +159,40 @@ const RouteView = () => {
     navigate(-1);
   };
 
+  const handleGeocodeResult = useCallback((address) => {
+    const placeName = extractPlaceName(address);
+    console.log(placeName);
+
+    setRouteDataCopy((prevData) => {
+      const updatedKeypoints = prevData.keypoints.map((point, index) => {
+        if (index === prevData.keypoints.length - 1) {
+          return { ...point, placeName: placeName };
+        }
+        return point;
+      });
+      return { ...prevData, keypoints: updatedKeypoints };
+    });
+  }, []);
+
+  const extractPlaceName = (fullAddress) => {
+    const parts = fullAddress.split(",").map((part) => part.trim());
+
+    if (parts.length < 3) {
+      console.warn(
+        "Address does not contain enough parts to extract place name."
+      );
+      return fullAddress;
+    }
+
+    const thirdLastPart = parts[parts.length - 3];
+    const secondLastPart = parts[parts.length - 2];
+
+    // Combine them to form the desired place name
+    return `${thirdLastPart}, ${secondLastPart}`;
+  };
+
   const onSaveClick = async () => {
-    console.log("save");
-    if (!routeId) return; // Ensure routeId is available
+    if (!routeId) return;
 
     const userConfirmed = window.confirm(
       "Are you sure with the changes you made?"
@@ -189,19 +207,22 @@ const RouteView = () => {
       await updateDoc(routeDocRef, {
         route_name: routeDataCopy.route_name,
         description: routeDataCopy.description,
-        keypoints: routeDataCopy.keypoints,
+        keypoints: routeDataCopy.keypoints.map((point) => ({
+          latitude: point.latitude,
+          longitude: point.longitude,
+          placeName: point.placeName,
+        })),
       });
       console.log("Route updated successfully!");
+      setRouteData(routeDataCopy);
+
       setIsChangedMarker(false);
       setIsChangedX(false);
       setIsEditing(false);
-      navigate(-1);
     } catch (error) {
       console.error("Error updating route:", error);
     }
   };
-
-  // edit the marker
 
   const onEditClick = () => {
     document.getElementById("confirm_edit_modal").close();
@@ -209,17 +230,16 @@ const RouteView = () => {
     if (!isEditing) {
       setShowToast(true);
     }
-    // Revert to original markers when exiting edit mode
+
     setRouteDataCopy((prevDataCopy) => ({
       ...prevDataCopy,
-      keypoints: routeData.keypoints, // Use stored original markers
+      keypoints: routeData.keypoints,
     }));
 
     setIsChangedMarker(false);
     setSelectedMarkerIndex(null);
   };
 
-  // save form
   const [inputValue, setInputValue] = useState("");
   const handleSave = (e) => {
     e.preventDefault();
@@ -230,7 +250,6 @@ const RouteView = () => {
     }
 
     setRouteDataCopy((prevData) => {
-      console.log(title);
       if (title === "Route Name") {
         setIsChangedX(true);
         return { ...prevData, route_name: inputValue };
@@ -243,11 +262,8 @@ const RouteView = () => {
     });
 
     setInputValue("");
-
     document.getElementById("modal_route_view").close();
   };
-
-  // prompt when leaving if editing
 
   useEffect(() => {
     const handleBeforeUnload = (event) => {
@@ -255,7 +271,7 @@ const RouteView = () => {
         const message =
           "You have unsaved changes. Are you sure you want to reload?";
         event.preventDefault();
-        event.returnValue = message; // Most browsers require this to display a confirmation dialog
+        event.returnValue = message;
       }
     };
 
@@ -266,13 +282,11 @@ const RouteView = () => {
     };
   }, [isEditing, isChangedX]);
 
-  // highlighted
-
   const getMarkerIcon = (index) => {
     if (index === selectedMarkerIndex) {
-      return blueMarker; // Example of highlighted icon
+      return blueMarker;
     }
-    return redMarker; // Example of default icon
+    return redMarker;
   };
 
   return (
@@ -301,7 +315,15 @@ const RouteView = () => {
               icon={getMarkerIcon(index)}
             />
           ))}
-          {!isEditing && <Polyline path={routeCoordinates} strokeColor={'#001bff'} />}
+          {placePosition && (
+            <GeocodeComponent
+              position={placePosition}
+              onGeocodeResult={handleGeocodeResult}
+            />
+          )}
+          {!isEditing && (
+            <Polyline path={routeCoordinates} strokeColor={"#001bff"} />
+          )}
         </Map>
         <button
           className="absolute top-5 left-5 btn btn-primary"
@@ -369,7 +391,10 @@ const RouteView = () => {
                     onClick={() => handleMarkerClick(index, point)}
                     className="cursor-pointer hover:bg-base-300 px-2 rounded-lg mt-1"
                   >
-                    {`Marker ${index + 1}`}
+                    <div>{`Marker ${index + 1}`}</div>
+                    <div className="text-sm text-gray-500 w-48 whitespace-nowrap overflow-hidden text-ellipsis">
+                      {point.placeName || "No Place Name"}
+                    </div>
                   </li>
                 ))}
               </ul>
