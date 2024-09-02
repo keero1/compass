@@ -15,6 +15,9 @@ import backgroundImage from "../../../assets/images/frieren-bg.png";
 // icons
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import icons
 
+// css
+import "./Login.css";
+
 const Login = () => {
   const { userLoggedIn } = useAuth();
 
