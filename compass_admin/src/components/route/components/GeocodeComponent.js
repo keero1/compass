@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
 const GeocodeComponent = ({ position, onGeocodeResult }) => {
@@ -20,7 +20,7 @@ const GeocodeComponent = ({ position, onGeocodeResult }) => {
         }
       );
     }
-  }, [geocoder, position]);
+  }, [geocoder, position, onGeocodeResult]);
 
   return null;
 };

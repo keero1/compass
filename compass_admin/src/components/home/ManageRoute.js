@@ -157,7 +157,7 @@ const ManageRoute = () => {
                         to={`/manage-route/route-view/${route.id}`}
                         className="btn btn-ghost btn-xs"
                       >
-                        details
+                        View
                       </Link>
                     </td>
                     <td>
