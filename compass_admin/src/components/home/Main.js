@@ -1,16 +1,35 @@
 import React, { useState, useEffect, useRef } from "react";
-import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
+import {
+  APIProvider,
+  Map,
+  Marker,
+  InfoWindow,
+  useMarkerRef,
+} from "@vis.gl/react-google-maps";
 
 //firebase
 import { db } from "../../firebase/firebase";
-import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  getDoc,
+  getDocs,
+} from "firebase/firestore";
 
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
+
+import Frieren from "../../assets/images/frieren.png";
+
+import "./Main.css";
+
+//collection
+const routesCollection = collection(db, "routes");
 
 const Main = () => {
   const API_KEY = process.env.REACT_APP_MAP_KEY;
 
-  const [mapCache, setMapCache] = useState({
+  const [mapDefault] = useState({
     center: { lat: 14.77908927, lng: 121.06667698 }, // default values
     zoom: 15,
   });
@@ -18,20 +37,35 @@ const Main = () => {
   const [markers, setMarkers] = useState([]);
   const markersRef = useRef(markers);
 
+  // for infowindow
+  const [infoWindowOpen, setInfoWindowOpen] = useState(null);
+  const [markerRef, marker] = useMarkerRef();
+
+  // route
+  const [routes, setRoutes] = useState([]);
+
   const mapRef = useRef(null);
 
-  useEffect(() => {
-    const loadMapCache = () => {
-      if (mapRef.current) {
-        mapRef.current.setCenter(mapCache.center);
-        mapRef.current.setZoom(mapCache.zoom);
-      }
-    };
-
-    loadMapCache();
-  }, [mapCache]);
-
   // bus location
+
+  // fetch data
+  const fetchBusDetails = async (busId) => {
+    console.log("fetching bus details");
+    try {
+      const busDoc = doc(db, "buses", busId); // Adjust the collection name if needed
+      const busSnapshot = await getDoc(busDoc);
+
+      if (busSnapshot.exists()) {
+        return busSnapshot.data();
+      } else {
+        console.log("No such bus!");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching bus details:", error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     console.log("effect triggered");
@@ -58,7 +92,7 @@ const Main = () => {
       ).then((markers) =>
         markers.filter((marker) => {
           const timestampDiff = (now - marker.timestamp) / 1000 / 60; // Difference in minutes
-          return timestampDiff <= 5; // Keep markers with timestamp <= 5 minutes old
+          return timestampDiff > 5; // Keep markers with timestamp <= 5 minutes old
         })
       );
 
@@ -68,16 +102,17 @@ const Main = () => {
 
     return () => unsubscribe();
   }, []);
-  // check for offline
+
+  // interval to refresh buses (incase offline)
   useEffect(() => {
     console.log("effect triggered (interval check)");
-    // Check every minute
+
     const intervalId = setInterval(() => {
       console.log("interval triggered");
       const now = new Date();
       const updatedMarkers = markersRef.current.filter((marker) => {
         const timestampDiff = (now - marker.timestamp) / 1000 / 60; // Difference in minutes
-        return timestampDiff <= 5; // Keep markers with timestamp <= 5 minutes old
+        return timestampDiff > 5; // Keep markers with timestamp <= 5 minutes old
       });
       setMarkers(updatedMarkers);
     }, 60000); // 60,000 ms = 1 minute
@@ -85,56 +120,33 @@ const Main = () => {
     return () => clearInterval(intervalId); // Clear interval on component unmount
   }, []);
 
-  // fetch data
-
-  const fetchBusDetails = async (busId) => {
-    console.log("fetching bus details");
+  //route
+  const fetchRouteData = async () => {
     try {
-      const busDoc = doc(db, "buses", busId); // Adjust the collection name if needed
-      const busSnapshot = await getDoc(busDoc);
-
-      if (busSnapshot.exists()) {
-        return busSnapshot.data();
-      } else {
-        console.log("No such bus!");
-        return null;
-      }
+      const querySnapshot = await getDocs(routesCollection);
+      const fetchedRoutes = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.route_name,
+        };
+      });
+      setRoutes(fetchedRoutes);
     } catch (error) {
-      console.error("Error fetching bus details:", error);
-      return null;
+      console.error("Error fetching route data:", error);
     }
   };
 
-  // map load
+  useEffect(() => {
+    fetchRouteData();
+  }, []);
 
-  const handleMapLoad = (mapInstance) => {
-    mapRef.current = mapInstance;
-
-    mapInstance.setCenter(mapCache.center);
-    mapInstance.setZoom(mapCache.zoom);
-
-    // style
-    mapInstance.setOptions({ styles: noLandMarkStyle });
-
-    mapInstance.addListener("center_changed", () => {
-      const center = mapInstance.getCenter();
-      setMapCache((prevCache) => ({
-        ...prevCache,
-        center: { lat: center.lat(), lng: center.lng() },
-      }));
-    });
-
-    mapInstance.addListener("zoom_changed", () => {
-      const zoom = mapInstance.getZoom();
-      setMapCache((prevCache) => ({
-        ...prevCache,
-        zoom,
-      }));
-    });
+  const getRouteName = (route_id) => {
+    const route = routes.find((r) => r.id === route_id);
+    return route ? route.name : "Unknown";
   };
 
-  // marker
-
+  // storing marker info
   useEffect(() => {
     if (mapRef.current) {
       markers.forEach(({ lat, lng, id }) => {
@@ -147,22 +159,14 @@ const Main = () => {
     }
   }, [markers]);
 
+  // click handlers
+
   const handleMarkerClick = (marker) => {
-    console.log("Marker clicked:", marker);
+    setInfoWindowOpen(marker);
+  };
 
-    if (marker.details) {
-      // Update the modal content with bus details
-      document.getElementById("modal_title").textContent =
-        marker.details.name || "No Name";
-      document.getElementById(
-        "modal_license_plate"
-      ).textContent = `License Plate: ${marker.details.license_plate || "N/A"}`;
-    } else {
-      document.getElementById("modal_title").textContent =
-        "Bus details not available";
-    }
-
-    document.getElementById("modal_popup").showModal();
+  const onMapClick = () => {
+    setInfoWindowOpen(null);
   };
 
   return (
@@ -171,40 +175,64 @@ const Main = () => {
         <div className="flex-1">
           <Map
             style={{ width: "100%", height: "100%" }}
-            defaultCenter={mapCache.center}
-            defaultZoom={mapCache.zoom}
+            defaultCenter={mapDefault.center}
+            defaultZoom={mapDefault.zoom}
             maxZoom={20}
             minZoom={12}
             gestureHandling={"greedy"}
             disableDefaultUI={true}
-            onLoad={handleMapLoad}
             keyboardShortcuts={false}
             options={{
               styles: noLandMarkStyle,
             }}
+            onClick={onMapClick}
           >
             {markers.map((marker, index) => (
               <Marker
                 key={index}
+                ref={markerRef}
                 position={{ lat: marker.lat, lng: marker.lng }}
                 onClick={() => handleMarkerClick(marker)}
               />
             ))}
+
+            {infoWindowOpen && (
+              <InfoWindow
+                anchor={marker}
+                onCloseClick={() => setInfoWindowOpen(null)}
+                className=""
+              >
+                <div>
+                  <div className="avatar flex justify-center mb-2">
+                    <div className="w-24 rounded-full overflow-hidden">
+                      <img src={Frieren} className="object-cover" alt="Profile" />
+                    </div>
+                  </div>
+                  <div className="text-center text-sm whitespace-nowrap">
+                    <p>
+                      <strong>Bus Driver:</strong>{" "}
+                      {infoWindowOpen.details.bus_driver_name}
+                    </p>
+                    <p>
+                      <strong>Phone Number:</strong>
+                      {"(+63) "}
+                      {infoWindowOpen.details.phone_number}
+                    </p>
+                    <p>
+                      <strong>Route:</strong>{" "}
+                      {getRouteName(infoWindowOpen.details.route_id)}
+                    </p>
+                    <p>
+                      <strong>License:</strong>{" "}
+                      {infoWindowOpen.details.license_plate}
+                    </p>
+                  </div>
+                </div>
+              </InfoWindow>
+            )}
           </Map>
         </div>
       </div>
-      <dialog id="modal_popup" className="modal">
-        <div className="modal-box">
-          <h3 id="modal_title" className="font-bold text-lg">
-            Bus Details
-          </h3>
-          <p id="modal_license_plate" className="py-4"></p>
-          <p className="py-4">Press ESC key or click outside to close</p>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
     </APIProvider>
   );
 };
