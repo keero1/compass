@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { db } from "../../firebase/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
-import { ArrowPathIcon } from "@heroicons/react/24/solid";
 import { Link } from "react-router-dom";
 
 const busesCollection = collection(db, "buses");
@@ -14,7 +13,6 @@ const ManageDriver = () => {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedBus, setSelectedBus] = useState(null); // State to hold the selected bus details
   const rowsPerPage = 5;
 
   //route
@@ -63,14 +61,7 @@ const ManageDriver = () => {
     const route = routes.find((r) => r.id === route_id);
     return route ? route.name : "Unknown";
   };
-
-  // format date
-  const formatDate = (timestamp) => {
-    const date = timestamp.toDate(); // Convert Firebase Timestamp to JavaScript Date
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return date.toLocaleDateString("en-PH", options);
-  };
-
+  
   const handleNextPage = () => {
     setCurrentPage((prevPage) =>
       Math.min(prevPage + 1, Math.ceil(buses.length / rowsPerPage))
@@ -89,22 +80,17 @@ const ManageDriver = () => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedBuses = buses.slice(startIndex, startIndex + rowsPerPage);
 
-  const openModal = (bus) => {
-    setSelectedBus(bus);
-    document.getElementById("bus-details-modal").showModal();
-  };
-
-  const closeModal = () => {
-    setSelectedBus(null);
-    document.getElementById("bus-details-modal").close();
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Buses</h1>
-        <Link to="/manage-driver/create-bus" className="btn btn-primary text-lg">Add Bus</Link>
+        <Link
+          to="/manage-driver/create-bus"
+          className="btn btn-primary text-lg"
+        >
+          Add Bus
+        </Link>
       </div>
 
       {/* Search Bar */}
@@ -125,9 +111,7 @@ const ManageDriver = () => {
               <th className="text-left text-xl">Name</th>
               <th className="text-left text-xl">License Plate</th>
               <th className="text-left text-xl">Phone Number</th>
-              <th>
-                <ArrowPathIcon className="size-6 ml-3" />
-              </th>
+              <th className="text-left text-xl">Route Name</th>
             </tr>
           </thead>
           <tbody>
@@ -153,13 +137,14 @@ const ManageDriver = () => {
                     <td className="text-lg">{bus.name}</td>
                     <td className="text-lg">{bus.license_plate}</td>
                     <td className="text-lg">{"0" + bus.phone_number}</td>
+                    <td className="text-lg">{getRouteName(bus.route_id)}</td>
                     <td>
-                      <button
+                      <Link
+                        to={`/manage-driver/bus-view/${bus.id}`}
                         className="btn btn-ghost btn-xs"
-                        onClick={() => openModal(bus)}
                       >
-                        details
-                      </button>
+                        Edit
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -197,44 +182,6 @@ const ManageDriver = () => {
           </div>
         </div>
       )}
-
-      {/* Modal */}
-      <dialog id="bus-details-modal" className="modal">
-        <div className="modal-box">
-          <h2 className="text-2xl font-bold mb-4">Bus Details</h2>
-          {selectedBus && (
-            <>
-              <div className="mb-4">
-                <strong>Bus Driver Name:</strong> {selectedBus.bus_driver_name}
-              </div>
-              <div className="mb-4">
-                <strong>Name:</strong> {selectedBus.name}
-              </div>
-              <div className="mb-4">
-                <strong>Phone:</strong> {selectedBus.phone_number}
-              </div>
-              <div className="mb-4">
-                <strong>License:</strong> {selectedBus.license_plate}
-              </div>
-              <div className="mb-4">
-                <strong>Route Name:</strong> {getRouteName(selectedBus.route_id)}
-              </div>
-              <div className="mb-4">
-                <strong>Created At:</strong>{" "}
-                {formatDate(selectedBus.created_at)}
-              </div>
-              <div className="flex justify-end space-x-4 mt-4">
-                <button className="btn btn-primary" onClick={() => {}}>
-                  Edit Info
-                </button>
-                <button className="btn" onClick={closeModal}>
-                  Close
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </dialog>
     </div>
   );
 };

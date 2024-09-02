@@ -7,7 +7,7 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { ArrowPathIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { TrashIcon } from "@heroicons/react/24/solid";
 import { Link } from "react-router-dom";
 
 const routesCollection = collection(db, "routes");

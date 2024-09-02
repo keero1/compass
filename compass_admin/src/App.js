@@ -9,6 +9,9 @@ import { AuthProvider } from "./contexts/authContext";
 
 import { PrivateRoute } from "./components/auth/private/PrivateRoute";
 
+// route view and bus driver account edit
+import { PrivateRouteButOutsideMainRoute } from "./components/auth/private/PrivateRouteButOutsideMainRoute";
+
 // auth
 import Login from "./components/auth/login/Login";
 //protected pages
@@ -21,8 +24,7 @@ import Profile from "./components/home/Profile";
 
 import RouteView from "./components/route/RouteView";
 import BusCreate from "./components/bus/BusCreate";
-
-import { PrivateRouteButOutsideMainRoute } from "./components/auth/private/PrivateRouteButOutsideMainRoute";
+import BusView from "./components/bus/BusView";
 
 function App() {
   return (
@@ -48,6 +50,10 @@ function App() {
             <Route
               path="/manage-driver/create-bus"
               element={<BusCreate />}
+            />
+            <Route
+              path="/manage-driver/bus-view/:busId"
+              element={<BusView />}
             />
           </Route>
           {/* error 404*/}
