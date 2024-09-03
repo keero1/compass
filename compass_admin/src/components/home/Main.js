@@ -35,11 +35,13 @@ const Main = () => {
   });
 
   const [markers, setMarkers] = useState([]);
-  const markersRef = useRef(markers);
+  const markersDataRef = useRef(markers);
+
+  //marker reference
+  const markerInstancesRef = useRef([]);
 
   // for infowindow
   const [infoWindowOpen, setInfoWindowOpen] = useState(null);
-  const [markerRef, marker] = useMarkerRef();
 
   // route
   const [routes, setRoutes] = useState([]);
@@ -96,7 +98,7 @@ const Main = () => {
         })
       );
 
-      markersRef.current = newMarkers;
+      markersDataRef.current = newMarkers;
       setMarkers(newMarkers);
     });
 
@@ -110,7 +112,7 @@ const Main = () => {
     const intervalId = setInterval(() => {
       console.log("interval triggered");
       const now = new Date();
-      const updatedMarkers = markersRef.current.filter((marker) => {
+      const updatedMarkers = markersDataRef.current.filter((marker) => {
         const timestampDiff = (now - marker.timestamp) / 1000 / 60; // Difference in minutes
         return timestampDiff > 5; // Keep markers with timestamp <= 5 minutes old
       });
@@ -161,8 +163,12 @@ const Main = () => {
 
   // click handlers
 
-  const handleMarkerClick = (marker) => {
-    setInfoWindowOpen(marker);
+  const handleMarkerClick = (index) => {
+    const markerRef = markerInstancesRef.current[index];
+    setInfoWindowOpen({
+      details: markers[index].details,
+      markerRef,
+    });
   };
 
   const onMapClick = () => {
@@ -190,22 +196,25 @@ const Main = () => {
             {markers.map((marker, index) => (
               <Marker
                 key={index}
-                ref={markerRef}
                 position={{ lat: marker.lat, lng: marker.lng }}
-                onClick={() => handleMarkerClick(marker)}
+                onClick={() => handleMarkerClick(index)}
+                ref={(el) => (markerInstancesRef.current[index] = el)}
               />
             ))}
 
             {infoWindowOpen && (
               <InfoWindow
-                anchor={marker}
+                anchor={infoWindowOpen.markerRef}
                 onCloseClick={() => setInfoWindowOpen(null)}
-                className=""
               >
                 <div>
                   <div className="avatar flex justify-center mb-2">
                     <div className="w-24 rounded-full overflow-hidden">
-                      <img src={Frieren} className="object-cover" alt="Profile" />
+                      <img
+                        src={Frieren}
+                        className="object-cover"
+                        alt="Profile"
+                      />
                     </div>
                   </div>
                   <div className="text-center text-sm whitespace-nowrap">
