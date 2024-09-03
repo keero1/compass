@@ -4,7 +4,6 @@ import {
   Map,
   Marker,
   InfoWindow,
-  useMarkerRef,
 } from "@vis.gl/react-google-maps";
 
 //firebase
