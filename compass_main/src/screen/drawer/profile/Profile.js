@@ -34,9 +34,6 @@ const Profile = props => {
       const user = auth().currentUser;
 
       if (user) {
-        // Set displayName and email from Firebase Authentication
-        setUserFullName(user.displayName);
-
         try {
           // Fetch user document from Firestore
           const userDoc = await firestore()
@@ -45,6 +42,7 @@ const Profile = props => {
             .get();
 
           if (userDoc.exists) {
+            setUserFullName(userDoc.data().bus_driver_name);
             setUserName(userDoc.data().username);
           } else {
             console.log('User document does not exist');

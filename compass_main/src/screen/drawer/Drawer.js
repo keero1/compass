@@ -13,6 +13,7 @@ import {useIsFocused} from '@react-navigation/native';
 
 //firebase
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 import {IMAGES, ROUTES} from '../../constants';
 
@@ -32,7 +33,19 @@ const Drawer = props => {
       const user = auth().currentUser;
 
       if (user) {
-        setUserDisplayName(user.displayName);
+        try {
+          const userDoc = await firestore()
+            .collection('buses')
+            .doc(user.uid)
+            .get();
+          if (userDoc.exists) {
+            setUserDisplayName(userDoc.data().bus_driver_name);
+          } else {
+            console.log('No such document!');
+          }
+        } catch (error) {
+          console.error('Error fetching document: ', error);
+        }
       }
     };
 
@@ -56,7 +69,7 @@ const Drawer = props => {
           <View style={styles.profileContent}>
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
-              <Text style={styles.text}>{userDisplayName}</Text>
+              <Text style={styles.text}>{userDisplayName || "ComPass Driver"}</Text>
               {/* Profile */}
               <TouchableOpacity
                 style={styles.viewProfileButton}
