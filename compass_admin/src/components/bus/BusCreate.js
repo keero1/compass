@@ -134,7 +134,8 @@ const BusCreate = () => {
                   placeholder="Enter phone number"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  pattern="\d*"
+                  pattern="9\d{9}"
+                  title="Format: 9123456789"
                   required
                 />
               </div>
