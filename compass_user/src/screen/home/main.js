@@ -544,7 +544,7 @@ const Main = props => {
           {routeCoordinates.length > 0 && (
             <Polyline
               coordinates={routeCoordinates}
-              strokeColor="#FF0000" // Customize the color
+              strokeColor="#0051ff" // Customize the color
               strokeWidth={2} // Customize the width
             />
           )}
