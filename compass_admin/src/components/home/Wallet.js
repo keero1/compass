@@ -7,7 +7,7 @@ const Wallet = () => {
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-base-100 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Earnings</div>
-          <div className="text-2xl">$24k</div>
+          <div className="text-2xl">₱24k</div>
           <div className="text-sm text-green-500">↑ 12% Since last month</div>
         </div>
         <div className="bg-base-100 shadow-lg rounded-lg p-4">
@@ -17,7 +17,7 @@ const Wallet = () => {
         </div>
         <div className="bg-base-100 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Wallet</div>
-          <div className="text-2xl">$15k</div>
+          <div className="text-2xl">₱15k</div>
         </div>
         <div className="bg-base-100 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Buses</div>
