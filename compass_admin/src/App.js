@@ -9,6 +9,9 @@ import { AuthProvider } from "./contexts/authContext";
 
 import { PrivateRoute } from "./components/auth/private/PrivateRoute";
 
+// route view and bus driver account edit
+import { PrivateRouteButOutsideMainRoute } from "./components/auth/private/PrivateRouteButOutsideMainRoute";
+
 // auth
 import Login from "./components/auth/login/Login";
 //protected pages
@@ -18,6 +21,10 @@ import ManageDriver from "./components/home/ManageDriver";
 import ManageRoute from "./components/home/ManageRoute";
 // import NotFound from "./components/pages/NotFound";
 import Profile from "./components/home/Profile";
+
+import RouteView from "./components/route/RouteView";
+import BusCreate from "./components/bus/BusCreate";
+import BusView from "./components/bus/BusView";
 
 function App() {
   return (
@@ -29,9 +36,25 @@ function App() {
             <Route index element={<Home />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/manage-driver" element={<ManageDriver />} />
+            {/* route */}
             <Route path="/manage-route" element={<ManageRoute />} />
             {/* Profile */}
             <Route path="/profile" element={<Profile />} />
+          </Route>
+          <Route path="/" element={<PrivateRouteButOutsideMainRoute />}>
+            {/* no navbar pages */}
+            <Route
+              path="/manage-route/route-view/:routeId"
+              element={<RouteView />}
+            />
+            <Route
+              path="/manage-driver/create-bus"
+              element={<BusCreate />}
+            />
+            <Route
+              path="/manage-driver/bus-view/:busId"
+              element={<BusView />}
+            />
           </Route>
           {/* error 404*/}
           <Route path="*" element={<Navigate to="/" />} />

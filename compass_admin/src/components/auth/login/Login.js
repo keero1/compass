@@ -15,6 +15,9 @@ import backgroundImage from "../../../assets/images/frieren-bg.png";
 // icons
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import icons
 
+// css
+import "./Login.css";
+
 const Login = () => {
   const { userLoggedIn } = useAuth();
 
@@ -61,7 +64,7 @@ const Login = () => {
     <div className="flex flex-col md:flex-row h-screen">
       {/* Background Image */}
       <div
-        className="hidden md:block md:w-2/3 h-full bg-cover bg-center"
+        className="hidden md:block md:w-full h-full bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${backgroundImage})` }}
       ></div>
 
@@ -104,9 +107,9 @@ const Login = () => {
               </div>
 
               <div className="mb-4 text-right">
-                <a href="#" className="text-primary hover:underline">
+                <div className="text-primary hover:underline">
                   Forgot Password?
-                </a>
+                </div>
               </div>
 
               <button
