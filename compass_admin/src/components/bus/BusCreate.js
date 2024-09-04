@@ -113,7 +113,7 @@ const BusCreate = () => {
               <input
                 type="text"
                 className="input input-bordered w-full"
-                placeholder="Enter bus name"
+                placeholder="Enter Driver Name"
                 value={busName}
                 onChange={(e) => setBusName(e.target.value)}
                 required

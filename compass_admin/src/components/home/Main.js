@@ -162,7 +162,7 @@ const Main = () => {
 
   // click handlers
 
-  const handleMarkerClick = (index) => {
+  const handleHoverMouse = (index) => {
     const markerRef = markerInstancesRef.current[index];
     setInfoWindowOpen({
       details: markers[index].details,
@@ -196,7 +196,8 @@ const Main = () => {
               <Marker
                 key={index}
                 position={{ lat: marker.lat, lng: marker.lng }}
-                onClick={() => handleMarkerClick(index)}
+                onMouseOver={() => handleHoverMouse(index)}
+                onMouseOut={() => setInfoWindowOpen(null)}
                 ref={(el) => (markerInstancesRef.current[index] = el)}
               />
             ))}
