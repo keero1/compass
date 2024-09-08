@@ -59,7 +59,7 @@ const Drawer = props => {
   };
 
   const onWalletPressed = () => {
-    navigation.navigate(ROUTES.WALLET);
+    navigation.navigate(ROUTES.PAYMENT);
   };
 
   return (
@@ -69,7 +69,7 @@ const Drawer = props => {
           <View style={styles.profileContent}>
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
-              <Text style={styles.text}>{userDisplayName || "ComPass Driver"}</Text>
+              <Text style={styles.text}>{userDisplayName || ""}</Text>
               {/* Profile */}
               <TouchableOpacity
                 style={styles.viewProfileButton}

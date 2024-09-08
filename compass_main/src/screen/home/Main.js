@@ -57,25 +57,25 @@ const Main = props => {
       {enableHighAccuracy: true, timeout: 20000},
     );
 
-    // Set interval to update location every 5 seconds
-    const intervalId = setInterval(() => {
-      Geolocation.getCurrentPosition(
-        position => {
-          const {latitude, longitude} = position.coords;
-          setCurrentLocation({latitude, longitude});
+    // // Set interval to update location every 5 seconds
+    // const intervalId = setInterval(() => {
+    //   Geolocation.getCurrentPosition(
+    //     position => {
+    //       const {latitude, longitude} = position.coords;
+    //       setCurrentLocation({latitude, longitude});
 
-          // Send updated location to Firestore
-          updateBusLocation(latitude, longitude);
-        },
-        error => {
-          console.error(error);
-        },
-        {enableHighAccuracy: true},
-      );
-    }, 10000); // 10000 milliseconds = 10 seconds
+    //       // Send updated location to Firestore
+    //       updateBusLocation(latitude, longitude);
+    //     },
+    //     error => {
+    //       console.error(error);
+    //     },
+    //     {enableHighAccuracy: true},
+    //   );
+    // }, 10000); // 10000 milliseconds = 10 seconds
 
-    // Cleanup interval on unmount
-    return () => clearInterval(intervalId);
+    // // Cleanup interval on unmount
+    // return () => clearInterval(intervalId);
   }, []); // Empty dependency array to run only on mount
 
   // Function to update bus location in Firestore
@@ -125,9 +125,9 @@ const Main = props => {
   };
 
   const onPayPressed = () => {
-    navigation.navigate(ROUTES.WALLET);
+    navigation.navigate(ROUTES.PAYMENT);
 
-    console.log('wallet');
+    console.log('payment');
   };
 
   // save the current region

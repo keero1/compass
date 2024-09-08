@@ -9,5 +9,5 @@ export default {
 
     PROFILE: 'Profile',
 
-    WALLET: 'Wallet',
+    PAYMENT: 'Payment',
 }
