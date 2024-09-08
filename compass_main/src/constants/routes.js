@@ -10,4 +10,6 @@ export default {
     PROFILE: 'Profile',
 
     PAYMENT: 'Payment',
+
+    PAYMENTCONFIRMATION: 'PaymentConfirmation',
 }

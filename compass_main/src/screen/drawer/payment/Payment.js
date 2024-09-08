@@ -12,6 +12,8 @@ import {
 import {useWindowDimensions} from 'react-native';
 import {useIsFocused} from '@react-navigation/native';
 
+import {ROUTES} from '../../../constants/';
+
 const Wallet = props => {
   const {navigation} = props;
   const {height} = useWindowDimensions();
@@ -47,6 +49,13 @@ const Wallet = props => {
     }
   }, []);
 
+  const handleButtonPress = () => {
+    navigation.navigate(ROUTES.PAYMENTCONFIRMATION, {
+      chosenFare,
+      selectedPaymentType,
+    });
+  };
+  
   return (
     <SafeAreaView style={styles.main}>
       {/* List of KM and Price */}
@@ -90,13 +99,13 @@ const Wallet = props => {
           </TouchableHighlight>
           <TouchableHighlight
             style={styles.radioButtonContainer}
-            onPress={() => setSelectedPaymentType('pwd/student/senior')}
+            onPress={() => setSelectedPaymentType('discount')}
             underlayColor="#ddd">
             <View style={styles.radioButton}>
               <View
                 style={[
                   styles.radioInner,
-                  selectedPaymentType === 'pwd/student/senior' &&
+                  selectedPaymentType === 'discount' &&
                     styles.radioInnerSelected,
                 ]}
               />
@@ -112,12 +121,18 @@ const Wallet = props => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => setPaymentMethod('Cash')}>
+            onPress={() => {
+              setPaymentMethod('Cash');
+              handleButtonPress();
+            }}>
             <Text style={styles.buttonText}>Cash</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => setPaymentMethod('Cashless')}>
+            onPress={() => {
+              setPaymentMethod('Cashless');
+              handleButtonPress();
+            }}>
             <Text style={styles.buttonText}>Cashless</Text>
           </TouchableOpacity>
         </View>

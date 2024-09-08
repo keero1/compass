@@ -2,7 +2,7 @@ import React from 'react';
 
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 
-import {Main, Drawer, Settings, Profile, EditProfile, Payment} from '../screen';
+import {Main, Drawer, Settings, Profile, EditProfile, Payment, PaymentConfirmation} from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/inputs/CustomBack';
 
@@ -46,6 +46,17 @@ function HomeNavigator() {
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
           headerTransparent: true,
+        })}
+      />
+       <InsideStack.Screen
+        name={ROUTES.PAYMENTCONFIRMATION}
+        component={PaymentConfirmation}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTransparent: true,
+          headerTitle: null,
         })}
       />
     </InsideStack.Navigator>
