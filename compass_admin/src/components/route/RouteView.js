@@ -10,6 +10,8 @@ import { getRoute } from "./components/RoutesUtils.js";
 import redMarker from "../../assets/images/pins/pin_red.png";
 import blueMarker from "../../assets/images/pins/pin_blue.png";
 
+import PlaceSearchComponent from "./components/PlaceSearchComponent.js";
+
 const RouteView = () => {
   const API_KEY = process.env.REACT_APP_MAP_KEY;
   const navigate = useNavigate();
@@ -21,6 +23,8 @@ const RouteView = () => {
   });
 
   const [mapCenter, setMapCenter] = useState(null);
+  // zoom
+  const [mapZoom, setMapZoom] = useState(null);
   const [routeData, setRouteData] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [routeDataCopy, setRouteDataCopy] = useState();
@@ -92,6 +96,11 @@ const RouteView = () => {
   const onMapClick = (event) => {
     if (!isEditing) return;
 
+    // if (routeDataCopy.keypoints.length > 15) {
+    //   alert("Max Markers is 15.");
+    //   return;
+    // }
+
     const lat = event.detail.latLng.lat;
     const lng = event.detail.latLng.lng;
     const newMarker = { latitude: lat, longitude: lng, placeName: null };
@@ -100,6 +109,7 @@ const RouteView = () => {
 
     setRouteDataCopy((prevData) => {
       const updatedKeypoints = [...prevData.keypoints, newMarker];
+
       setIsChangedMarker(true);
       return { ...prevData, keypoints: updatedKeypoints };
     });
@@ -161,7 +171,6 @@ const RouteView = () => {
 
   const handleGeocodeResult = useCallback((address) => {
     const placeName = extractPlaceName(address);
-    console.log(placeName);
 
     setRouteDataCopy((prevData) => {
       const updatedKeypoints = prevData.keypoints.map((point, index) => {
@@ -177,18 +186,13 @@ const RouteView = () => {
   const extractPlaceName = (fullAddress) => {
     const parts = fullAddress.split(",").map((part) => part.trim());
 
-    if (parts.length < 3) {
-      console.warn(
-        "Address does not contain enough parts to extract place name."
-      );
+    if (parts.length === 0) {
+      console.warn("Address is empty or invalid.");
       return fullAddress;
     }
 
-    const thirdLastPart = parts[parts.length - 3];
-    const secondLastPart = parts[parts.length - 2];
-
-    // Combine them to form the desired place name
-    return `${thirdLastPart}, ${secondLastPart}`;
+    // Return only the first part (first name of the address)
+    return parts[0];
   };
 
   const onSaveClick = async () => {
@@ -317,10 +321,12 @@ const RouteView = () => {
           center={mapCenter}
           maxZoom={20}
           minZoom={12}
+          zoom={mapZoom}
           gestureHandling={"greedy"}
           disableDefaultUI={true}
           keyboardShortcuts={false}
           onClick={onMapClick}
+          clickableIcons={false}
           options={{
             styles: noLandMarkStyle,
           }}
@@ -343,12 +349,25 @@ const RouteView = () => {
             <Polyline path={routeCoordinates} strokeColor={"#001bff"} />
           )}
         </Map>
+        {/* BACK BUTTON */}
         <button
           className="absolute top-5 left-5 btn btn-primary"
           onClick={handleBackClick}
         >
           Back
         </button>
+
+        {/* SEARCH BAR */}
+        {isEditing && (
+          <div className="absolute top-5 left-1/2 transform -translate-x-1/2 w-80">
+            <PlaceSearchComponent
+              setMapCenter={setMapCenter}
+              setMapZoom={setMapZoom}
+            />
+          </div>
+        )}
+
+        {/* SAVE BUTTON */}
         <button
           className="absolute bottom-5 right-5 btn btn-primary"
           onClick={onSaveClick}
