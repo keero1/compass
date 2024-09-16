@@ -45,7 +45,7 @@ const Login = () => {
 
       const querySnapshot = await firestore().collection('buses').get();
       const userDocs = querySnapshot.docs.filter(
-        doc => doc.data().username === trimmedUsername,
+        doc => doc.data().username.toLocaleLowerCase === trimmedUsername.toLocaleLowerCase,
       );
 
       if (userDocs.length < 1) {

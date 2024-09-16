@@ -12,12 +12,16 @@ import {
 import {useWindowDimensions} from 'react-native';
 import {useIsFocused} from '@react-navigation/native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import {ROUTES} from '../../../constants/';
 
 const Wallet = props => {
   const {navigation} = props;
   const {height} = useWindowDimensions();
   const focus = useIsFocused();
+
+  const [fareData, setFareData] = useState(null);
 
   const [paymentMethod, setPaymentMethod] = useState('');
   const [selectedPaymentType, setSelectedPaymentType] = useState('regular');
@@ -43,19 +47,38 @@ const Wallet = props => {
 
   // Default to 5 km on mount
   useEffect(() => {
+    const fetchFareData = async () => {
+      const data = await loadFare(); // Call loadFare and wait for the result
+      setFareData(data); // Update fareData state
+    };
+
+    fetchFareData();
+
     const defaultItem = kmPriceList.find(item => item.km === '5 km');
     if (defaultItem) {
       setChosenFare(defaultItem.price);
     }
   }, []);
 
-  const handleButtonPress = () => {
-    navigation.navigate(ROUTES.PAYMENTCONFIRMATION, {
-      chosenFare,
-      selectedPaymentType,
-    });
+  // load fare
+
+  const loadFare = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('fare-data');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (error) {
+      console.error('Error fetching fare data: ', error);
+    }
   };
-  
+
+  const handleButtonPress = () => {
+    console.log(fareData);
+    // navigation.navigate(ROUTES.PAYMENTCONFIRMATION, {
+    //   chosenFare,
+    //   selectedPaymentType,
+    // });
+  };
+
   return (
     <SafeAreaView style={styles.main}>
       {/* List of KM and Price */}

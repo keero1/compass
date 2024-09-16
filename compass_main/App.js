@@ -7,8 +7,11 @@ import {
   StyleSheet,
 } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 //firebase
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 //navigator
 import AuthNavigator from './src/navigations/AuthNavigator';
@@ -20,15 +23,47 @@ export default function App() {
   const [user, setUser] = useState();
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(user => {
+    const subscriber = auth().onAuthStateChanged(async user => {
       setUser(user);
+      if (user) {
+        await fetchFareData(user.uid);
+      }
+
       setTimeout(() => {
         setInitializing(false); // Set initializing to false after 1 second
       }, 1000); // 1000 milliseconds = 1 second
     });
 
+    requestLocationPermission(); // Request location permission when component mounts
+
     return subscriber; // unsubscribe on unmount
   }, []);
+
+  // Fetch fare data using the route_id
+  async function fetchFareData(uid) {
+    try {
+      // Fetch the bus data for the current user
+      const busDoc = await firestore().collection('buses').doc(uid).get();
+
+      if (busDoc.exists) {
+        const routeId = busDoc.data().route_id; // Get route_id
+
+        // Fetch fare document using route_id
+        const fareDoc = await firestore()
+          .collection('fares')
+          .doc(routeId)
+          .get();
+
+        if (fareDoc.exists) {
+          const fareData = fareDoc.data(); // Get the fare data
+          await AsyncStorage.setItem('fare-data', JSON.stringify(fareData)); // Save it locally
+          console.log('Fare data fetched and stored locally');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fare data: ', error);
+    }
+  }
 
   // Function to request location permission
   async function requestLocationPermission() {
@@ -52,10 +87,6 @@ export default function App() {
       console.warn(err);
     }
   }
-
-  useEffect(() => {
-    requestLocationPermission(); // Request location permission when component mounts
-  }, []);
 
   // TODO : Add a loading design
   if (initializing) {
