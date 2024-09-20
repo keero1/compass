@@ -6,8 +6,6 @@ import {
   View,
   TouchableOpacity,
   FlatList,
-  Dimensions,
-  TouchableHighlight,
 } from 'react-native';
 import {useWindowDimensions} from 'react-native';
 import {useIsFocused} from '@react-navigation/native';
@@ -16,51 +14,51 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {ROUTES} from '../../../constants/';
 
-const Wallet = props => {
+const Payment = props => {
   const {navigation} = props;
   const {height} = useWindowDimensions();
   const focus = useIsFocused();
 
+  const numColumns = 2;
+
+  const [busType, setBusType] = useState(null);
+
   const [fareData, setFareData] = useState(null);
+  const [selectedOrigin, setSelectedOrigin] = useState(null);
+  const [selectedOriginIndex, setSelectedOriginIndex] = useState(null);
 
-  const [paymentMethod, setPaymentMethod] = useState('');
-  const [selectedPaymentType, setSelectedPaymentType] = useState('regular');
-  const [chosenFare, setChosenFare] = useState('11.00 PHP');
+  const [cancelButton, setCancelButton] = useState(false);
 
-  // Generate km and price list dynamically (limited to 100 km)
-  const generateKmPriceList = () => {
-    const kmPriceList = [];
-    let price = 11;
-    for (let km = 5; km <= 100; km += 5) {
-      kmPriceList.push({km: `${km} km`, price: `${price.toFixed(2)} PHP`});
-      price += 9.25;
-    }
-    return kmPriceList;
-  };
-
-  const kmPriceList = generateKmPriceList();
-
-  // Function to handle item press
-  const handleItemPress = (km, price) => {
-    setChosenFare(price);
-  };
-
-  // Default to 5 km on mount
   useEffect(() => {
+    if (focus) {
+      setSelectedOrigin(null);
+      setSelectedOriginIndex(null);
+      setCancelButton(false);
+    }
+
     const fetchFareData = async () => {
-      const data = await loadFare(); // Call loadFare and wait for the result
-      setFareData(data); // Update fareData state
+      const data = await loadFare();
+      setFareData(data);
+    };
+
+    const fetchBusType = async () => {
+      const type = await loadBusType();
+      setBusType(type);
     };
 
     fetchFareData();
-
-    const defaultItem = kmPriceList.find(item => item.km === '5 km');
-    if (defaultItem) {
-      setChosenFare(defaultItem.price);
-    }
-  }, []);
+    fetchBusType();
+  }, [focus]); // Add focus as a dependency
 
   // load fare
+
+  const loadBusType = async () => {
+    try {
+      return await AsyncStorage.getItem('bus-type');
+    } catch (error) {
+      console.error('error fetching bus type: ', error);
+    }
+  };
 
   const loadFare = async () => {
     try {
@@ -71,94 +69,88 @@ const Wallet = props => {
     }
   };
 
-  const handleButtonPress = () => {
-    console.log(fareData);
-    // navigation.navigate(ROUTES.PAYMENTCONFIRMATION, {
-    //   chosenFare,
-    //   selectedPaymentType,
-    // });
+  // calculate
+  const calculateDistance = (destinationIndex, place) => {
+    const originKM = fareData.kmPlace[selectedOriginIndex].distance;
+    const destinationKM = fareData.kmPlace[destinationIndex].distance;
+
+    const travelDistance = destinationKM - originKM;
+
+    navigation.navigate(ROUTES.PAYMENTCONFIRMATION, {
+      travelDistance,
+      busType,
+      selectedOrigin,
+      place,
+    });
+  };
+
+  const onPlaceClick = (place, index) => {
+    if (selectedOrigin === null) {
+      if (fareData.kmPlace.length - 1 === index) {
+        return;
+      }
+      setSelectedOriginIndex(index);
+      setSelectedOrigin(place);
+      setCancelButton(true);
+
+      return;
+    }
+
+    if (selectedOriginIndex === index || index < selectedOriginIndex) {
+      return;
+    }
+
+    calculateDistance(index, place);
+  };
+
+  const onCancelClick = () => {
+    // Handle cancel action here
+    setSelectedOrigin(null);
+    setSelectedOriginIndex(null);
+    setCancelButton(false);
   };
 
   return (
     <SafeAreaView style={styles.main}>
-      {/* List of KM and Price */}
-      <FlatList
-        data={kmPriceList}
-        style={styles.list}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({item}) => (
-          <TouchableOpacity
-            style={styles.kmPriceContainer}
-            onPress={() => handleItemPress(item.km, item.price)}>
-            <Text style={styles.text}>{item.km}</Text>
-            <Text style={styles.text}>{item.price}</Text>
-          </TouchableOpacity>
-        )}
-      />
+      {/* Ensure fareData and kmPlace exist before rendering the FlatList */}
+      {fareData && fareData.kmPlace ? (
+        <FlatList
+          data={fareData.kmPlace} // Access the kmPlace array
+          style={styles.list}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={numColumns} // Set the number of columns
+          columnWrapperStyle={styles.row} // Style for the row
+          renderItem={({item, index}) => (
+            <TouchableOpacity
+              style={styles.placeButton}
+              onPress={() => onPlaceClick(item.place, index)}>
+              <Text style={styles.buttonText}>{item.place}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      ) : (
+        <Text>Loading data...</Text> // Show loading text while fetching data
+      )}
 
-      {/* Display Chosen Distance and Fare */}
+      {/* Display "Select Origin" or "Origin: {place name}" and "Cancel" */}
       <View style={styles.chosenInfoContainer}>
-        <Text style={styles.sectionTitle}>Fare: {chosenFare}</Text>
-      </View>
-
-      {/* Type of Passenger */}
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Select Type of Passenger</Text>
-        <View style={styles.radioGroup}>
-          <TouchableHighlight
-            style={styles.radioButtonContainer}
-            onPress={() => setSelectedPaymentType('regular')}
-            underlayColor="#ddd">
-            <View style={styles.radioButton}>
-              <View
-                style={[
-                  styles.radioInner,
-                  selectedPaymentType === 'regular' &&
-                    styles.radioInnerSelected,
-                ]}
-              />
-              <Text style={styles.radioText}>Regular</Text>
-            </View>
-          </TouchableHighlight>
-          <TouchableHighlight
-            style={styles.radioButtonContainer}
-            onPress={() => setSelectedPaymentType('discount')}
-            underlayColor="#ddd">
-            <View style={styles.radioButton}>
-              <View
-                style={[
-                  styles.radioInner,
-                  selectedPaymentType === 'discount' &&
-                    styles.radioInnerSelected,
-                ]}
-              />
-              <Text style={styles.radioText}>PWD/Student/Senior</Text>
-            </View>
-          </TouchableHighlight>
+        <View style={styles.selectBox}>
+          <Text style={styles.selectText}>
+            {selectedOrigin ? `Origin: ${selectedOrigin}` : 'Select Origin'}
+          </Text>
+          {selectedOrigin && (
+            <Text style={styles.selectText}>Select Destination</Text>
+          )}
         </View>
-      </View>
 
-      {/* Mode of Payment */}
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Select Mode of Payment</Text>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => {
-              setPaymentMethod('Cash');
-              handleButtonPress();
-            }}>
-            <Text style={styles.buttonText}>Cash</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => {
-              setPaymentMethod('Cashless');
-              handleButtonPress();
-            }}>
-            <Text style={styles.buttonText}>Cashless</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={onCancelClick}
+          disabled={!cancelButton}
+          style={styles.cancelButton}>
+          <Text style={styles.cancelButtonText}>
+            {selectedOrigin ? 'Cancel' : ''}
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -173,78 +165,61 @@ const styles = StyleSheet.create({
   },
   list: {
     marginTop: 40,
-    maxHeight: Dimensions.get('window').height * 0.5,
   },
-  kmPriceContainer: {
-    flexDirection: 'row',
+  row: {
+    flex: 1,
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    marginBottom: 15, // Add some spacing between rows
   },
-  text: {
-    fontSize: 16,
-    color: '#333',
-  },
-  chosenInfoContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  sectionContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    marginBottom: 10,
-    color: '#333',
-  },
-  radioGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  radioButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  radioButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  radioInner: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#176B87',
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioInnerSelected: {
+  placeButton: {
+    flex: 1,
     backgroundColor: '#176B87',
-  },
-  radioText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  button: {
-    backgroundColor: '#176B87',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    paddingVertical: 15,
     marginHorizontal: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     fontSize: 16,
     color: '#fff',
+    textAlign: 'center',
+  },
+  chosenInfoContainer: {
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  selectBox: {
+    backgroundColor: '#4CAF50',
+    width: '100%',
+    marginHorizontal: 20,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#388E3C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  selectText: {
+    padding: 10,
+    fontSize: 18,
+    color: '#333',
+  },
+  cancelButton: {
+    backgroundColor: '#cacaca', // Red color for the cancel button
+    width: '100%',
+    marginHorizontal: 20,
+    paddingVertical: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  cancelButtonText: {
+    fontSize: 18,
+    color: '#333',
   },
 });
 
-export default Wallet;
+export default Payment;
