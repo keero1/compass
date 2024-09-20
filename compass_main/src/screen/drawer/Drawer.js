@@ -87,9 +87,9 @@ const Drawer = props => {
         <TouchableOpacity onPress={onPaymentPressed}>
           <Text style={styles.menuItem}>Payment</Text>
         </TouchableOpacity>
-        <TouchableOpacity>
+        {/* <TouchableOpacity>
           <Text style={styles.menuItem}>Settings</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity onPress={onShutdownPressed}>
           <Text style={styles.menuItem}>Shutdown</Text>
         </TouchableOpacity>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../../firebase/firebase"; // Adjust path to Firebase configuration
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 
 import Frieren from "../../assets/images/frieren.png";
 
@@ -56,17 +56,19 @@ const BusView = () => {
   useEffect(() => {
     fetchRoutes();
     fetchBusData();
-  });
+  }, []);
 
   const handleUpdateBus = async (event) => {
     event.preventDefault();
     setIsSaving(true);
     try {
-      console.log("qweqweqwe");
+      await setDoc(doc(db, "buses", busId), busData);
+      alert("Bus account updated successfully!");
     } catch (error) {
       console.error("Error updating bus account:", error);
     } finally {
       setIsSaving(false);
+      navigate(-1);
     }
   };
 
@@ -110,40 +112,54 @@ const BusView = () => {
 
         {isLoading ? (
           <div className="w-full max-w-4xl bg-base-100 p-8 rounded-lg shadow-lg">
-          <div className="skeleton h-8 w-64 mb-6"></div> {/* Title Skeleton */}
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <div className="skeleton h-5 w-36 mb-2"></div> {/* Label Skeleton */}
-              <div className="skeleton h-10 w-full"></div> {/* Input Skeleton */}
+            <div className="skeleton h-8 w-64 mb-6"></div>{" "}
+            {/* Title Skeleton */}
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <div className="skeleton h-5 w-36 mb-2"></div>{" "}
+                {/* Label Skeleton */}
+                <div className="skeleton h-10 w-full"></div>{" "}
+                {/* Input Skeleton */}
+              </div>
+
+              <div>
+                <div className="skeleton h-5 w-36 mb-2"></div>{" "}
+                {/* Label Skeleton */}
+                <div className="skeleton h-10 w-full"></div>{" "}
+                {/* Input Skeleton */}
+              </div>
+
+              <div>
+                <div className="skeleton h-5 w-36 mb-2"></div>{" "}
+                {/* Label Skeleton */}
+                <div className="skeleton h-10 w-full"></div>{" "}
+                {/* Input Skeleton */}
+              </div>
+
+              <div>
+                <div className="skeleton h-5 w-36 mb-2"></div>{" "}
+                {/* Label Skeleton */}
+                <div className="skeleton h-10 w-full"></div>{" "}
+                {/* Select Skeleton */}
+              </div>
+
+              <div>
+                <div className="skeleton h-5 w-36 mb-2"></div>{" "}
+                {/* Label Skeleton */}
+                <div className="skeleton h-10 w-full"></div>{" "}
+                {/* Input Skeleton */}
+              </div>
+
+              <div>
+                <div className="skeleton h-5 w-36 mb-2"></div>{" "}
+                {/* Label Skeleton */}
+                <div className="skeleton h-10 w-full"></div>{" "}
+                {/* Input Skeleton */}
+              </div>
             </div>
-      
-            <div>
-              <div className="skeleton h-5 w-36 mb-2"></div> {/* Label Skeleton */}
-              <div className="skeleton h-10 w-full"></div> {/* Input Skeleton */}
-            </div>
-      
-            <div>
-              <div className="skeleton h-5 w-36 mb-2"></div> {/* Label Skeleton */}
-              <div className="skeleton h-10 w-full"></div> {/* Input Skeleton */}
-            </div>
-      
-            <div>
-              <div className="skeleton h-5 w-36 mb-2"></div> {/* Label Skeleton */}
-              <div className="skeleton h-10 w-full"></div> {/* Select Skeleton */}
-            </div>
-      
-            <div>
-              <div className="skeleton h-5 w-36 mb-2"></div> {/* Label Skeleton */}
-              <div className="skeleton h-10 w-full"></div> {/* Input Skeleton */}
-            </div>
-      
-            <div>
-              <div className="skeleton h-5 w-36 mb-2"></div> {/* Label Skeleton */}
-              <div className="skeleton h-10 w-full"></div> {/* Input Skeleton */}
-            </div>
+            <div className="skeleton h-10 w-full mt-6"></div>{" "}
+            {/* Button Skeleton */}
           </div>
-          <div className="skeleton h-10 w-full mt-6"></div> {/* Button Skeleton */}
-        </div>
         ) : (
           <div className="w-full max-w-4xl bg-base-100 p-8 rounded-lg shadow-lg">
             <h2 className="text-2xl font-bold mb-6 text-primary">
@@ -158,7 +174,7 @@ const BusView = () => {
                   <input
                     type="text"
                     className="input input-bordered w-full"
-                    placeholder="Enter bus name"
+                    placeholder="Enter bus driver name"
                     disabled
                     value={busData.bus_driver_name}
                     onChange={(e) =>
@@ -233,16 +249,16 @@ const BusView = () => {
 
                 <div>
                   <label className="block text-sm font-medium mb-1 text-base-content">
-                    Bus Name
+                    Bus Number
                   </label>
                   <input
                     type="text"
                     className="input input-bordered w-full"
                     placeholder="Enter name"
                     disabled
-                    value={busData.name}
+                    value={busData.bus_number}
                     onChange={(e) =>
-                      setBusData({ ...busData, name: e.target.value })
+                      setBusData({ ...busData, bus_number: e.target.value })
                     }
                   />
                 </div>

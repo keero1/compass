@@ -16,9 +16,9 @@ const BusCreate = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [username, setUsername] = useState("");
   const [route, setRoute] = useState("");
-  const [busNumber, setBusNumber] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [routes, setRoutes] = useState([]);
+  const [totalBuses, setTotalBuses] = useState(0);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -36,8 +36,33 @@ const BusCreate = () => {
       }
     };
 
+    const fetchTotalBuses = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "buses"));
+        setTotalBuses(querySnapshot.size + 1);
+      } catch (error) {
+        console.error("Error fetching total buses:", error);
+      }
+    };
+
     fetchRoutes();
+    fetchTotalBuses();
   }, []);
+
+  useEffect(() => {
+    const generateUsername = () => {
+      const formattedName = busName.replace(/\s+/g, "").toLowerCase();
+      const numberFormat = totalBuses.toString().padStart(3, '0');
+      const username = `${formattedName}.${numberFormat}`;
+      setUsername(username);
+    };
+
+    if (busName) {
+      generateUsername();
+    } else {
+      setUsername("");
+    }
+  }, [busName, totalBuses]);
 
   const handleBackClick = () => {
     navigate(-1);
@@ -74,7 +99,7 @@ const BusCreate = () => {
         bus_driver_name: busName,
         phone_number: phoneNumber,
         route_id: route,
-        bus_number: busNumber,
+        bus_number: totalBuses,
         license_plate: licensePlate,
         email: randomEmail,
         company_id: "ComPass XD",
@@ -157,6 +182,7 @@ const BusCreate = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                disabled
               />
             </div>
 
@@ -190,11 +216,8 @@ const BusCreate = () => {
                 type="text"
                 className="input input-bordered w-full"
                 placeholder="Enter Bus Number"
-                value={busNumber}
-                onChange={(e) => {
-                  const numericValue = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
-                  setBusNumber(numericValue);
-                }}
+                value={totalBuses}
+                disabled
                 required
               />
             </div>

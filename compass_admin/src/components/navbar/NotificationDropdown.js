@@ -1,9 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ClickOutside from "./ClickOutside";
+
+// Firebase imports
+import { db } from "../../firebase/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 const NotificationDropdown = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifying, setNotifying] = useState(true);
+
+  const [profileUpdateRequests, setProfileUpdateRequests] = useState(null);
+
+  // Fetch profile update requests
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        // Access the 'profileUpdateRequests' collection from Firestore
+        const requestsCollection = collection(db, "profileUpdateRequests");
+        const requestsSnapshot = await getDocs(requestsCollection);
+
+        // Extract data from each document and update the state
+        const requestsData = requestsSnapshot.docs.map((doc) => ({
+          id: doc.id, // Save document ID
+          ...doc.data(), // Spread the rest of the data
+        }));
+
+        setProfileUpdateRequests(requestsData); // Set the fetched data to state
+      } catch (error) {
+        console.error("Error fetching profile update requests:", error);
+      }
+    };
+
+    fetchRequests();
+  }, []); // Empty dependency array means this will run once when component mounts
+
+  const formatTime = (timestamp) => {
+    const now = Date.now();
+    const seconds = Math.floor((now - timestamp.toDate().getTime()) / 1000);
+
+    const timeUnits = [
+      { limit: 60, divisor: 1, suffix: "second" },
+      { limit: 3600, divisor: 60, suffix: "minute" },
+      { limit: 86400, divisor: 3600, suffix: "hour" },
+      { limit: Infinity, divisor: 86400, suffix: "day" },
+    ];
+
+    for (const { limit, divisor, suffix } of timeUnits) {
+      if (seconds < limit) {
+        const value = Math.floor(seconds / divisor);
+        return `${value} ${suffix}${value !== 1 ? "s" : ""} ago`;
+      }
+    }
+  };
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
@@ -42,18 +90,20 @@ const NotificationDropdown = () => {
             Notifications
           </div>
           <div className="max-h-48 overflow-y-auto">
-            <div className="px-4 py-2 border-b border-base-300">
-              <p className="text-sm">User 1 requested to change name</p>
-              <p className="text-xs text-gray-500">1 day ago</p>
-            </div>
-            <div className="px-4 py-2 border-b border-base-300">
-              <p className="text-sm">User 1 requested to reset password</p>
-              <p className="text-xs text-gray-500">1 day ago</p>
-            </div>
-            <div className="px-4 py-2 border-b border-base-300">
-              <p className="text-sm">User 1 requested qweqjwdfasgydcqqwgecvqdsad</p>
-              <p className="text-xs text-gray-500">1 day ago</p>
-            </div>
+            {profileUpdateRequests.map((request) => (
+              <div
+                key={request.id}
+                className="px-4 py-2 border-b border-base-300"
+              >
+                <p className="text-sm">
+                  <strong>{request.currentDriverName}</strong> requested to
+                  change name to <strong>{request.requestedDriverName}</strong>
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatTime(request.requestTime)}
+                </p>
+              </div>
+            ))}
           </div>
           <div className="px-4 text-center">
             <button

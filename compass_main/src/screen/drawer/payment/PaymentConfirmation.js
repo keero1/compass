@@ -9,6 +9,8 @@ import {
   TouchableHighlight,
   Modal,
   ActivityIndicator,
+  ToastAndroid,
+  Platform,
 } from 'react-native';
 
 import firestore from '@react-native-firebase/firestore';
@@ -99,6 +101,7 @@ const PaymentConfirmation = ({route}) => {
       payment_type: 'Cash',
       reference_number: referenceNumber,
       fare_amount: fareAmount.toFixed(2),
+      distance: travelDistance,
       timestamp: firestore.FieldValue.serverTimestamp(),
     };
 
@@ -111,6 +114,9 @@ const PaymentConfirmation = ({route}) => {
       console.error('Error syncing transaction:', error);
     } finally {
       setLoadingVisible(false); // Hide loading modal
+      if (Platform.OS == 'android') {
+        ToastAndroid.show('Transaction Success!', ToastAndroid.SHORT);
+      }
     }
   };
 
@@ -125,6 +131,7 @@ const PaymentConfirmation = ({route}) => {
         <Text style={styles.text}>Bus Type: {busType}</Text>
         <Text style={styles.text}>Origin: {selectedOrigin}</Text>
         <Text style={styles.text}>Destination: {place}</Text>
+        <Text style={styles.text}>Distance: {travelDistance}</Text>
         {/* Type of Passenger */}
         <View style={styles.sectionContainer}>
           <View style={styles.radioGroup}>
@@ -186,7 +193,7 @@ const PaymentConfirmation = ({route}) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>Your QR Code</Text>
             <View style={styles.qrCodeContainer}>
-              <Text>QRPH (need gcash permit)</Text>
+              <Text>QRPH (Need Business Permit)</Text>
             </View>
             <TouchableOpacity
               style={styles.closeButton}

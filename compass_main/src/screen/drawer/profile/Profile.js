@@ -7,6 +7,8 @@ import {
   useWindowDimensions,
   Text,
   TouchableOpacity,
+  Modal,
+  TextInput,
   Alert,
 } from 'react-native';
 
@@ -17,15 +19,16 @@ import IMAGES from '../../../constants/images';
 
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage';
 
 const Profile = props => {
   const {navigation} = props;
   const {height} = useWindowDimensions();
 
-  // get the name
-
   const [userFullName, setUserFullName] = useState(null);
   const [userName, setUserName] = useState(null);
+  const [newDriverName, setNewDriverName] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   const focus = useIsFocused();
 
@@ -35,7 +38,6 @@ const Profile = props => {
 
       if (user) {
         try {
-          // Fetch user document from Firestore
           const userDoc = await firestore()
             .collection('buses')
             .doc(user.uid)
@@ -53,15 +55,34 @@ const Profile = props => {
       }
     };
 
-    if (focus == true) {
+    if (focus) {
       getUserInfo();
     }
   }, [focus]);
 
-  // edit profile
+  const requestNameChange = async () => {
+    const user = auth().currentUser;
 
-  const EditProfilePressed = type => {
-    // navigation.navigate('EditProfile', {profileDataType: type});
+    if (user && newDriverName.trim() !== '') {
+      try {
+        await firestore().collection('profileUpdateRequests').add({
+          userId: user.uid,
+          currentDriverName: userFullName,
+          requestedDriverName: newDriverName,
+          status: 'pending',
+          requestTime: firestore.FieldValue.serverTimestamp(),
+        });
+
+        Alert.alert('Success', 'Name change request submitted successfully!');
+        setModalVisible(false); // Close modal after submission
+        setNewDriverName(''); // Reset input
+      } catch (error) {
+        console.error('Error submitting name change request:', error);
+        Alert.alert('Error', 'Failed to submit name change request.');
+      }
+    } else {
+      Alert.alert('Error', 'Please enter a valid driver name.');
+    }
   };
 
   const onLogoutPressed = () => {
@@ -97,10 +118,12 @@ const Profile = props => {
             <Text style={styles.sectionTitle}>Account Details</Text>
 
             <View style={styles.detailBox}>
-              <View style={styles.detailItem}>
+              <TouchableOpacity
+                style={styles.detailItem}
+                onPress={() => setModalVisible(true)}>
                 <Text style={styles.detailTitle}>Full Name</Text>
                 <Text style={styles.detailText}>{userFullName}</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -112,12 +135,6 @@ const Profile = props => {
                 <Text style={styles.detailTitle}>Username</Text>
                 <Text style={styles.detailText}>{userName || 'user name'}</Text>
               </View>
-              <View style={styles.separator} />
-              <TouchableOpacity
-                style={styles.detailItemX}
-                onPress={() => EditProfilePressed('Password')}>
-                <Text style={styles.detailTitle}>Password</Text>
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -132,6 +149,37 @@ const Profile = props => {
             </View>
           </View>
         </View>
+
+        {/* Name Change Modal */}
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Request Name Change</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Enter new driver name"
+                value={newDriverName}
+                onChangeText={setNewDriverName}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={requestNameChange}>
+                  <Text style={styles.modalButtonText}>Submit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => setModalVisible(false)}>
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -160,7 +208,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sectionBox: {
-    marginBottom: 20, // Space between sections
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -169,7 +217,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   detailBox: {
-    backgroundColor: '#FFFFFF', // Background color for the details box
+    backgroundColor: '#FFFFFF',
     borderRadius: 5,
   },
   detailItem: {
@@ -186,16 +234,62 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 16,
   },
-
   deleteAccounText: {
     fontSize: 16,
     color: '#FF0000',
   },
-
   separator: {
     height: 1,
-    backgroundColor: '#E0E0E0', // Color for the separator line
-    marginHorizontal: 10, // Space around the separator
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 10,
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#CCC',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: '#007BFF',
+    borderRadius: 5,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  modalCancelButton: {
+    backgroundColor: '#FF0000',
   },
 });
 

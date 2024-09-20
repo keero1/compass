@@ -108,7 +108,7 @@ const ManageDriver = () => {
         <table className="table w-full">
           <thead>
             <tr>
-              <th className="text-left text-xl">Name</th>
+              <th className="text-left text-xl">Bus Driver Name</th>
               <th className="text-left text-xl">License Plate</th>
               <th className="text-left text-xl">Phone Number</th>
               <th className="text-left text-xl">Route Name</th>
@@ -134,7 +134,7 @@ const ManageDriver = () => {
                 ))
               : paginatedBuses.map((bus) => (
                   <tr key={bus.id} className="hover">
-                    <td className="text-lg">{bus.name}</td>
+                    <td className="text-lg">{bus.bus_driver_name}</td>
                     <td className="text-lg">{bus.license_plate}</td>
                     <td className="text-lg">{"0" + bus.phone_number}</td>
                     <td className="text-lg">{getRouteName(bus.route_id)}</td>
