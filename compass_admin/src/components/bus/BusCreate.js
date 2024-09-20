@@ -16,7 +16,7 @@ const BusCreate = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [username, setUsername] = useState("");
   const [route, setRoute] = useState("");
-  const [name, setName] = useState("");
+  const [busNumber, setBusNumber] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [routes, setRoutes] = useState([]);
 
@@ -74,15 +74,17 @@ const BusCreate = () => {
         bus_driver_name: busName,
         phone_number: phoneNumber,
         route_id: route,
-        name: name,
+        bus_number: busNumber,
         license_plate: licensePlate,
         email: randomEmail,
         company_id: "ComPass XD",
         created_at: Timestamp.now(), // Use Timestamp.now() to get the current timestamp
       });
 
-      alert("due to some bug for now. creating bus accounts will sign you off.");
-      
+      alert(
+        "due to some bug for now. creating bus accounts will sign you off."
+      );
+
       doSignOut();
     } catch (error) {
       console.error("Error creating bus account:", error);
@@ -133,7 +135,10 @@ const BusCreate = () => {
                   className="input input-bordered pl-16 w-full"
                   placeholder="Enter phone number"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={(e) => {
+                    const numericValue = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+                    setPhoneNumber(numericValue);
+                  }}
                   pattern="9\d{9}"
                   title="Format: 9123456789"
                   required
@@ -179,14 +184,17 @@ const BusCreate = () => {
 
             <div>
               <label className="block text-sm font-medium mb-1 text-base-content">
-                Bus Name
+                Bus Number
               </label>
               <input
                 type="text"
                 className="input input-bordered w-full"
-                placeholder="Enter name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter Bus Number"
+                value={busNumber}
+                onChange={(e) => {
+                  const numericValue = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+                  setBusNumber(numericValue);
+                }}
                 required
               />
             </div>
