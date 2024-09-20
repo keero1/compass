@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TouchableHighlight,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 
 import firestore from '@react-native-firebase/firestore';
@@ -29,6 +30,8 @@ const PaymentConfirmation = ({route}) => {
 
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [loadingVisible, setLoadingVisible] = useState(false);
 
   const calculatedFare =
     travelDistance <= 4
@@ -81,6 +84,8 @@ const PaymentConfirmation = ({route}) => {
   };
 
   const createTransaction = async () => {
+    setLoadingVisible(true); // Show loading modal
+
     const referenceNumber = generateReferenceNumber();
 
     const receipt = {
@@ -105,7 +110,7 @@ const PaymentConfirmation = ({route}) => {
     } catch (error) {
       console.error('Error syncing transaction:', error);
     } finally {
-      NavigationHelpersContext;
+      setLoadingVisible(false); // Hide loading modal
     }
   };
 
@@ -188,6 +193,16 @@ const PaymentConfirmation = ({route}) => {
               onPress={() => setModalVisible(false)}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Loading Modal */}
+      <Modal animationType="none" transparent={true} visible={loadingVisible}>
+        <View style={styles.modalView}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color="#2196F3" />
+            <Text style={styles.modalText}>Processing your transaction...</Text>
           </View>
         </View>
       </Modal>
