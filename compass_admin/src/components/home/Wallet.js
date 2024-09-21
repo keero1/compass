@@ -43,14 +43,14 @@ const Wallet = () => {
         <div className="bg-base-100 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Earnings</div>
           <div className="text-2xl truncate">₱{totalEarnings}</div>
-          <div className="text-sm text-green-500">↑ 12% Since last month</div>
+          {/* <div className="text-sm text-green-500">↑ 12% Since last month</div> */}
         </div>
 
         {/* Transactions Card */}
         <div className="bg-base-100 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Transactions</div>
           <div className="text-2xl truncate">{totalTransactions}</div>
-          <div className="text-sm text-red-500">↓ 16% Since last month</div>
+          {/* <div className="text-sm text-red-500">↓ 16% Since last month</div> */}
         </div>
 
         {/* Wallet Card */}

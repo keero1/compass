@@ -3,13 +3,15 @@ import ClickOutside from "./ClickOutside";
 
 // Firebase imports
 import { db } from "../../firebase/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 
 const NotificationDropdown = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifying, setNotifying] = useState(true);
 
   const [profileUpdateRequests, setProfileUpdateRequests] = useState(null);
+
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   // Fetch profile update requests
   useEffect(() => {
@@ -53,6 +55,45 @@ const NotificationDropdown = () => {
     }
   };
 
+  // approval
+  const handleApproval = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      const requestDocRef = doc(
+        db,
+        "profileUpdateRequests",
+        selectedRequest.id
+      );
+      await updateDoc(requestDocRef, { status: "approved" });
+
+      const busDocRef = doc(db, "buses", selectedRequest.userId);
+      await updateDoc(busDocRef, {
+        bus_driver_name: selectedRequest.requestedDriverName,
+      });
+
+      console.log(`Approved request for ${selectedRequest.currentDriverName}`);
+      closeModal();
+    } catch (error) {
+      console.error("Error updating request or bus:", error);
+    }
+  };
+
+  // modal
+
+  const openModal = (request) => {
+    console.log(request.userId);
+    setSelectedRequest(request);
+    const modal = document.getElementById("notification_modal");
+    modal.showModal();
+  };
+
+  const closeModal = () => {
+    const modal = document.getElementById("notification_modal");
+    modal.close();
+    setSelectedRequest(null);
+  };
+
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
       <button
@@ -93,7 +134,8 @@ const NotificationDropdown = () => {
             {profileUpdateRequests.map((request) => (
               <div
                 key={request.id}
-                className="px-4 py-2 border-b border-base-300"
+                className="px-4 py-2 border-b border-base-300 cursor-pointer hover:bg-gray-200"
+                onClick={() => openModal(request)}
               >
                 <p className="text-sm">
                   <strong>{request.currentDriverName}</strong> requested to
@@ -115,6 +157,46 @@ const NotificationDropdown = () => {
           </div>
         </div>
       )}
+
+      {/* Modal for Approve/Reject */}
+      <dialog id="notification_modal" className="modal">
+        <div className="modal-box">
+          <form method="dialog">
+            {/* if there is a button in form, it will close the modal */}
+            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+              ✕
+            </button>
+          </form>
+          <h3 className="font-bold text-lg">
+            {selectedRequest
+              ? `${selectedRequest.currentDriverName}'s Request`
+              : "Request"}
+          </h3>
+          <p>
+            {selectedRequest ? `wants to update the name to ` : ""}
+            <strong>
+              {selectedRequest ? selectedRequest.requestedDriverName : ""}
+            </strong>
+          </p>
+          <p>
+            Status:{" "}
+            <strong>{selectedRequest ? selectedRequest.status : ""}</strong>
+          </p>
+          <p>
+            {formatTime(selectedRequest.requestTime)}
+          </p>
+          {selectedRequest && selectedRequest.status === "pending" && (
+            <div className="modal-action">
+              <button className="btn btn-primary" onClick={handleApproval}>
+                Approve
+              </button>
+              <button className="btn btn-secondary" onClick={closeModal}>
+                Reject
+              </button>
+            </div>
+          )}
+        </div>
+      </dialog>
     </ClickOutside>
   );
 };
