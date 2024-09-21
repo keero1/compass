@@ -183,7 +183,7 @@ const NotificationDropdown = () => {
             <strong>{selectedRequest ? selectedRequest.status : ""}</strong>
           </p>
           <p>
-            {formatTime(selectedRequest.requestTime)}
+            {selectedRequest ? formatTime(selectedRequest.requestTime) : ""}
           </p>
           {selectedRequest && selectedRequest.status === "pending" && (
             <div className="modal-action">
