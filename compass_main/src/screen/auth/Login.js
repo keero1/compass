@@ -37,22 +37,24 @@ const Login = () => {
     setLoading(true);
     try {
       // trim the username to avoid whitespace
-      const trimmedUsername = username.trim();
+      const trimmedUsername = username.trim().toLowerCase();
 
       if (!trimmedUsername || !password) {
         throw new Error();
       }
 
-      const querySnapshot = await firestore().collection('buses').get();
-      const userDocs = querySnapshot.docs.filter(
-        doc => doc.data().username.toLocaleLowerCase === trimmedUsername.toLocaleLowerCase,
-      );
+      const querySnapshot = await firestore()
+        .collection('buses')
+        .where('username', '==', trimmedUsername)
+        .get();
 
-      if (userDocs.length < 1) {
+      if (querySnapshot.empty) {
         Alert.alert('Sign In Failed!', 'No user found with this username.');
+        setLoading(false);
         return;
       }
-      const userDoc = userDocs[0].data();
+
+      const userDoc = querySnapshot.docs[0].data();
       const email = userDoc.email;
 
       await auth().signInWithEmailAndPassword(email, password);

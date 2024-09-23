@@ -62,6 +62,10 @@ const Drawer = props => {
     navigation.navigate(ROUTES.PAYMENT);
   };
 
+  const onTransactionPressed = () => {
+    console.log("erwqeqw");
+  }
+
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
@@ -69,7 +73,7 @@ const Drawer = props => {
           <View style={styles.profileContent}>
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
-              <Text style={styles.text}>{userDisplayName || ""}</Text>
+              <Text style={styles.text}>{userDisplayName || ''}</Text>
               {/* Profile */}
               <TouchableOpacity
                 style={styles.viewProfileButton}
@@ -86,6 +90,10 @@ const Drawer = props => {
         {/* Touchable Text Components */}
         <TouchableOpacity onPress={onPaymentPressed}>
           <Text style={styles.menuItem}>Payment</Text>
+        </TouchableOpacity>
+        {/* Touchable Text Components */}
+        <TouchableOpacity onPress={onTransactionPressed}>
+          <Text style={styles.menuItem}>Transactions</Text>
         </TouchableOpacity>
         {/* <TouchableOpacity>
           <Text style={styles.menuItem}>Settings</Text>

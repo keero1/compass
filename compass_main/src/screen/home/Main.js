@@ -44,8 +44,8 @@ const Main = props => {
         setInitialRegion({
           latitude,
           longitude,
-          latitudeDelta: 0.001,
-          longitudeDelta: 0.001,
+          latitudeDelta: 0.010,
+          longitudeDelta: 0.010,
         });
 
         // Send initial location to Firestore
@@ -118,8 +118,8 @@ const Main = props => {
       mapRef.current.animateToRegion({
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        latitudeDelta: 0.001,
-        longitudeDelta: 0.001,
+        latitudeDelta: 0.010,
+        longitudeDelta: 0.010,
       });
     }
   };
@@ -153,11 +153,13 @@ const Main = props => {
           showsUserLocation={true}
           showsMyLocationButton={false}
           initialRegion={initialRegion}
+          showsTraffic
           maxZoomLevel={20}
           minZoomLevel={12}
           onRegionChangeComplete={onRegionChangeComplete}
           pitchEnabled={false}
           showsCompass={false}
+          followsUserLocation
           toolbarEnabled={false}></MapView>
         <TouchableOpacity onPress={centerToUser} style={styles.centerButton}>
           <Icon name="my-location" size={30} color="black" />

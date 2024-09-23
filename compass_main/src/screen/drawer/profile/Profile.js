@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 
 import {useIsFocused} from '@react-navigation/native';
@@ -24,11 +25,14 @@ import storage from '@react-native-firebase/storage';
 
 import {launchImageLibrary} from 'react-native-image-picker';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const Profile = props => {
   const {navigation} = props;
   const {height} = useWindowDimensions();
 
   const [userFullName, setUserFullName] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState(null);
   const [userName, setUserName] = useState(null);
   const [newDriverName, setNewDriverName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -50,6 +54,7 @@ const Profile = props => {
 
           if (userDoc.exists) {
             setUserFullName(userDoc.data().bus_driver_name);
+            setPhoneNumber(userDoc.data().phone_number);
             setUserName(userDoc.data().username);
           } else {
             console.log('User document does not exist');
@@ -129,10 +134,16 @@ const Profile = props => {
       {
         text: 'Logout',
         onPress: async () => {
-          console.log('Sign out');
-          auth()
-            .signOut()
-            .then(() => console.log('User signed out'));
+          try {
+            await AsyncStorage.clear();
+            console.log('Async Storage Cleared');
+
+            auth()
+              .signOut()
+              .then(() => console.log('User signed out'));
+          } catch (error) {
+            console.error('Error during logout:', error);
+          }
         },
       },
       {
@@ -145,15 +156,17 @@ const Profile = props => {
 
   return (
     <SafeAreaView style={styles.main}>
-      <View style={styles.root}>
+      <View style={styles.logoContainer}>
         <TouchableOpacity onPress={handleImagePicker}>
           <Image
             source={IMAGES.logo}
-            style={styles.logo} // Set explicit width and height
-            resizeMode="contain" // Ensure the image scales correctly
+            style={styles.logo}
+            resizeMode="contain"
           />
         </TouchableOpacity>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.detailsContainer}>
           <View style={styles.sectionBox}>
             <Text style={styles.sectionTitle}>Account Details</Text>
@@ -164,6 +177,15 @@ const Profile = props => {
                 onPress={() => setModalVisible(true)}>
                 <Text style={styles.detailTitle}>Full Name</Text>
                 <Text style={styles.detailText}>{userFullName}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity style={styles.detailItem}>
+                <Text style={styles.detailTitle}>Phone Number</Text>
+                <Text style={styles.detailText}>
+                  (+63) {phoneNumber || 912345678}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -176,6 +198,14 @@ const Profile = props => {
                 <Text style={styles.detailTitle}>Username</Text>
                 <Text style={styles.detailText}>{userName || 'user name'}</Text>
               </View>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity
+                style={styles.detailItemX}
+                onPress={() => console.log('password')}>
+                <Text style={styles.detailTitle}>Password</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -216,8 +246,9 @@ const Profile = props => {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalCancelButton]}
                   disabled={loading}
-                  onPress={() => {setNewDriverName("");
-                    setModalVisible(false)
+                  onPress={() => {
+                    setNewDriverName('');
+                    setModalVisible(false);
                   }}>
                   <Text style={styles.modalButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -225,7 +256,7 @@ const Profile = props => {
             </View>
           </View>
         </Modal>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -235,18 +266,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F4FB',
   },
-
-  root: {
-    flex: 1,
-    flexGrow: 1,
+  logoContainer: {
     alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 20,
+    marginVertical: 50,
   },
   logo: {
-    maxWidth: 150,
-    maxHeight: 150,
-    marginVertical: 50,
+    width: 150,
+    height: 150,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingBottom: 20,
   },
   detailsContainer: {
     width: '100%',
