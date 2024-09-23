@@ -23,7 +23,6 @@ import ROUTES from '../../constants/routes';
 import MapView, {
   PROVIDER_GOOGLE,
   Marker,
-  MarkerAnimated,
   Callout,
   Polyline,
 } from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
@@ -51,7 +50,6 @@ const Main = props => {
 
   // marker
   const [marker, setMarker] = useState(null);
-  const animatedMarkersRef = useRef();
 
   // bus location
   const [busMarkers, setBusMarkers] = useState([]);
@@ -101,7 +99,7 @@ const Main = props => {
 
     const unsubscribe = firestore()
       .collection('busLocation')
-      .where('timestamp', '>=', fiveMinutesAgo)
+      .where('timestamp', '<=', fiveMinutesAgo)
       .onSnapshot(async querySnapshot => {
         console.log('Snapshot fired');
 
@@ -147,13 +145,6 @@ const Main = props => {
         const validBusesData = busesData.filter(bus => bus !== null);
 
         setBusMarkers(validBusesData);
-
-        // Call animate or map update logic after state is set
-        validBusesData.forEach(bus => {
-          if (bus.coordinate) {
-            animate(bus.coordinate.latitude, bus.coordinate.longitude);
-          }
-        });
       });
 
     return () => {
@@ -183,19 +174,6 @@ const Main = props => {
 
     return () => clearInterval(intervalId); // Clean up on unmount
   }, [busMarkers]);
-
-  const animate = (latitude, longitude) => {
-    const newCoordinate = {latitude, longitude};
-    const duration = 5000;
-    if (Platform.OS === 'android' && animatedMarkersRef.current) {
-      if (animatedMarkersRef.current.animateMarkerToCoordinate) {
-        animatedMarkersRef.current.animateMarkerToCoordinate(
-          newCoordinate,
-          duration,
-        );
-      }
-    }
-  };
 
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -482,6 +460,12 @@ const Main = props => {
     return distance;
   };
 
+  const onPayPressed = () => {
+    navigation.navigate(ROUTES.WALLET);
+
+    console.log('wallet');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -511,6 +495,7 @@ const Main = props => {
           pitchEnabled={false}
           showsCompass={false}
           toolbarEnabled={false}
+          showsTraffic
           onPress={onMapPress}>
           {/* Marker */}
           {marker && (
@@ -523,8 +508,7 @@ const Main = props => {
 
           {/* Bus markers */}
           {busMarkers.map(bus => (
-            <MarkerAnimated
-              ref={animatedMarkersRef}
+            <Marker
               key={bus.id}
               coordinate={bus.coordinate}
               onPress={() => onBusMarkerPressed(bus.details.route_id)}
@@ -537,7 +521,7 @@ const Main = props => {
                   Last Update: {bus.details.timestamp.toDate().toLocaleString()}
                 </Text>
               </Callout>
-            </MarkerAnimated>
+            </Marker>
           ))}
 
           {/* Draw polyline */}
@@ -556,6 +540,9 @@ const Main = props => {
 
         <TouchableOpacity onPress={centerToUser} style={styles.centerButton}>
           <Icon name="my-location" size={30} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onPayPressed} style={styles.payButton}>
+          <Icon name="payment" size={30} color="black" />
         </TouchableOpacity>
       </View>
 
@@ -655,6 +642,18 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
   },
+  payButton: {
+    backgroundColor: '#e4e9f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    position: 'absolute',
+    bottom: 20,
+    right: 10,
+  },
+
   map: {
     ...StyleSheet.absoluteFillObject,
   },
