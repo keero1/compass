@@ -10,7 +10,7 @@ export { default as Main} from './home/main';
 
 // drawer
 export { default as Drawer } from './drawer/Drawer';
-export { default as Settings } from './drawer/Settings';
+export { default as Wallet } from './drawer/Wallet';
 
 // drawer child
 

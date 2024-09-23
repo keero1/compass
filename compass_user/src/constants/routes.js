@@ -7,7 +7,7 @@ export default {
 
     // DRAWER
     DRAWER: 'Drawer',
-    SETTINGS: 'Settings',
+    WALLET: 'Wallet',
 
     //DRAWER CHILD
 

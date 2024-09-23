@@ -2,7 +2,7 @@ import React from 'react';
 
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 
-import {Main, Drawer, Settings, Profile, EditProfile} from '../screen';
+import {Main, Drawer, Wallet, Profile, EditProfile} from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/custom/CustomBack';
 
@@ -32,8 +32,8 @@ function HomeNavigator() {
       />
 
       <InsideStack.Screen
-        name={ROUTES.SETTINGS}
-        component={Settings}
+        name={ROUTES.WALLET}
+        component={Wallet}
         options={() => ({
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',

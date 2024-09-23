@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 
 import { COLORS } from '../../constants'
 
-const Settings = () => {
+const Wallet = () => {
     return (
         <View style={{
             flex: 1,
@@ -16,4 +16,4 @@ const Settings = () => {
     );
 }
 
-export default Settings;
+export default Wallet;
