@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 // Firebase imports
 import { db } from "../../firebase/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 
 const Wallet = () => {
   const [totalEarnings, setTotalEarnings] = useState(0);
@@ -9,18 +9,21 @@ const Wallet = () => {
   const [totalBuses, setTotalBuses] = useState(0);
 
   // Fetch earnings from transactions collection
-  const fetchEarnings = async () => {
+  const fetchEarnings = () => {
     const transactionsCollection = collection(db, "transactions");
-    const transactionsSnapshot = await getDocs(transactionsCollection);
-    let earnings = 0;
 
-    transactionsSnapshot.forEach((doc) => {
-      const data = doc.data();
-      earnings += Number(data.fare_amount || 0); // Ensure fareAmount exists
+    const unsubscribe = onSnapshot(transactionsCollection, (snapshot) => {
+      let earnings = 0;
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        earnings += Number(data.fare_amount || 0);
+      });
+
+      setTotalEarnings(earnings.toFixed(2));
+      setTotalTransactions(snapshot.size);
     });
 
-    setTotalEarnings(earnings.toFixed(2));
-    setTotalTransactions(transactionsSnapshot.size); // Set total transactions
+    return unsubscribe;
   };
 
   // Fetch total buses count
@@ -30,9 +33,21 @@ const Wallet = () => {
     setTotalBuses(busesSnapshot.size); // Set total buses count
   };
 
+  // Helper function to format numbers with commas and decimals
+  const formatNumber = (number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "PHP",
+    }).format(number);
+  };
+
   useEffect(() => {
-    fetchEarnings();
+    const unsubscribeEarnings = fetchEarnings();
     fetchBuses();
+
+    return () => {
+      unsubscribeEarnings(); // Cleanup the listener on unmount
+    };
   }, []);
 
   return (
@@ -42,7 +57,7 @@ const Wallet = () => {
         {/* Earnings Card */}
         <div className="bg-base-100 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Earnings</div>
-          <div className="text-2xl truncate">₱{totalEarnings}</div>
+          <div className="text-2xl truncate">{formatNumber(totalEarnings)}</div>
           {/* <div className="text-sm text-green-500">↑ 12% Since last month</div> */}
         </div>
 

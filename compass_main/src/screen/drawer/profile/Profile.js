@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 
 import {useIsFocused} from '@react-navigation/native';
@@ -21,6 +22,8 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
 
+import {launchImageLibrary} from 'react-native-image-picker';
+
 const Profile = props => {
   const {navigation} = props;
   const {height} = useWindowDimensions();
@@ -29,6 +32,8 @@ const Profile = props => {
   const [userName, setUserName] = useState(null);
   const [newDriverName, setNewDriverName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [loading, setLoading] = useState(false);
 
   const focus = useIsFocused();
 
@@ -64,12 +69,26 @@ const Profile = props => {
     const user = auth().currentUser;
 
     if (user && newDriverName.trim() !== '') {
+      setLoading(true);
       try {
+        // Check for existing pending requests
+        const pendingRequestsSnapshot = await firestore()
+          .collection('profileUpdateRequests')
+          .where('userId', '==', user.uid)
+          .where('status', '==', 'Pending')
+          .get();
+
+        if (!pendingRequestsSnapshot.empty) {
+          Alert.alert('Error', 'You already have a pending request.');
+          setLoading(false);
+          return; // Exit the function if there is a pending request
+        }
+
         await firestore().collection('profileUpdateRequests').add({
           userId: user.uid,
           currentDriverName: userFullName,
           requestedDriverName: newDriverName,
-          status: 'pending',
+          status: 'Pending',
           requestTime: firestore.FieldValue.serverTimestamp(),
         });
 
@@ -79,9 +98,29 @@ const Profile = props => {
       } catch (error) {
         console.error('Error submitting name change request:', error);
         Alert.alert('Error', 'Failed to submit name change request.');
+      } finally {
+        setLoading(false);
       }
     } else {
       Alert.alert('Error', 'Please enter a valid driver name.');
+    }
+  };
+
+  const handleImagePicker = async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      maxWidth: 300,
+      maxHeight: 300,
+      quality: 0.7,
+    });
+
+    if (result.didCancel) {
+      console.log('Image selection canceled');
+    } else if (result.error) {
+      console.log('Error picking image: ', result.error);
+    } else {
+      // const image = result.assets[0];
+      // uploadProfilePicture(image.uri); // Upload the selected image
     }
   };
 
@@ -107,11 +146,13 @@ const Profile = props => {
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
-        <Image
-          source={IMAGES.logo}
-          style={[styles.logo, {height: height * 0.18}]}
-          resizeMode="contain"
-        />
+        <TouchableOpacity onPress={handleImagePicker}>
+          <Image
+            source={IMAGES.logo}
+            style={styles.logo} // Set explicit width and height
+            resizeMode="contain" // Ensure the image scales correctly
+          />
+        </TouchableOpacity>
 
         <View style={styles.detailsContainer}>
           <View style={styles.sectionBox}>
@@ -168,12 +209,16 @@ const Profile = props => {
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.modalButton}
+                  disabled={loading}
                   onPress={requestNameChange}>
                   <Text style={styles.modalButtonText}>Submit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalCancelButton]}
-                  onPress={() => setModalVisible(false)}>
+                  disabled={loading}
+                  onPress={() => {setNewDriverName("");
+                    setModalVisible(false)
+                  }}>
                   <Text style={styles.modalButtonText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
@@ -199,9 +244,8 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   logo: {
-    width: '70%',
-    maxWidth: 300,
-    maxHeight: 200,
+    maxWidth: 150,
+    maxHeight: 150,
     marginVertical: 50,
   },
   detailsContainer: {

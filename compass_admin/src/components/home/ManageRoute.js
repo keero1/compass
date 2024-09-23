@@ -160,12 +160,12 @@ const ManageRoute = () => {
                         View
                       </Link>
                     </td>
-                    <td>
+                    {/* <td>
                       <TrashIcon
                         className="size-6 text-red-500 cursor-pointer"
                         onClick={() => confirmDeleteRoute(route.id)}
                       />
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
           </tbody>

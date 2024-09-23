@@ -3,7 +3,7 @@ import ClickOutside from "./ClickOutside";
 
 // Firebase imports
 import { db } from "../../firebase/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 
 const NotificationDropdown = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -13,28 +13,33 @@ const NotificationDropdown = () => {
 
   const [selectedRequest, setSelectedRequest] = useState(null);
 
-  // Fetch profile update requests
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        // Access the 'profileUpdateRequests' collection from Firestore
-        const requestsCollection = collection(db, "profileUpdateRequests");
-        const requestsSnapshot = await getDocs(requestsCollection);
+  // use effect
 
-        // Extract data from each document and update the state
-        const requestsData = requestsSnapshot.docs.map((doc) => ({
-          id: doc.id, // Save document ID
-          ...doc.data(), // Spread the rest of the data
+  useEffect(() => {
+    const unsubscribeRequests = fetchRequests();
+    return () => {
+      unsubscribeRequests();
+    };
+  }, []);
+
+  const fetchRequests = () => {
+    const requestsCollection = collection(db, "profileUpdateRequests");
+
+    return onSnapshot(
+      requestsCollection,
+      (snapshot) => {
+        const requestsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
         }));
 
-        setProfileUpdateRequests(requestsData); // Set the fetched data to state
-      } catch (error) {
+        setProfileUpdateRequests(requestsData);
+      },
+      (error) => {
         console.error("Error fetching profile update requests:", error);
       }
-    };
-
-    fetchRequests();
-  }, []); // Empty dependency array means this will run once when component mounts
+    );
+  };
 
   const formatTime = (timestamp) => {
     const now = Date.now();
@@ -131,21 +136,30 @@ const NotificationDropdown = () => {
             Notifications
           </div>
           <div className="max-h-48 overflow-y-auto">
-            {profileUpdateRequests.map((request) => (
-              <div
-                key={request.id}
-                className="px-4 py-2 border-b border-base-300 cursor-pointer hover:bg-gray-200"
-                onClick={() => openModal(request)}
-              >
-                <p className="text-sm">
-                  <strong>{request.currentDriverName}</strong> requested to
-                  change name to <strong>{request.requestedDriverName}</strong>
-                </p>
-                <p className="text-xs text-gray-500">
-                  {formatTime(request.requestTime)}
-                </p>
+            {profileUpdateRequests === null ? (
+              // daisy ui skeleton
+              <div className="flex flex-col gap-2 px-4 py-2">
+                <div className="skeleton h-4 w-28"></div>
+                <div className="skeleton h-4 w-full"></div>
               </div>
-            ))}
+            ) : (
+              profileUpdateRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="px-4 py-2 border-b border-base-300 cursor-pointer hover:bg-base-200"
+                  onClick={() => openModal(request)}
+                >
+                  <p className="text-sm">
+                    <strong>{request.currentDriverName}</strong> requested to
+                    change name to{" "}
+                    <strong>{request.requestedDriverName}</strong>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatTime(request.requestTime)}
+                  </p>
+                </div>
+              ))
+            )}
           </div>
           <div className="px-4 text-center">
             <button
