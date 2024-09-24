@@ -22,7 +22,7 @@ const Navbar = () => {
 
   const navigate = useNavigate();
   const [theme, setTheme] = useState(
-    localStorage.getItem("theme") || "cupcake"
+    localStorage.getItem("theme") || "nord"
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -32,7 +32,7 @@ const Navbar = () => {
   }, [theme]);
 
   const handleToggle = (e) => {
-    const newTheme = e.target.checked ? "dracula" : "cupcake";
+    const newTheme = e.target.checked ? "night" : "nord";
     setTheme(newTheme);
   };
 
@@ -40,7 +40,7 @@ const Navbar = () => {
   useEffect(() => {
     const themeCheckbox = document.querySelector("#theme-checkbox");
     if (themeCheckbox) {
-      themeCheckbox.checked = theme === "dracula";
+      themeCheckbox.checked = theme === "night";
     }
   }, [theme]);
 
@@ -104,7 +104,7 @@ const Navbar = () => {
               <input
                 id="theme-checkbox"
                 type="checkbox"
-                checked={theme === "dracula"}
+                checked={theme === "night"}
                 onChange={handleToggle}
               />
 
@@ -223,12 +223,12 @@ const Navbar = () => {
               Manage Routes
             </Link>
           </li>
-          <li>
+          {/* <li>
             <button>
               <Cog6ToothIcon className="size-6" />
               Settings
             </button>
-          </li>
+          </li> */}
         </ul>
       </div>
     </div>
