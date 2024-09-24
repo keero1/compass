@@ -155,24 +155,24 @@ const Main = props => {
   // remove offline bus
   useEffect(() => {
     // Interval to check if buses are offline
-    const checkBusOfflineStatus = () => {
-      console.log('offline bus check');
-      const currentTime = new Date();
-      const updatedBusMarkers = busMarkers.filter(bus => {
-        const lastSeen = new Date(bus.details.timestamp.toDate());
-        const diffInSeconds = (currentTime - lastSeen) / 1000;
-        return diffInSeconds <= 300; // Consider buses offline after 5 minutes
-      });
+    // const checkBusOfflineStatus = () => {
+    //   console.log('offline bus check');
+    //   const currentTime = new Date();
+    //   const updatedBusMarkers = busMarkers.filter(bus => {
+    //     const lastSeen = new Date(bus.details.timestamp.toDate());
+    //     const diffInSeconds = (currentTime - lastSeen) / 1000;
+    //     return diffInSeconds <= 300; // Consider buses offline after 5 minutes
+    //   });
 
-      if (updatedBusMarkers.length !== busMarkers.length) {
-        console.log('remove bus');
-        setBusMarkers(updatedBusMarkers); // Remove offline buses from state
-      }
-    };
+    //   if (updatedBusMarkers.length !== busMarkers.length) {
+    //     console.log('remove bus');
+    //     setBusMarkers(updatedBusMarkers); // Remove offline buses from state
+    //   }
+    // };
 
-    const intervalId = setInterval(checkBusOfflineStatus, 60000); // Run every minute
+    // const intervalId = setInterval(checkBusOfflineStatus, 60000); // Run every minute
 
-    return () => clearInterval(intervalId); // Clean up on unmount
+    // return () => clearInterval(intervalId); // Clean up on unmount
   }, [busMarkers]);
 
   useEffect(() => {
