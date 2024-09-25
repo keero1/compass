@@ -12,7 +12,6 @@ import {
   WalletIcon,
   TruckIcon,
   MapPinIcon,
-  Cog6ToothIcon,
 } from "@heroicons/react/24/solid";
 
 import NotificationDropdown from "./NotificationDropdown";
