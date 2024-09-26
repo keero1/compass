@@ -4,10 +4,7 @@ import {
   collection,
   getDocs,
   addDoc,
-  deleteDoc,
-  doc,
 } from "firebase/firestore";
-import { TrashIcon } from "@heroicons/react/24/solid";
 import { Link } from "react-router-dom";
 
 const routesCollection = collection(db, "routes");
@@ -18,9 +15,6 @@ const ManageRoute = () => {
   const [showModal, setShowModal] = useState(false);
   const [newRoute, setNewRoute] = useState({ route_name: "", description: "" });
   const [isSaving, setIsSaving] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [routeToDelete, setRouteToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
 
@@ -60,27 +54,6 @@ const ManageRoute = () => {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleDeleteRoute = async () => {
-    if (!routeToDelete) return;
-
-    setIsDeleting(true);
-    try {
-      await deleteDoc(doc(db, "routes", routeToDelete));
-      fetchBusData(); // Refresh the route list
-      setShowDeleteModal(false); // Close the delete confirmation modal
-      setCurrentPage(1); // Reset to the first page
-    } catch (error) {
-      console.error("Error deleting route:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const confirmDeleteRoute = (routeId) => {
-    setRouteToDelete(routeId);
-    setShowDeleteModal(true);
   };
 
   const handleNextPage = () => {
@@ -267,36 +240,6 @@ const ManageRoute = () => {
                   ✕
                 </button>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal for Deleting Route */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-          <div className="modal modal-open modal-bottom sm:modal-middle">
-            <div className="modal-box">
-              <h2 className="text-2xl font-bold mb-4">Confirm Deletion</h2>
-              <p>Are you sure you want to delete this route?</p>
-              <div className="modal-action">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(false)}
-                  className="btn"
-                  disabled={isDeleting}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteRoute}
-                  className={`btn btn-error ${
-                    isDeleting ? "btn-disabled" : ""
-                  }`}
-                >
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </button>
-              </div>
             </div>
           </div>
         </div>

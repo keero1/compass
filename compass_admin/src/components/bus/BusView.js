@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../../firebase/firebase"; // Adjust path to Firebase configuration
 import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
@@ -36,7 +36,7 @@ const BusView = () => {
   };
 
   // Fetch the specific bus data
-  const fetchBusData = async () => {
+  const fetchBusData = useCallback(async () => {
     try {
       const busDoc = await getDoc(doc(db, "buses", busId));
       if (busDoc.exists()) {
@@ -49,14 +49,14 @@ const BusView = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [busId]);
 
   // load on mount
 
   useEffect(() => {
     fetchRoutes();
     fetchBusData();
-  }, []);
+  }, [fetchBusData]);
 
   const handleUpdateBus = async (event) => {
     event.preventDefault();
