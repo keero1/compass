@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   SafeAreaView,
   View,
@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 
 import firestore from '@react-native-firebase/firestore';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import QRCode from 'react-native-qrcode-svg'; // Import QRCode generator
 
 const PaymentConfirmation = ({route}) => {
   const {travelDistance, busType, selectedOrigin, place} = route.params;
@@ -30,7 +30,7 @@ const PaymentConfirmation = ({route}) => {
   const [routeName, setRouteName] = useState(null);
   const [busData, setBusData] = useState(null);
 
-  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [qrCodeData, setQrCodeData] = useState(null); // Use this for QR code data
   const [modalVisible, setModalVisible] = useState(false);
 
   const [loadingVisible, setLoadingVisible] = useState(false);
@@ -85,12 +85,15 @@ const PaymentConfirmation = ({route}) => {
     return Math.floor(Math.random() * 1000000000);
   };
 
-  const createTransaction = async () => {
+  const createTransaction = async (paymentType = 'Cash', qrData = null) => {
     setLoadingVisible(true); // Show loading modal
 
-    const referenceNumber = generateReferenceNumber();
+    const referenceNumber = qrData
+      ? qrData.reference_number
+      : generateReferenceNumber();
 
     const receipt = {
+      bus_id: busData.bus_id,
       bus_type: busType,
       bus_number: busData.bus_number,
       bus_driver_name: busData.bus_driver_name,
@@ -98,7 +101,8 @@ const PaymentConfirmation = ({route}) => {
       origin: selectedOrigin,
       destination: place,
       passenger_type: passengerType,
-      payment_type: 'Cash',
+      passenger_id: qrData ? qrData.passenger_id : null,
+      payment_type: paymentType,
       reference_number: referenceNumber,
       fare_amount: fareAmount.toFixed(2),
       distance: travelDistance,
@@ -121,8 +125,19 @@ const PaymentConfirmation = ({route}) => {
   };
 
   const createQRTransaction = () => {
-    setQrCodeUrl('static_qr_code_url'); // Replace with actual QR code URL
+    const referenceNumber = generateReferenceNumber();
+
+    const qrData = {
+      bus_id: busData.bus_id,
+      fare_amount: fareAmount.toFixed(2),
+      reference_number: referenceNumber,
+      passenger_id: passenger_id,
+    };
+
+    setQrCodeData(JSON.stringify(qrData));
     setModalVisible(true);
+
+    createTransaction('Cashless', qrData);
   };
 
   return (
@@ -176,7 +191,7 @@ const PaymentConfirmation = ({route}) => {
         {/* Ticket Amount Button */}
         <TouchableOpacity
           style={styles.ticketButton}
-          onPress={createTransaction}>
+          onPress={() => createTransaction('Cash')}>
           <Text style={styles.ticketButtonText}>
             Ticket Amount: ₱{fareAmount.toFixed(2)}
           </Text>
@@ -193,7 +208,13 @@ const PaymentConfirmation = ({route}) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>Your QR Code</Text>
             <View style={styles.qrCodeContainer}>
-              <Text>QRPH (Need Business Permit)</Text>
+              {/* Generate and display the QR code */}
+              {qrCodeData && (
+                <QRCode
+                  value={qrCodeData} // QR code data containing bus ID and fare amount
+                  size={200}
+                />
+              )}
             </View>
             <TouchableOpacity
               style={styles.closeButton}
@@ -228,17 +249,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
   text: {
     fontSize: 18,
     marginVertical: 10,
     color: '#333',
   },
-
+  sectionContainer: {
+    marginVertical: 20,
+  },
   radioGroup: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -269,7 +287,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-
   ticketButton: {
     backgroundColor: '#28a745',
     paddingVertical: 15,

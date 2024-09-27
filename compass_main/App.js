@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { PermissionsAndroid, View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import {
+  PermissionsAndroid,
+  View,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Firebase
@@ -17,7 +22,7 @@ export default function App() {
   const [user, setUser] = useState();
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(async (user) => {
+    const subscriber = auth().onAuthStateChanged(async user => {
       setUser(user);
       if (user) {
         await fetchFareData(user.uid);
@@ -40,9 +45,13 @@ export default function App() {
       const busDoc = await firestore().collection('buses').doc(uid).get();
 
       if (busDoc.exists) {
-        const { route_id, bus_type } = busDoc.data();
-        
-        await AsyncStorage.setItem('bus-data', JSON.stringify(busDoc.data())); // Save bus data locally
+        const busData = busDoc.data();
+        const bus_id = busDoc.id;
+
+        const {route_id, bus_type} = busData;
+        const busDocWithId = {...busData, bus_id};
+
+        await AsyncStorage.setItem('bus-data', JSON.stringify(busDocWithId)); // Save bus data locally
         await fetchRouteAndFareData(route_id, bus_type); // Fetch related route and fare data
       }
     } catch (error) {
@@ -53,7 +62,10 @@ export default function App() {
   // Helper function to fetch route name and fare data
   async function fetchRouteAndFareData(routeId, busType) {
     try {
-      const routeDoc = await firestore().collection('routes').doc(routeId).get();
+      const routeDoc = await firestore()
+        .collection('routes')
+        .doc(routeId)
+        .get();
       const fareDoc = await firestore().collection('fares').doc(routeId).get();
 
       if (fareDoc.exists) {
@@ -86,7 +98,7 @@ export default function App() {
           buttonNeutral: 'Ask Me Later',
           buttonNegative: 'Cancel',
           buttonPositive: 'OK',
-        }
+        },
       );
 
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
