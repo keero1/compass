@@ -131,7 +131,7 @@ const Main = props => {
               longitude: data.coordinates.longitude,
             },
             details: {
-              name: busData.name,
+              name: busData.bus_driver_name,
               license_plate: busData.license_plate,
               route_id: data.route_id,
               timestamp: data.timestamp,
@@ -519,6 +519,9 @@ const Main = props => {
                 <Text>License Plate: {bus.details.license_plate}</Text>
                 <Text>
                   Last Update: {bus.details.timestamp.toDate().toLocaleString()}
+                </Text>
+                <Text>
+                  Bus Seat Slots: 0
                 </Text>
               </Callout>
             </Marker>

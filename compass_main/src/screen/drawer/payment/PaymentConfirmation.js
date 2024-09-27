@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   SafeAreaView,
   View,
@@ -32,6 +32,7 @@ const PaymentConfirmation = ({route}) => {
 
   const [qrCodeData, setQrCodeData] = useState(null); // Use this for QR code data
   const [modalVisible, setModalVisible] = useState(false);
+  const [token, setToken] = useState(null);
 
   const [loadingVisible, setLoadingVisible] = useState(false);
 
@@ -62,7 +63,9 @@ const PaymentConfirmation = ({route}) => {
 
     fetchBusData();
     fetchRouteData();
-  }, []); // Add focus as a dependency
+  }, []);
+
+  // load data
 
   const loadRouteData = async () => {
     try {
@@ -81,16 +84,20 @@ const PaymentConfirmation = ({route}) => {
     }
   };
 
+  // reference
+
   const generateReferenceNumber = () => {
     return Math.floor(Math.random() * 1000000000);
   };
 
-  const createTransaction = async (paymentType = 'Cash', qrData = null) => {
+  const createTransaction = async data => {
     setLoadingVisible(true); // Show loading modal
 
-    const referenceNumber = qrData
-      ? qrData.reference_number
+    const referenceNumber = data
+      ? data.reference_number
       : generateReferenceNumber();
+
+    console.log(data);
 
     const receipt = {
       bus_id: busData.bus_id,
@@ -101,8 +108,8 @@ const PaymentConfirmation = ({route}) => {
       origin: selectedOrigin,
       destination: place,
       passenger_type: passengerType,
-      passenger_id: qrData ? qrData.passenger_id : null,
-      payment_type: paymentType,
+      passenger_id: data ? data.passenger_id : null,
+      payment_type: data ? 'Cashless' : 'Cash',
       reference_number: referenceNumber,
       fare_amount: fareAmount.toFixed(2),
       distance: travelDistance,
@@ -121,24 +128,80 @@ const PaymentConfirmation = ({route}) => {
       if (Platform.OS == 'android') {
         ToastAndroid.show('Transaction Success!', ToastAndroid.SHORT);
       }
+      if (token) {
+        await deleteToken(token);
+        setToken(null);
+      }
     }
   };
 
-  const createQRTransaction = () => {
-    const referenceNumber = generateReferenceNumber();
+  const createQRTransaction = async () => {
+    setLoadingVisible(true);
 
-    const qrData = {
-      bus_id: busData.bus_id,
-      fare_amount: fareAmount.toFixed(2),
-      reference_number: referenceNumber,
-      passenger_id: passenger_id,
-    };
+    try {
+      const referenceNumber = generateReferenceNumber();
 
-    setQrCodeData(JSON.stringify(qrData));
-    setModalVisible(true);
+      const newTokenDoc = await firestore().collection('tokens').add({
+        passenger_id: null,
+        fare_amount: null,
+        reference_number: null,
+      });
 
-    createTransaction('Cashless', qrData);
+      const qrData = {
+        bus_driver_name: busData.bus_driver_name,
+        fare_amount: fareAmount.toFixed(2),
+        reference_number: referenceNumber,
+        token: newTokenDoc.id,
+      };
+
+      setToken(newTokenDoc.id);
+
+      setQrCodeData(JSON.stringify(qrData));
+      setModalVisible(true);
+    } catch (error) {
+      console.error('Something went wrong', error);
+    } finally {
+      setLoadingVisible(false); // Hide loading modal
+    }
   };
+
+  const deleteToken = async tokenId => {
+    try {
+      await firestore().collection('tokens').doc(tokenId).delete();
+    } catch (error) {
+      console.error('Error deleting token:', error);
+    }
+  };
+
+  useEffect(() => {
+    let intervalId; // Store the interval ID
+
+    if (token) {
+      intervalId = setInterval(async () => {
+        try {
+          const doc = await firestore().collection('tokens').doc(token).get();
+          if (doc.exists) {
+            const data = doc.data();
+            // Check if fare_amount and reference_number have been updated
+            if (
+              data.passenger_id !== null &&
+              data.fare_amount !== null &&
+              data.reference_number !== null
+            ) {
+              ToastAndroid.show('Processing payment...', ToastAndroid.SHORT);
+              createTransaction(data);
+              setModalVisible(false); // Close the modal after processing
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching document:', error);
+        }
+      }, 5000); // Random interval between 3-5 seconds
+
+      // Cleanup function to clear the interval
+      return () => clearInterval(intervalId);
+    }
+  }, [token]);
 
   return (
     <SafeAreaView style={styles.main}>
@@ -191,7 +254,7 @@ const PaymentConfirmation = ({route}) => {
         {/* Ticket Amount Button */}
         <TouchableOpacity
           style={styles.ticketButton}
-          onPress={() => createTransaction('Cash')}>
+          onPress={() => createTransaction()}>
           <Text style={styles.ticketButtonText}>
             Ticket Amount: ₱{fareAmount.toFixed(2)}
           </Text>

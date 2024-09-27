@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
+import {useFocusEffect} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
@@ -17,6 +18,7 @@ const Wallet = props => {
   const {navigation} = props;
 
   const [balance, setBalance] = useState(null);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const user = auth().currentUser;
@@ -43,6 +45,41 @@ const Wallet = props => {
       setLoading(false);
     }
   };
+
+  const fetchTransactions = async () => {
+    setLoading(true);
+    try {
+      const transactionSnapshot = await firestore()
+        .collection('transactions')
+        .where('passenger_id', '==', user.uid) // Filter by current user's ID
+        .orderBy('timestamp', 'desc') // Sort by timestamp in descending order
+        .get();
+
+      const transactionData = transactionSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          origin: data.origin,
+          destination: data.destination,
+          fare_amount: data.fare_amount,
+          timestamp: data.timestamp,
+        };
+      });
+
+      setTransactions(transactionData);
+    } catch (error) {
+      console.log('Error fetching transactions: ', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchwalletBalance();
+      fetchTransactions();
+    }, []),
+  );
 
   const formatNumber = number => {
     return new Intl.NumberFormat('en-US', {
@@ -85,59 +122,25 @@ const Wallet = props => {
       <View style={styles.transactionHistoryBox}>
         <View style={styles.historyHeader}>
           <Text style={styles.historyTitle}>Transaction History</Text>
-          <View style={styles.filterButtons}>
-            <TouchableOpacity style={styles.filterButton}>
-              <Text style={styles.filterButtonText}>Day</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterButton}>
-              <Text style={styles.filterButtonText}>Week</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         <ScrollView style={styles.historyList}>
-          {/* Sample transaction item */}
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Amazon Purchase</Text>
-            <Text style={styles.transactionAmount}>- $150.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Cashback Received</Text>
-            <Text style={styles.transactionAmount}>+ $5.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Grocery Store</Text>
-            <Text style={styles.transactionAmount}>- $80.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Grocery Store</Text>
-            <Text style={styles.transactionAmount}>- $80.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Grocery Store</Text>
-            <Text style={styles.transactionAmount}>- $80.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Grocery Store</Text>
-            <Text style={styles.transactionAmount}>- $80.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Grocery Store</Text>
-            <Text style={styles.transactionAmount}>- $80.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Grocery Store</Text>
-            <Text style={styles.transactionAmount}>- $80.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Grocery Store</Text>
-            <Text style={styles.transactionAmount}>- $80.00</Text>
-          </View>
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionText}>Grocery Store</Text>
-            <Text style={styles.transactionAmount}>- $80.00</Text>
-          </View>
-          {/* Add more transaction items as needed */}
+          {transactions.length > 0 ? (
+            transactions.map(transaction => (
+              <View key={transaction.id} style={styles.transactionItem}>
+                <Text style={styles.transactionText}>
+                  {transaction.origin} - {transaction.destination}
+                </Text>
+                <Text style={styles.transactionAmount}>
+                  {formatNumber(transaction.fare_amount)}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noTransactionsText}>
+              No transactions found.
+            </Text>
+          )}
         </ScrollView>
       </View>
 
@@ -223,19 +226,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  filterButtons: {
-    flexDirection: 'row',
-  },
-  filterButton: {
-    backgroundColor: '#ddd',
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    marginLeft: 10,
-  },
-  filterButtonText: {
-    color: '#333',
-    fontSize: 14,
+  noTransactionsText: {
+    textAlign: 'center',
+    fontSize: 25,
+    color: '#999',
+    marginVertical: '50%',
   },
   historyList: {
     marginTop: 20,
