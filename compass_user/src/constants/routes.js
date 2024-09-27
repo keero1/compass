@@ -11,6 +11,8 @@ export default {
 
     //DRAWER CHILD
 
+    QRCAMERA: 'QRCamera',
+
     PROFILE: 'Profile',
 
     EDITPROFILE: 'EditProfile',

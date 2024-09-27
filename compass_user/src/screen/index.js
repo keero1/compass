@@ -10,9 +10,11 @@ export { default as Main} from './home/main';
 
 // drawer
 export { default as Drawer } from './drawer/Drawer';
-export { default as Wallet } from './drawer/Wallet';
+export { default as Wallet } from './drawer/wallet/Wallet';
 
 // drawer child
+
+export { default as QRCamera } from './drawer/wallet/QRCamera';
 
 export { default as Profile } from './drawer/profile/Profile';
 

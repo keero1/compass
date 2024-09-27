@@ -16,7 +16,7 @@ import AuthButton from '../../components/auth/AuthButton';
 
 import auth from '@react-native-firebase/auth';
 
-import firestore from '@react-native-firebase/firestore';
+import firestore, {serverTimestamp} from '@react-native-firebase/firestore';
 
 const Register = props => {
   const {navigation} = props;
@@ -100,8 +100,19 @@ const Register = props => {
 
       await firestore().collection('users').doc(user.uid).set({
         username: username,
-        coordinates: null,
+        timestamp: firestore.FieldValue.serverTimestamp(),
       });
+
+      await firestore()
+        .collection('users')
+        .doc(user.uid)
+        .collection('wallet')
+        .doc('wallet')
+        .set({
+          balance: 0,
+          currency: 'PHP',
+          last_updated: firestore.FieldValue.serverTimestamp(),
+        });
 
       await user.sendEmailVerification();
       auth().signOut();

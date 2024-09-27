@@ -2,7 +2,7 @@ import React from 'react';
 
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 
-import {Main, Drawer, Wallet, Profile, EditProfile} from '../screen';
+import {Main, Drawer, Wallet, Profile, EditProfile, QRCamera} from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/custom/CustomBack';
 
@@ -39,6 +39,18 @@ function HomeNavigator() {
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
           headerTransparent: true,
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.QRCAMERA}
+        component={QRCamera}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTransparent: true,
+          headerTitle: () => null,
         })}
       />
 
