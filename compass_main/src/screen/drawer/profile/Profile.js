@@ -21,9 +21,6 @@ import IMAGES from '../../../constants/images';
 
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import storage from '@react-native-firebase/storage';
-
-import {launchImageLibrary} from 'react-native-image-picker';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -111,24 +108,6 @@ const Profile = props => {
     }
   };
 
-  const handleImagePicker = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      maxWidth: 300,
-      maxHeight: 300,
-      quality: 0.7,
-    });
-
-    if (result.didCancel) {
-      console.log('Image selection canceled');
-    } else if (result.error) {
-      console.log('Error picking image: ', result.error);
-    } else {
-      // const image = result.assets[0];
-      // uploadProfilePicture(image.uri); // Upload the selected image
-    }
-  };
-
   const onLogoutPressed = () => {
     Alert.alert('Alert', 'Confirm Logout?', [
       {
@@ -157,13 +136,13 @@ const Profile = props => {
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.logoContainer}>
-        <TouchableOpacity onPress={handleImagePicker}>
+        <View>
           <Image
             source={IMAGES.logo}
             style={styles.logo}
             resizeMode="contain"
           />
-        </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>

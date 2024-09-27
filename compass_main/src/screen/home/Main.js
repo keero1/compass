@@ -5,8 +5,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
-  Animated,
-  TextInput,
+  Text,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -33,6 +32,10 @@ const Main = props => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
 
+  // Seat count
+  const maxSeatCount = 71;
+  const [seatCount, setSeatCount] = useState(0);
+
   const user = auth().currentUser.uid;
 
   useEffect(() => {
@@ -44,8 +47,8 @@ const Main = props => {
         setInitialRegion({
           latitude,
           longitude,
-          latitudeDelta: 0.010,
-          longitudeDelta: 0.010,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
         });
 
         // Send initial location to Firestore
@@ -56,6 +59,8 @@ const Main = props => {
       },
       {enableHighAccuracy: true, timeout: 20000},
     );
+
+    fetchSeatCount();
 
     // // Set interval to update location every 5 seconds
     // const intervalId = setInterval(() => {
@@ -86,7 +91,9 @@ const Main = props => {
       const docSnapshot = await busDocRef.get();
       if (!docSnapshot.exists) {
         // get the route id
-        const busInfo = (await firestore().collection('buses').doc(user).get()).data();
+        const busInfo = (
+          await firestore().collection('buses').doc(user).get()
+        ).data();
         await busDocRef.set({
           coordinates: new firestore.GeoPoint(latitude, longitude),
           timestamp: firestore.FieldValue.serverTimestamp(),
@@ -104,6 +111,34 @@ const Main = props => {
     }
   };
 
+  // seat count
+  const fetchSeatCount = async () => {
+    try {
+      const busDoc = await firestore().collection('buses').doc(user).get();
+      const busData = busDoc.data();
+      setSeatCount(busData.seat_count || 0);
+    } catch (error) {
+      console.error('Error fetching seat count:', error);
+    }
+  };
+
+  const updateSeatCount = async newCount => {
+    try {
+      const busDocRef = firestore().collection('buses').doc(user);
+      await busDocRef.update({
+        seat_count: newCount,
+      });
+      setSeatCount(newCount);
+    } catch (error) {
+      console.error('Error updating seat count:', error);
+    }
+  };
+
+  const setSeatCountToPercentage = percentage => {
+    const newSeatCount = Math.ceil((percentage / 100) * maxSeatCount);
+    updateSeatCount(newSeatCount);
+  };
+
   // hamburger menu
   const onMenuPressed = () => {
     navigation.navigate(ROUTES.DRAWER);
@@ -118,8 +153,8 @@ const Main = props => {
       mapRef.current.animateToRegion({
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        latitudeDelta: 0.010,
-        longitudeDelta: 0.010,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
       });
     }
   };
@@ -168,6 +203,34 @@ const Main = props => {
         <TouchableOpacity onPress={onPayPressed} style={styles.payButton}>
           <Icon name="payment" size={30} color="black" />
         </TouchableOpacity>
+
+        {/* Seat Count Modifier */}
+        <View style={styles.seatCounterContainer}>
+          <Text style={styles.seatCountLabel}>Seat Count: {seatCount}</Text>
+          <View style={styles.percentageButtonsContainer}>
+            {/* Buttons for 25%, 50%, 75%, and 100% */}
+            <TouchableOpacity
+              style={styles.percentageButton}
+              onPress={() => setSeatCountToPercentage(25)}>
+              <Text style={styles.percentageText}>25%</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.percentageButton}
+              onPress={() => setSeatCountToPercentage(50)}>
+              <Text style={styles.percentageText}>50%</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.percentageButton}
+              onPress={() => setSeatCountToPercentage(75)}>
+              <Text style={styles.percentageText}>75%</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.percentageButton}
+              onPress={() => setSeatCountToPercentage(100)}>
+              <Text style={styles.percentageText}>100%</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -232,5 +295,37 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
+  },
+  seatCounterContainer: {
+    position: 'absolute',
+    top: 0, // Adjust this to place between center and pay
+    right: 0, // Align to the right
+    backgroundColor: '#e4e9f6',
+    padding: 10,
+    borderRadius: 10,
+  },
+
+  seatCountLabel: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  percentageButtonsContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  percentageButton: {
+    backgroundColor: '#e4e9f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: screenWidth * 0.2,
+    height: screenHeight * 0.05,
+    borderRadius: 5,
+    marginVertical: 5,
+  },
+  percentageText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

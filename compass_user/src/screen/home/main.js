@@ -135,6 +135,7 @@ const Main = props => {
               license_plate: busData.license_plate,
               route_id: data.route_id,
               timestamp: data.timestamp,
+              seat_count: busData.seat_count,
             },
           };
         });
@@ -163,15 +164,12 @@ const Main = props => {
     //     const diffInSeconds = (currentTime - lastSeen) / 1000;
     //     return diffInSeconds <= 300; // Consider buses offline after 5 minutes
     //   });
-
     //   if (updatedBusMarkers.length !== busMarkers.length) {
     //     console.log('remove bus');
     //     setBusMarkers(updatedBusMarkers); // Remove offline buses from state
     //   }
     // };
-
     // const intervalId = setInterval(checkBusOfflineStatus, 60000); // Run every minute
-
     // return () => clearInterval(intervalId); // Clean up on unmount
   }, [busMarkers]);
 
@@ -520,9 +518,7 @@ const Main = props => {
                 <Text>
                   Last Update: {bus.details.timestamp.toDate().toLocaleString()}
                 </Text>
-                <Text>
-                  Bus Seat Slots: 0
-                </Text>
+                <Text>Seat Slots: {bus.details.seat_count}</Text>
               </Callout>
             </Marker>
           ))}

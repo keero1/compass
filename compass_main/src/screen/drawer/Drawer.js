@@ -98,9 +98,9 @@ const Drawer = props => {
         {/* <TouchableOpacity>
           <Text style={styles.menuItem}>Settings</Text>
         </TouchableOpacity> */}
-        <TouchableOpacity onPress={onShutdownPressed}>
+        {/* <TouchableOpacity onPress={onShutdownPressed}>
           <Text style={styles.menuItem}>Shutdown</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );
