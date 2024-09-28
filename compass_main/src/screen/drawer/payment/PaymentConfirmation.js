@@ -90,7 +90,7 @@ const PaymentConfirmation = ({route}) => {
     return Math.floor(Math.random() * 1000000000);
   };
 
-  const createTransaction = async data => {
+  const createTransaction = async (data, isCashless = false) => {
     setLoadingVisible(true); // Show loading modal
 
     const referenceNumber = data
@@ -109,7 +109,7 @@ const PaymentConfirmation = ({route}) => {
       destination: place,
       passenger_type: passengerType,
       passenger_id: data ? data.passenger_id : null,
-      payment_type: data ? 'Cashless' : 'Cash',
+      payment_type: isCashless ? 'Cashless' : 'Cash',
       reference_number: referenceNumber,
       fare_amount: fareAmount.toFixed(2),
       distance: travelDistance,
@@ -121,8 +121,23 @@ const PaymentConfirmation = ({route}) => {
     try {
       await firestore().collection('transactions').add(receipt);
       console.log('Transaction synced to Firestore');
+      console.log(busData.company_id);
+      if (isCashless) {
+        await firestore()
+          .collection('company')
+          .doc(busData.company_id)
+          .collection('wallet')
+          .doc('wallet')
+          .update({
+            balance: firestore.FieldValue.increment(+fareAmount),
+            last_updated: firestore.FieldValue.serverTimestamp(),
+          });
+        console.log('company wallet updated successfully in sub-collection');
+      } else {
+        console.error('company wallet not found in sub-collection!');
+      }
     } catch (error) {
-      console.error('Error syncing transaction:', error);
+      console.error('Error syncing transaction and company wallet:', error);
     } finally {
       setLoadingVisible(false); // Hide loading modal
       if (Platform.OS == 'android') {
@@ -189,7 +204,7 @@ const PaymentConfirmation = ({route}) => {
               data.reference_number !== null
             ) {
               ToastAndroid.show('Processing payment...', ToastAndroid.SHORT);
-              createTransaction(data);
+              createTransaction(data, true);
               setModalVisible(false); // Close the modal after processing
             }
           }
