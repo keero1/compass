@@ -77,7 +77,7 @@ const Main = props => {
         },
         {enableHighAccuracy: true},
       );
-    }, 10000); // 10000 milliseconds = 10 seconds
+    }, 15000); // 15000 milliseconds = 15 seconds
 
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
