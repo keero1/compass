@@ -63,8 +63,8 @@ const Drawer = props => {
   };
 
   const onTransactionPressed = () => {
-    console.log("erwqeqw");
-  }
+    navigation.navigate(ROUTES.TRANSACTIONS);
+  };
 
   return (
     <SafeAreaView style={styles.main}>

@@ -1,15 +1,18 @@
 export default {
-    LOGIN: 'Login',
+  LOGIN: 'Login',
 
-    FORGOT: 'Forgot',
+  FORGOT: 'Forgot',
 
-    MAIN: 'Main',
+  MAIN: 'Main',
 
-    DRAWER: 'Drawer',
+  DRAWER: 'Drawer',
 
-    PROFILE: 'Profile',
+  PROFILE: 'Profile',
 
-    PAYMENT: 'Payment',
+  PAYMENT: 'Payment',
 
-    PAYMENTCONFIRMATION: 'PaymentConfirmation',
-}
+  PAYMENTCONFIRMATION: 'PaymentConfirmation',
+  
+  TRANSACTIONS: 'Transactions',
+
+};

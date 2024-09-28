@@ -62,25 +62,25 @@ const Main = props => {
 
     fetchSeatCount();
 
-    // // Set interval to update location every 5 seconds
-    // const intervalId = setInterval(() => {
-    //   Geolocation.getCurrentPosition(
-    //     position => {
-    //       const {latitude, longitude} = position.coords;
-    //       setCurrentLocation({latitude, longitude});
+    // Set interval to update location every 10 seconds
+    const intervalId = setInterval(() => {
+      Geolocation.getCurrentPosition(
+        position => {
+          const {latitude, longitude} = position.coords;
+          setCurrentLocation({latitude, longitude});
 
-    //       // Send updated location to Firestore
-    //       updateBusLocation(latitude, longitude);
-    //     },
-    //     error => {
-    //       console.error(error);
-    //     },
-    //     {enableHighAccuracy: true},
-    //   );
-    // }, 10000); // 10000 milliseconds = 10 seconds
+          // Send updated location to Firestore
+          updateBusLocation(latitude, longitude);
+        },
+        error => {
+          console.error(error);
+        },
+        {enableHighAccuracy: true},
+      );
+    }, 10000); // 10000 milliseconds = 10 seconds
 
-    // // Cleanup interval on unmount
-    // return () => clearInterval(intervalId);
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
   }, []); // Empty dependency array to run only on mount
 
   // Function to update bus location in Firestore
@@ -206,9 +206,14 @@ const Main = props => {
 
         {/* Seat Count Modifier */}
         <View style={styles.seatCounterContainer}>
-          <Text style={styles.seatCountLabel}>Seat Count: {seatCount}</Text>
+          <Text style={styles.seatCountLabel}>Seat: {seatCount}</Text>
           <View style={styles.percentageButtonsContainer}>
             {/* Buttons for 25%, 50%, 75%, and 100% */}
+            <TouchableOpacity
+              style={styles.percentageButton}
+              onPress={() => setSeatCountToPercentage(0)}>
+              <Text style={styles.percentageText}>0%</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.percentageButton}
               onPress={() => setSeatCountToPercentage(25)}>
@@ -301,8 +306,8 @@ const styles = StyleSheet.create({
     top: 0, // Adjust this to place between center and pay
     right: 0, // Align to the right
     backgroundColor: '#e4e9f6',
-    padding: 10,
     borderRadius: 10,
+    paddingTop: 10,
   },
 
   seatCountLabel: {

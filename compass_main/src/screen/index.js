@@ -17,3 +17,5 @@ export {default as Profile} from './drawer/profile/Profile';
 // child of payment
 export {default as Payment} from './drawer/payment/Payment';
 export {default as PaymentConfirmation} from './drawer/payment/PaymentConfirmation';
+
+export {default as Transactions} from './drawer/transaction/Transactions';
