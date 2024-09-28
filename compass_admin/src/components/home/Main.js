@@ -90,12 +90,13 @@ const Main = () => {
             details: busDetails, // Include the bus details
           };
         })
-      ).then((markers) =>
-        markers.filter((marker) => {
-          const timestampDiff = (now - marker.timestamp) / 1000 / 60; // Difference in minutes
-          return timestampDiff > 5; // Keep markers with timestamp <= 5 minutes old
-        })
-      );
+      )
+      // .then((markers) =>
+      //   markers.filter((marker) => {
+      //     const timestampDiff = (now - marker.timestamp) / 1000 / 60; // Difference in minutes
+      //     return timestampDiff <= 5; // Keep markers with timestamp <= 5 minutes old
+      //   })
+      // );
 
       markersDataRef.current = newMarkers;
       setMarkers(newMarkers);
@@ -105,21 +106,21 @@ const Main = () => {
   }, []);
 
   // interval to refresh buses (incase offline)
-  useEffect(() => {
-    console.log("effect triggered (interval check)");
+  // useEffect(() => {
+  //   console.log("effect triggered (interval check)");
 
-    const intervalId = setInterval(() => {
-      console.log("interval triggered");
-      const now = new Date();
-      const updatedMarkers = markersDataRef.current.filter((marker) => {
-        const timestampDiff = (now - marker.timestamp) / 1000 / 60; // Difference in minutes
-        return timestampDiff > 5; // Keep markers with timestamp <= 5 minutes old
-      });
-      setMarkers(updatedMarkers);
-    }, 60000); // 60,000 ms = 1 minute
+  //   const intervalId = setInterval(() => {
+  //     console.log("interval triggered");
+  //     const now = new Date();
+  //     const updatedMarkers = markersDataRef.current.filter((marker) => {
+  //       const timestampDiff = (now - marker.timestamp) / 1000 / 60; // Difference in minutes
+  //       return timestampDiff > 5; // Keep markers with timestamp <= 5 minutes old
+  //     });
+  //     setMarkers(updatedMarkers);
+  //   }, 60000); // 60,000 ms = 1 minute
 
-    return () => clearInterval(intervalId); // Clear interval on component unmount
-  }, []);
+  //   return () => clearInterval(intervalId); // Clear interval on component unmount
+  // }, []);
 
   //route
   const fetchRouteData = async () => {
