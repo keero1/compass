@@ -136,7 +136,7 @@ const ManageDriver = () => {
                   <tr key={bus.id} className="hover">
                     <td className="text-lg">{bus.bus_driver_name}</td>
                     <td className="text-lg">{bus.license_plate}</td>
-                    <td className="text-lg">{"0" + bus.phone_number}</td>
+                    <td className="text-lg">{"(+63) " + bus.phone_number}</td>
                     <td className="text-lg">{getRouteName(bus.route_id)}</td>
                     <td>
                       <Link
