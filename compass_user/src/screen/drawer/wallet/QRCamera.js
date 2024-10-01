@@ -207,7 +207,7 @@ const QRCamera = ({navigation}) => {
             Scan the QR Code from Bus App
           </Text>
         </View>
-        <View
+        {/* <View
           style={[
             styles.scanArea,
             {
@@ -217,7 +217,7 @@ const QRCamera = ({navigation}) => {
               top: cornerOffsetY,
             },
           ]}
-        />
+        /> */}
         <View style={styles.svgContainer}>
           <Svg height="100%" width="100%">
             <Defs>
@@ -234,12 +234,14 @@ const QRCamera = ({navigation}) => {
               </Mask>
             </Defs>
 
-            <Rect
+            {/* BLACK */}
+
+            {/* <Rect
               height="100%"
               width="100%"
               fill="rgba(0, 0, 0, 0.8)"
               mask="url(#mask)"
-            />
+            /> */}
 
             {/* Top-left corner lines */}
             <Line
@@ -401,7 +403,7 @@ const styles = StyleSheet.create({
   button: {
     position: 'absolute',
     bottom: 50,
-    backgroundColor: '#007BFF',
+    backgroundColor: '#176B87',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -441,7 +443,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   modalButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#176B87',
     padding: 10,
     borderRadius: 5,
     width: '40%',
