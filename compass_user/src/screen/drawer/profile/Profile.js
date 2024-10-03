@@ -130,7 +130,7 @@ const Profile = props => {
             </View>
           </View>
 
-          <View style={styles.sectionBox}>
+          {/* <View style={styles.sectionBox}>
             <Text style={styles.sectionTitle}>Advanced</Text>
 
             <View style={styles.detailBox}>
@@ -138,7 +138,7 @@ const Profile = props => {
                 <Text style={styles.deleteAccounText}>Delete Account</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </View> */}
         </View>
       </View>
     </SafeAreaView>

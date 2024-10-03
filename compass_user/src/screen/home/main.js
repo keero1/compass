@@ -10,14 +10,19 @@ import {
   FlatList,
   Text,
   BackHandler,
-  Platform,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
+import {Svg, Image as ImageSvg} from 'react-native-svg';
+
 // ROUTES
 
 import ROUTES from '../../constants/routes';
+
+import IMAGES from '../../constants/images';
+
+import notifee, {AndroidImportance} from '@notifee/react-native';
 
 // MAP
 import MapView, {
@@ -33,6 +38,8 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 import {getRoute} from '../../components/utils/RoutesUtils';
+import HeaderComponent from './HeaderComponent';
+import FooterComponent from './FooterComponent';
 
 const Main = props => {
   const {navigation} = props;
@@ -41,7 +48,6 @@ const Main = props => {
   // user current location
   const [initialRegion, setInitialRegion] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [mapRegion, setMapRegion] = useState(null);
 
   // search
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,10 +60,12 @@ const Main = props => {
   // bus location
   const [busMarkers, setBusMarkers] = useState([]);
 
-  // search boc
+  // search box
 
   const [searchVisible, setSearchVisible] = useState(false);
   const searchBoxHeight = useRef(new Animated.Value(0)).current;
+
+  // default location
 
   useEffect(() => {
     // Fetch all routes when component mounts
@@ -91,6 +99,8 @@ const Main = props => {
       {enableHighAccuracy: true, timeout: 20000},
     );
   }, []); // Empty dependency array to run only on mount
+
+  // get bus location
 
   useEffect(() => {
     console.log('Effect triggered');
@@ -153,25 +163,66 @@ const Main = props => {
     };
   }, []);
 
-  // remove offline bus
+  // notification
+
+  async function onDisplayNotification() {
+    // Request permissions (required for iOS)
+    await notifee.requestPermission();
+
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'default',
+      name: 'Default Channel',
+    });
+
+    // Display a notification
+    await notifee.displayNotification({
+      title: 'Bus Nearby!',
+      body: 'A Bus is within 1 KM of your marker location. please be ready',
+      android: {
+        channelId,
+        smallIcon: 'ic_launcher', // optional, defaults to 'ic_launcher'.
+        // pressAction is needed if you want the notification to open the app when pressed
+        pressAction: {
+          id: 'default',
+        },
+        importance: AndroidImportance.HIGH,
+        fullScreenAction: {
+          id: 'default',
+        },
+      },
+    });
+  }
+
+  // Check bus location in relation to the marker
   useEffect(() => {
-    // Interval to check if buses are offline
-    // const checkBusOfflineStatus = () => {
-    //   console.log('offline bus check');
-    //   const currentTime = new Date();
-    //   const updatedBusMarkers = busMarkers.filter(bus => {
-    //     const lastSeen = new Date(bus.details.timestamp.toDate());
-    //     const diffInSeconds = (currentTime - lastSeen) / 1000;
-    //     return diffInSeconds <= 300; // Consider buses offline after 5 minutes
-    //   });
-    //   if (updatedBusMarkers.length !== busMarkers.length) {
-    //     console.log('remove bus');
-    //     setBusMarkers(updatedBusMarkers); // Remove offline buses from state
-    //   }
-    // };
-    // const intervalId = setInterval(checkBusOfflineStatus, 60000); // Run every minute
-    // return () => clearInterval(intervalId); // Clean up on unmount
-  }, [busMarkers]);
+    const checkBusProximity = async () => {
+      if (!marker || busMarkers.length === 0) {
+        return; // No marker or buses
+      }
+
+      busMarkers.forEach(async bus => {
+        const distance = calculateDistance(bus.coordinate, marker);
+
+        // Check if the bus is within the 1 km radius of the marker
+        if (distance <= 1000) {
+          // Trigger push notification
+          onDisplayNotification();
+
+          // Remove the marker after triggering the notification
+          const userID = auth().currentUser.uid;
+          try {
+            await firestore().collection('markers').doc(userID).delete();
+            setMarker(null); // Update local state to remove the marker
+          } catch (error) {
+            console.error('Error removing marker from Firestore: ', error);
+          }
+        }
+      });
+    };
+
+    checkBusProximity();
+  }, [busMarkers, marker]);
 
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -187,32 +238,51 @@ const Main = props => {
   useEffect(() => {
     const handleBackPress = () => {
       if (searchVisible) {
-        hideSearchBox(); // Close the search box
-        return true; // Prevent default back action (closing the app)
+        hideSearchBox();
+        return true;
       }
       return false;
     };
 
     BackHandler.addEventListener('hardwareBackPress', handleBackPress);
 
-    // Cleanup the event listener on unmount
     return () => {
       BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
     };
   }, [searchVisible]);
 
-  // hamburger menu
-  const onMenuPressed = () => {
-    navigation.navigate(ROUTES.DRAWER);
+  useEffect(() => {
+    let watchId;
 
-    console.log('DRAWER');
-  };
+    // Start watching user's location
+    const startWatchingLocation = () => {
+      watchId = Geolocation.watchPosition(
+        position => {
+          const {latitude, longitude} = position.coords;
+          setCurrentLocation({latitude, longitude});
+        },
+        error => {
+          console.error(error);
+        },
+        {
+          enableHighAccuracy: true,
+          distanceFilter: 10, // Update the location only if the user moves by 10 meters or more
+        },
+      );
+    };
 
-  /* SEARCH START */
+    startWatchingLocation();
 
-  const onSearchPressed = () => {
-    console.log('SEARCH');
+    return () => {
+      if (watchId) {
+        Geolocation.clearWatch(watchId);
+      }
+    };
+  }, []);
 
+  // SEARCH
+
+  const showSearchBox = () => {
     setSearchVisible(true);
     Animated.timing(searchBoxHeight, {
       toValue: screenHeight * 0.95,
@@ -221,7 +291,6 @@ const Main = props => {
     }).start();
   };
 
-  // hide search box
   const hideSearchBox = () => {
     setSearchQuery('');
     Animated.timing(searchBoxHeight, {
@@ -274,34 +343,7 @@ const Main = props => {
     }
   };
 
-  /* SEARCH END */
-
-  // reset camera to north
-  const resetRotation = () => {
-    console.log('Rotation Reset');
-    if (mapRef.current) {
-      mapRef.current.animateCamera({heading: 0});
-    }
-  };
-
-  // handle centering to user
-  const centerToUser = () => {
-    console.log('Reset Camera to User');
-    if (currentLocation && mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude,
-        latitudeDelta: 0.001,
-        longitudeDelta: 0.001,
-      });
-    }
-  };
-
-  // save the current region
-  const onRegionChangeComplete = region => {
-    setMapRegion(region);
-  };
-
+  // SEARCH END
   const onMapPress = event => {
     if (routeCoordinates.length > 0) {
       setRouteCoordinates([]);
@@ -321,7 +363,7 @@ const Main = props => {
     const {coordinate} = event.nativeEvent;
     const distance = calculateDistance(currentLocation, coordinate);
 
-    if (distance <= 100) {
+    if (distance <= 1000) {
       Alert.alert(
         'Place Marker',
         'Do you want to place a marker here?',
@@ -361,7 +403,7 @@ const Main = props => {
     } else {
       Alert.alert(
         'Out of Range',
-        'Marker can only be placed within 100 meters from your current location.',
+        'Marker can only be placed within 1000 meters from your current location.',
       );
     }
   };
@@ -458,26 +500,13 @@ const Main = props => {
     return distance;
   };
 
-  const onPayPressed = () => {
-    navigation.navigate(ROUTES.WALLET);
-
-    console.log('wallet');
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onMenuPressed}>
-          <View style={styles.hamburgerMenu}>
-            <Icon name="menu" size={30} color="black" />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onSearchPressed}>
-          <View style={styles.searchButton}>
-            <Icon name="search" size={30} color="black" />
-          </View>
-        </TouchableOpacity>
-      </View>
+      <HeaderComponent
+        navigation={navigation}
+        ROUTES={ROUTES}
+        onSearchPressed={showSearchBox}
+      />
       {/* 14.823320026254835, 121.05946449733479 */}
       <View style={styles.mapContainer}>
         <MapView
@@ -489,7 +518,6 @@ const Main = props => {
           initialRegion={initialRegion}
           maxZoomLevel={20}
           minZoomLevel={12}
-          onRegionChangeComplete={onRegionChangeComplete}
           pitchEnabled={false}
           showsCompass={false}
           toolbarEnabled={false}
@@ -512,8 +540,16 @@ const Main = props => {
               onPress={() => onBusMarkerPressed(bus.details.route_id)}
               pinColor="blue" // Example, you can use custom images
             >
-              <Callout>
-                <Text>Name: {bus.details.name}</Text>
+              <Callout style={{alignItems: 'center'}}>
+                <Svg width={100} height={100} style={{margin: 10}}>
+                  <ImageSvg
+                    width={'100%'}
+                    height={'100%'}
+                    preserveAspectRatio="xMidYMid slice"
+                    href={IMAGES.logo}
+                  />
+                </Svg>
+                <Text>Driver Name: {bus.details.name}</Text>
                 <Text>License Plate: {bus.details.license_plate}</Text>
                 <Text>
                   Last Update: {bus.details.timestamp.toDate().toLocaleString()}
@@ -532,17 +568,12 @@ const Main = props => {
             />
           )}
         </MapView>
-        {/* compass button */}
-        <TouchableOpacity onPress={resetRotation} style={styles.compassButton}>
-          <Icon name="navigation" size={30} color="black" />
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={centerToUser} style={styles.centerButton}>
-          <Icon name="my-location" size={30} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onPayPressed} style={styles.payButton}>
-          <Icon name="payment" size={30} color="black" />
-        </TouchableOpacity>
+        <FooterComponent
+          mapRef={mapRef}
+          currentLocation={currentLocation}
+          navigation={navigation}
+          ROUTES={ROUTES}
+        />
       </View>
 
       {searchVisible && (
@@ -577,7 +608,6 @@ const Main = props => {
 
 export default Main;
 
-const screenWidth = Dimensions.get('window').width;
 const screenHeight = Dimensions.get('window').height;
 
 const styles = StyleSheet.create({
@@ -585,72 +615,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F4FB',
   },
-  header: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    right: 20,
-    zIndex: 999,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  //Callout
+  imageWrapperAndroid: {
+    height: 200,
+    flex: 1,
+    marginTop: -85,
+    width: 330,
+    alignContent: 'center',
     alignItems: 'center',
   },
-  hamburgerMenu: {
-    backgroundColor: '#e4e9f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: screenWidth * 0.112,
-    height: screenHeight * 0.061,
-    borderRadius: 10,
-    marginRight: 10,
+  imageAndroid: {
+    height: 100,
+    width: 180,
   },
-  searchButton: {
-    backgroundColor: '#e4e9f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: screenWidth * 0.112,
-    height: screenHeight * 0.061,
-    borderRadius: 10,
-    marginLeft: 10,
-  },
+
   mapContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
     alignItems: 'flex-start',
-  },
-  compassButton: {
-    backgroundColor: '#e4e9f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    position: 'absolute',
-    top: '20%', // 20% higher from the center
-    right: 10, // Right side of the screen
-  },
-
-  centerButton: {
-    backgroundColor: '#e4e9f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-  },
-  payButton: {
-    backgroundColor: '#e4e9f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    position: 'absolute',
-    bottom: 20,
-    right: 10,
   },
 
   map: {
