@@ -569,13 +569,12 @@ const Main = props => {
           )}
 
           {/* Bus markers */}
-          {busMarkers.map(bus => (
+          {busMarkers.map((bus, index) => (
             <Marker
-              key={bus.id}
+              key={`${bus.id}-${index}`} // Add index for extra uniqueness
               coordinate={bus.coordinate}
               onPress={() => onBusMarkerPressed(bus.details.route_id)}
-              pinColor="blue" // Example, you can use custom images
-            >
+              pinColor="blue">
               <Callout style={{alignItems: 'center'}}>
                 <Svg width={100} height={100} style={{margin: 10}}>
                   <ImageSvg
@@ -626,7 +625,7 @@ const Main = props => {
           {routes.length > 0 && (
             <FlatList
               data={filteredRoutes}
-              keyExtractor={item => item.id}
+              keyExtractor={(item, index) => `${item.id}-${index}`} // Use index if id might not be unique
               renderItem={({item}) => (
                 <TouchableOpacity
                   style={styles.routeItemContainer}

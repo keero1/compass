@@ -17,11 +17,11 @@ const HeaderComponent = ({navigation, ROUTES, onSearchPressed}) => {
           <Icon name="menu" size={30} color="black" />
         </View>
       </TouchableOpacity>
-      <TouchableOpacity onPress={onSearchPressed}>
+      {/* <TouchableOpacity onPress={onSearchPressed}>
         <View style={styles.searchButton}>
           <Icon name="search" size={30} color="black" />
         </View>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 };
