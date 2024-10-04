@@ -102,6 +102,7 @@ const Main = props => {
 
   // get bus location
 
+  // Optimized bus marker fetching and updating logic
   useEffect(() => {
     console.log('Effect triggered');
     const fiveMinutesAgo = new Date();
@@ -110,10 +111,16 @@ const Main = props => {
     const unsubscribe = firestore()
       .collection('busLocation')
       .where('timestamp', '<=', fiveMinutesAgo)
-      .onSnapshot(async querySnapshot => {
-        console.log('Snapshot fired');
+      .onSnapshot(async snapshot => {
+        let addedMarkers = [];
+        let modifiedMarkers = [];
+        let removedMarkers = [];
 
-        const busPromises = querySnapshot.docs.map(async doc => {
+        console.log('snapshot triggered');
+
+        const changes = snapshot.docChanges();
+        const busPromises = changes.map(async change => {
+          const doc = change.doc;
           console.log('Processing document:', doc.id);
           const data = doc.data();
 
@@ -134,7 +141,7 @@ const Main = props => {
             return null; // Skip this document
           }
 
-          return {
+          const busInfo = {
             id: doc.id,
             coordinate: {
               latitude: data.coordinates.latitude,
@@ -148,14 +155,43 @@ const Main = props => {
               seat_count: busData.seat_count,
             },
           };
+
+          switch (change.type) {
+            case 'added':
+              addedMarkers.push(busInfo);
+              break;
+            case 'modified':
+              modifiedMarkers.push(busInfo);
+              break;
+            case 'removed':
+              removedMarkers.push(busInfo);
+              break;
+          }
         });
 
-        const busesData = await Promise.all(busPromises);
+        // Await for all promises to resolve before processing
+        await Promise.all(busPromises);
 
-        // Filter out null results
-        const validBusesData = busesData.filter(bus => bus !== null);
+        // Handle added buses
+        setBusMarkers(prevMarkers => [
+          ...prevMarkers,
+          ...addedMarkers.filter(bus => bus !== null),
+        ]);
 
-        setBusMarkers(validBusesData);
+        // Handle modified buses
+        setBusMarkers(prevMarkers =>
+          prevMarkers.map(
+            bus =>
+              modifiedMarkers.find(modified => modified.id === bus.id) || bus,
+          ),
+        );
+
+        // Handle removed buses
+        setBusMarkers(prevMarkers =>
+          prevMarkers.filter(
+            bus => !removedMarkers.find(removed => removed.id === bus.id),
+          ),
+        );
       });
 
     return () => {
@@ -171,8 +207,9 @@ const Main = props => {
 
     // Create a channel (required for Android)
     const channelId = await notifee.createChannel({
-      id: 'default',
-      name: 'Default Channel',
+      id: 'important',
+      name: 'Important Notifications',
+      importance: AndroidImportance.HIGH,
     });
 
     // Display a notification
@@ -181,12 +218,11 @@ const Main = props => {
       body: 'A Bus is within 1 KM of your marker location. please be ready',
       android: {
         channelId,
-        smallIcon: 'ic_launcher', // optional, defaults to 'ic_launcher'.
-        // pressAction is needed if you want the notification to open the app when pressed
+        importance: AndroidImportance.HIGH,
+        smallIcon: 'ic_launcher',
         pressAction: {
           id: 'default',
         },
-        importance: AndroidImportance.HIGH,
         fullScreenAction: {
           id: 'default',
         },
