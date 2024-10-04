@@ -69,33 +69,32 @@ export default function App() {
     }
   }
 
-  async function checkPowerManagerSettings() {
-    const powerManagerInfo = await notifee.getPowerManagerInfo();
+  // async function checkPowerManagerSettings() {
+  //   const powerManagerInfo = await notifee.getPowerManagerInfo();
 
-    if (powerManagerInfo.activity) {
-      Alert.alert(
-        'Restrictions Detected',
-        'To ensure notifications are delivered, please adjust your settings to prevent the app from being killed.',
-        [
-          {
-            text: 'OK, open settings',
-            onPress: async () => await notifee.openPowerManagerSettings(),
-          },
-          {
-            text: 'Cancel',
-            onPress: () => console.log('Cancel Pressed'),
-            style: 'cancel',
-          },
-        ],
-        {cancelable: false},
-      );
-    }
-  }
+  //   if (powerManagerInfo.activity) {
+  //     Alert.alert(
+  //       'Restrictions Detected',
+  //       'To ensure notifications are delivered, please adjust your settings to prevent the app from being killed.',
+  //       [
+  //         {
+  //           text: 'OK, open settings',
+  //           onPress: async () => await notifee.openPowerManagerSettings(),
+  //         },
+  //         {
+  //           text: 'Cancel',
+  //           onPress: () => console.log('Cancel Pressed'),
+  //           style: 'cancel',
+  //         },
+  //       ],
+  //       {cancelable: false},
+  //     );
+  //   }
+  // }
 
   useEffect(() => {
     requestLocationPermission();
     requestNotificationPermission();
-    checkPowerManagerSettings();
   }, []);
 
   async function bootstrap() {
