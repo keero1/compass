@@ -10,7 +10,7 @@ import { db } from "../../../firebase/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
 // image
-import backgroundImage from "../../../assets/images/bg-cover.png";
+import backgroundImage from "../../../assets/images/bg_cover.png";
 
 // icons
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import icons
