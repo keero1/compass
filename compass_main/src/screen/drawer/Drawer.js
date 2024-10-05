@@ -73,7 +73,7 @@ const Drawer = props => {
           <View style={styles.profileContent}>
             <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.textContainer}>
-              <Text style={styles.text}>{userDisplayName || ''}</Text>
+              <Text style={styles.text}>{userDisplayName || 'ComPass Driver'}</Text>
               {/* Profile */}
               <TouchableOpacity
                 style={styles.viewProfileButton}

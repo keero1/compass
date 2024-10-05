@@ -4,13 +4,16 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
+  SafeAreaView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 
 import {useFocusEffect} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+
+import {ROUTES} from '../../../constants';
 
 const Transactions = props => {
   const {navigation} = props;
@@ -37,6 +40,9 @@ const Transactions = props => {
           destination: data.destination,
           fare_amount: data.fare_amount,
           timestamp: data.timestamp.toDate(), // Convert Firestore timestamp to JavaScript Date
+          reference_number: data.reference_number,
+          passenger_type: data.passenger_type,
+          payment_type: data.payment_type,
         };
       });
 
@@ -54,6 +60,23 @@ const Transactions = props => {
     }, []),
   );
 
+  const groupByDate = transactions => {
+    return transactions.reduce((groups, transaction) => {
+      const date = transaction.timestamp?.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(transaction);
+      return groups;
+    }, {});
+  };
+
+  const groupedTransactions = groupByDate(transactions);
+
   // Format fare amount as currency
   const formatNumber = number => {
     return new Intl.NumberFormat('en-US', {
@@ -62,151 +85,131 @@ const Transactions = props => {
     }).format(number);
   };
 
-  const formatDate = date => {
-    if (!date || !(date instanceof Date)) return 'Unknown date'; // Fallback if date is undefined or invalid
-    const options = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    };
-    return date.toLocaleDateString('en-US', options);
+  const handleTransactionPress = transaction => {
+    navigation.navigate(ROUTES.TRANSACTIONDETAILS, {
+      fare_amount: transaction.fare_amount,
+      timestamp: transaction.timestamp.toISOString(), // Convert to ISO string
+      reference_number: transaction.reference_number,
+      payment_type: transaction.payment_type,
+      passenger_type: transaction.passenger_type,
+    });
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.transactionHistoryBox}>
-        <View style={styles.historyHeader}>
-          <Text style={styles.historyTitle}>Transaction History</Text>
-          <View style={styles.filterButtons}>
-            <TouchableOpacity style={styles.filterButton}>
-              <Text style={styles.filterButtonText}>Day</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterButton}>
-              <Text style={styles.filterButtonText}>Month</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0000ff" />
-          </View>
-        ) : transactions.length > 0 ? (
-          <ScrollView style={styles.historyList}>
-            {transactions.map(transaction => (
-              <View key={transaction.id} style={styles.transactionItem}>
-                {/* First Row: origin - destination and fare_amount */}
-                <View style={styles.transactionRow}>
-                  <Text style={styles.transactionText}>
-                    {transaction.origin} - {transaction.destination}
-                  </Text>
-                  <Text style={styles.transactionAmount}>
-                    {formatNumber(transaction.fare_amount)}
+    <SafeAreaView style={styles.main}>
+      {!loading ? (
+        <ScrollView style={styles.detailsContainer}>
+          {Object.entries(groupedTransactions).length > 0 ? (
+            Object.entries(groupedTransactions).map(([date, transactions]) => (
+              <View key={date} style={styles.sectionBox}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>{date}</Text>
+                  <Text style={styles.transactionCount}>
+                    {transactions.length}{' '}
+                    {transactions.length === 1 ? 'Transaction' : 'Transactions'}
                   </Text>
                 </View>
-
-                {/* Second Row: Timestamp */}
-                <Text style={styles.timestampText}>
-                  {formatDate(transaction.timestamp)}
-                </Text>
+                {transactions.map(transaction => (
+                  <TouchableOpacity
+                    key={transaction.id}
+                    style={styles.detailBox}
+                    onPress={() => handleTransactionPress(transaction)}>
+                    <View style={styles.detailItem}>
+                      <Text
+                        style={
+                          styles.detailTitle
+                        }>{`${transaction.origin} - ${transaction.destination}`}</Text>
+                      <Text style={styles.detailText}>
+                        {formatNumber(transaction.fare_amount)} {' >'}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailTitle}>
+                        {transaction.passenger_type} :{' '}
+                        {transaction.payment_type}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
               </View>
-            ))}
-          </ScrollView>
-        ) : (
-          <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>No transactions found.</Text>
-          </View>
-        )}
-      </View>
-    </View>
+            ))
+          ) : (
+            <View style={styles.noTransactionsContainer}>
+              <Text style={styles.noTransactionsText}>No Transactions</Text>
+            </View>
+          )}
+        </ScrollView>
+      ) : (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" />
+        </View>
+      )}
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  main: {
     flex: 1,
-    backgroundColor: '#f4f4f4',
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-    marginTop: 30,
+    backgroundColor: '#F4F4FB',
   },
-  transactionHistoryBox: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    padding: 20,
-    flex: 1,
+
+  detailsContainer: {
+    width: '100%',
   },
-  historyHeader: {
+
+  sectionBox: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Align title and count
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  transactionCount: {
+    fontSize: 16,
+    color: '#666',
+  },
+  detailBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 5,
+    marginBottom: 1,
+  },
+  detailItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
   },
-  filterButtons: {
-    flexDirection: 'row',
+  detailTitle: {
+    fontSize: 16,
   },
-  filterButton: {
-    backgroundColor: '#ddd',
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    borderRadius: 10,
+  detailText: {
+    fontSize: 16,
+    textAlign: 'right',
     marginLeft: 10,
+    color: '#000000',
   },
-  filterButtonText: {
-    color: '#333',
-    fontSize: 14,
+  noTransactionsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  historyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  historyList: {
-    marginTop: 10,
-    flexGrow: 1,
-  },
-  transactionItem: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  transactionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  transactionText: {
-    fontSize: 16,
-    color: '#555',
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  timestampText: {
-    fontSize: 12, // Smaller font for timestamp
-    color: '#888',
-    marginTop: 5, // Small margin to separate timestamp from above text
+  noTransactionsText: {
+    fontSize: 18,
+    color: '#666',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyStateText: {
-    fontSize: 18,
-    color: '#999',
-    textAlign: 'center',
   },
 });
 

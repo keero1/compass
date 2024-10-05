@@ -5,34 +5,28 @@ import {
   Text,
   View,
   TouchableOpacity,
-  FlatList,
 } from 'react-native';
-import {useWindowDimensions} from 'react-native';
 import {useIsFocused} from '@react-navigation/native';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import {Dropdown} from 'react-native-element-dropdown'; // Import the Dropdown component
 import {ROUTES} from '../../../constants/';
 
 const Payment = props => {
   const {navigation} = props;
-  const {height} = useWindowDimensions();
   const focus = useIsFocused();
 
-  const numColumns = 2;
-
   const [busType, setBusType] = useState(null);
-
   const [fareData, setFareData] = useState(null);
   const [selectedOrigin, setSelectedOrigin] = useState(null);
   const [selectedOriginIndex, setSelectedOriginIndex] = useState(null);
-
+  const [selectedDestination, setSelectedDestination] = useState(null); // State for destination
   const [cancelButton, setCancelButton] = useState(false);
 
   useEffect(() => {
     if (focus) {
-      setSelectedOrigin(null);
+      loadSavedOrigin();
       setSelectedOriginIndex(null);
+      setSelectedDestination(null); // Reset destination when focused
       setCancelButton(false);
     }
 
@@ -48,10 +42,9 @@ const Payment = props => {
 
     fetchFareData();
     fetchBusType();
-  }, [focus]); // Add focus as a dependency
+  }, [focus]);
 
-  // load fare
-
+  // Load fare and bus type data
   const loadBusType = async () => {
     try {
       return await AsyncStorage.getItem('bus-type');
@@ -69,7 +62,7 @@ const Payment = props => {
     }
   };
 
-  // calculate
+  // Calculate distance for navigation
   const calculateDistance = (destinationIndex, place) => {
     const originKM = fareData.kmPlace[selectedOriginIndex].distance;
     const destinationKM = fareData.kmPlace[destinationIndex].distance;
@@ -84,74 +77,145 @@ const Payment = props => {
     });
   };
 
-  const onPlaceClick = (place, index) => {
-    if (selectedOrigin === null) {
-      if (fareData.kmPlace.length - 1 === index) {
-        return;
+  // remember the choice
+  const loadSavedOrigin = async () => {
+    try {
+      const savedOriginIndex = await AsyncStorage.getItem(
+        'selected-origin-index',
+      );
+      const savedOrigin = await AsyncStorage.getItem('selected-origin');
+
+      if (savedOriginIndex !== null && savedOrigin !== null) {
+        setSelectedOriginIndex(Number(savedOriginIndex));
+        setSelectedOrigin(savedOrigin);
+        setCancelButton(true);
       }
-      setSelectedOriginIndex(index);
-      setSelectedOrigin(place);
-      setCancelButton(true);
-
-      return;
+    } catch (error) {
+      console.error('Error loading saved origin: ', error);
     }
-
-    if (selectedOriginIndex === index || index < selectedOriginIndex) {
-      return;
-    }
-
-    calculateDistance(index, place);
   };
 
+  const saveSelectedOrigin = async (originIndex, originPlace) => {
+    try {
+      await AsyncStorage.setItem(
+        'selected-origin-index',
+        originIndex.toString(),
+      );
+      await AsyncStorage.setItem('selected-origin', originPlace);
+    } catch (error) {
+      console.error('Error saving origin: ', error);
+    }
+  };
+
+  // Handle origin selection
+  const onOriginChange = value => {
+    const originPlace = fareData.kmPlace[value].place;
+
+    setSelectedOrigin(fareData.kmPlace[value].place);
+    setSelectedOriginIndex(value);
+    setSelectedDestination(null); // Reset destination selection
+    setCancelButton(true);
+
+    saveSelectedOrigin(value, originPlace);
+  };
+
+  // Handle destination selection
+  const onDestinationChange = value => {
+    if (value > selectedOriginIndex) {
+      calculateDistance(value, fareData.kmPlace[value].place);
+    }
+  };
+
+  // Handle cancel action
   const onCancelClick = () => {
-    // Handle cancel action here
     setSelectedOrigin(null);
     setSelectedOriginIndex(null);
+    setSelectedDestination(null);
     setCancelButton(false);
+
+    AsyncStorage.removeItem('selected-origin-index');
+    AsyncStorage.removeItem('selected-origin');
   };
 
   return (
     <SafeAreaView style={styles.main}>
       {/* Ensure fareData and kmPlace exist before rendering the FlatList */}
       {fareData && fareData.kmPlace ? (
-        <FlatList
-          data={fareData.kmPlace} // Access the kmPlace array
-          style={styles.list}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={numColumns} // Set the number of columns
-          columnWrapperStyle={styles.row} // Style for the row
-          renderItem={({item, index}) => (
-            <TouchableOpacity
-              style={styles.placeButton}
-              onPress={() => onPlaceClick(item.place, index)}>
-              <Text style={styles.buttonText}>{item.place}</Text>
-            </TouchableOpacity>
+        <View style={styles.container}>
+          <View style={styles.dropdownContainer}>
+            <Text style={styles.label}>Select Origin:</Text>
+            <Dropdown
+              style={styles.dropdown}
+              data={fareData.kmPlace.map((item, index) => ({
+                label: item.place,
+                value: index,
+              }))}
+              labelField="label"
+              valueField="value"
+              value={selectedOriginIndex}
+              onChange={item => onOriginChange(item.value)}
+              placeholder="Select Origin"
+              searchPlaceholder="Search"
+              search={true}
+              itemTextStyle={styles.textStyle}
+            />
+
+            <Text style={styles.label}>Select Destination:</Text>
+            <Dropdown
+              style={styles.dropdown}
+              data={
+                selectedOriginIndex !== null
+                  ? fareData.kmPlace
+                      .filter((_, index) => index > selectedOriginIndex) // Filter items for destination
+                      .map((item, index) => ({
+                        label: item.place,
+                        value: index + selectedOriginIndex + 1, // Adjust index for filtered data
+                      }))
+                  : [] // No options if origin is not selected
+              }
+              labelField="label"
+              valueField="value"
+              value={selectedDestination}
+              onChange={
+                selectedOriginIndex !== null
+                  ? item => onDestinationChange(item.value)
+                  : null
+              }
+              placeholder={
+                selectedOriginIndex === null
+                  ? 'Select Origin First'
+                  : 'Select Destination'
+              }
+              searchPlaceholder="Search"
+              search={true}
+              itemTextStyle={styles.textStyle}
+            />
+
+            {/* New Box for Payment Description */}
+            <View style={styles.paymentInfoBox}>
+              <Text style={styles.paymentInfoText}>
+                After selecting your origin and destination, the payment is
+                calculated based on the travel distance. You will be redirected
+                to the payment confirmation page, where you can review the
+                details before proceeding.
+              </Text>
+            </View>
+          </View>
+
+          {selectedOrigin !== null && (
+            <View style={styles.chosenInfoContainer}>
+              <TouchableOpacity
+                onPress={onCancelClick}
+                disabled={!cancelButton}
+                style={styles.cancelButton}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           )}
-        />
+        </View>
       ) : (
         <Text>Loading data...</Text> // Show loading text while fetching data
       )}
-
-      {/* Display "Select Origin" or "Origin: {place name}" and "Cancel" */}
-      <View style={styles.chosenInfoContainer}>
-        <View style={styles.selectBox}>
-          <Text style={styles.selectText}>
-            {selectedOrigin ? `Origin: ${selectedOrigin}` : 'Select Origin'}
-          </Text>
-          {selectedOrigin && (
-            <Text style={styles.selectText}>Select Destination</Text>
-          )}
-        </View>
-
-        <TouchableOpacity
-          onPress={onCancelClick}
-          disabled={!cancelButton}
-          style={styles.cancelButton}>
-          <Text style={styles.cancelButtonText}>
-            {selectedOrigin ? 'Cancel' : ''}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
@@ -161,65 +225,56 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F4FB',
     padding: 20,
-    justifyContent: 'space-between',
   },
-  list: {
-    marginTop: 40,
-  },
-  row: {
+  container: {
     flex: 1,
-    justifyContent: 'space-between',
-    marginBottom: 15, // Add some spacing between rows
+    justifyContent: 'space-between', // Pushes the Cancel button to the bottom
   },
-  placeButton: {
-    flex: 1,
-    backgroundColor: '#176B87',
-    paddingVertical: 15,
-    marginHorizontal: 10,
+  dropdownContainer: {
+    marginBottom: 15, // Adjusted for better spacing
+  },
+  label: {
+    fontSize: 18,
+    color: '#333',
+    marginVertical: 10,
+  },
+  dropdown: {
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
     borderRadius: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 10,
   },
-  buttonText: {
+  textStyle: {
+    color: '#000000',
+  },
+  paymentInfoBox: {
+    backgroundColor: '#ffffff',
+    padding: 15,
+    marginTop: 20,
+    borderRadius: 5,
+  },
+  paymentInfoText: {
     fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
+    color: '#555',
+    lineHeight: 22,
   },
   chosenInfoContainer: {
     alignItems: 'center',
     marginTop: 10,
-    marginBottom: 10,
-  },
-  selectBox: {
-    backgroundColor: '#4CAF50',
-    width: '100%',
-    marginHorizontal: 20,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: '#388E3C',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  selectText: {
-    padding: 10,
-    fontSize: 18,
-    color: '#333',
   },
   cancelButton: {
-    backgroundColor: '#cacaca', // Red color for the cancel button
+    backgroundColor: '#cacaca',
     width: '100%',
-    marginHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginTop: 10, // Margin to separate from dropdowns
   },
   cancelButtonText: {
     fontSize: 18,
     color: '#333',
   },
 });
-
 export default Payment;

@@ -9,6 +9,7 @@ import {
   Payment,
   PaymentConfirmation,
   Transactions,
+  TransactionDetails,
 } from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/inputs/CustomBack';
@@ -52,7 +53,9 @@ function HomeNavigator() {
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
-          headerTransparent: true,
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
         })}
       />
       <InsideStack.Screen
@@ -74,8 +77,21 @@ function HomeNavigator() {
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
-          headerTransparent: true,
-          headerTitle: null,
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.TRANSACTIONDETAILS}
+        component={TransactionDetails}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
         })}
       />
     </InsideStack.Navigator>

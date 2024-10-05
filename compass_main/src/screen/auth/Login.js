@@ -103,9 +103,9 @@ const Login = () => {
           autoCapitalize={'none'}
         />
 
-        <Text style={styles.forgotPassword} onPress={onForgotPasswordPressed}>
+        {/* <Text style={styles.forgotPassword} onPress={onForgotPasswordPressed}>
           Forgot Password?
-        </Text>
+        </Text> */}
 
         {loading ? (
           <ActivityIndicator size="large" color="#0000FF" />

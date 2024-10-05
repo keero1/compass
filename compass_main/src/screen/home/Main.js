@@ -33,7 +33,7 @@ const Main = props => {
   const [mapRegion, setMapRegion] = useState(null);
 
   // Seat count
-  const maxSeatCount = 71;
+  const maxSeatCount = 56;
   const [seatCount, setSeatCount] = useState(0);
 
   const user = auth().currentUser.uid;

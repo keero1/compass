@@ -19,3 +19,4 @@ export {default as Payment} from './drawer/payment/Payment';
 export {default as PaymentConfirmation} from './drawer/payment/PaymentConfirmation';
 
 export {default as Transactions} from './drawer/transaction/Transactions';
+export {default as TransactionDetails} from './drawer/transaction/TransactionDetails';

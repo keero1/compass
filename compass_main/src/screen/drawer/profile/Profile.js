@@ -155,7 +155,7 @@ const Profile = props => {
                 style={styles.detailItem}
                 onPress={() => setModalVisible(true)}>
                 <Text style={styles.detailTitle}>Full Name</Text>
-                <Text style={styles.detailText}>{userFullName}</Text>
+                <Text style={styles.detailText}>{userFullName || 'ComPass Driver'}</Text>
               </TouchableOpacity>
 
               <View style={styles.separator} />
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     padding: 10,
-    backgroundColor: '#007BFF',
+    backgroundColor: '#176B87',
     borderRadius: 5,
     alignItems: 'center',
     marginHorizontal: 5,

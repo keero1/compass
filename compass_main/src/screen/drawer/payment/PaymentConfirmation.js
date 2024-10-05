@@ -24,7 +24,7 @@ const PaymentConfirmation = ({route}) => {
   const fareStart = busType === 'Aircon' ? 15 : 13;
   const fareIncrement = busType === 'Aircon' ? 3 : 2;
 
-  const [passengerType, setPassengerType] = useState('regular');
+  const [passengerType, setPassengerType] = useState('Regular');
   const [fareAmount, setFareAmount] = useState(0);
 
   const [routeName, setRouteName] = useState(null);
@@ -42,7 +42,7 @@ const PaymentConfirmation = ({route}) => {
       : fareStart + fareIncrement * (travelDistance - 4);
 
   useEffect(() => {
-    if (passengerType === 'discount') {
+    if (passengerType === 'Discount') {
       setFareAmount(calculatedFare * 0.8);
       return;
     }
@@ -133,8 +133,6 @@ const PaymentConfirmation = ({route}) => {
             last_updated: firestore.FieldValue.serverTimestamp(),
           });
         console.log('company wallet updated successfully in sub-collection');
-      } else {
-        console.error('company wallet not found in sub-collection!');
       }
     } catch (error) {
       console.error('Error syncing transaction and company wallet:', error);
@@ -230,13 +228,13 @@ const PaymentConfirmation = ({route}) => {
           <View style={styles.radioGroup}>
             <TouchableHighlight
               style={styles.radioButtonContainer}
-              onPress={() => setPassengerType('regular')}
+              onPress={() => setPassengerType('Regular')}
               underlayColor="#ddd">
               <View style={styles.radioButton}>
                 <View
                   style={[
                     styles.radioInner,
-                    passengerType === 'regular' && styles.radioInnerSelected,
+                    passengerType === 'Regular' && styles.radioInnerSelected,
                   ]}
                 />
                 <Text style={styles.radioText}>Regular</Text>
@@ -244,13 +242,13 @@ const PaymentConfirmation = ({route}) => {
             </TouchableHighlight>
             <TouchableHighlight
               style={styles.radioButtonContainer}
-              onPress={() => setPassengerType('discount')}
+              onPress={() => setPassengerType('Discount')}
               underlayColor="#ddd">
               <View style={styles.radioButton}>
                 <View
                   style={[
                     styles.radioInner,
-                    passengerType === 'discount' && styles.radioInnerSelected,
+                    passengerType === 'Discount' && styles.radioInnerSelected,
                   ]}
                 />
                 <Text style={styles.radioText}>PWD/Student/Senior</Text>
@@ -366,7 +364,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   ticketButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#176B87',
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 10,
@@ -412,7 +410,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   closeButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#176B87',
     borderRadius: 10,
     padding: 10,
     elevation: 2,

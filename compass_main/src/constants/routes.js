@@ -15,4 +15,6 @@ export default {
   
   TRANSACTIONS: 'Transactions',
 
+  TRANSACTIONDETAILS: 'TransactionDetails',
+
 };
