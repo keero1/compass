@@ -236,6 +236,10 @@ const Main = () => {
                       <strong>License:</strong>{" "}
                       {infoWindowOpen.details.license_plate}
                     </p>
+                    <p>
+                      <strong>Seat Taken:</strong>{" "}
+                      {infoWindowOpen.details.seat_count} / 56
+                    </p>
                   </div>
                 </div>
               </InfoWindow>

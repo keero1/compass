@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 // Firebase imports
 import { db } from "../../firebase/firebase";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
@@ -15,6 +15,9 @@ const Wallet = () => {
   // rows
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const rowsOptions = [5, 10, 15, 20];
+
+  // dropdown
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [filters, setFilters] = useState({
     busDriverName: "",
@@ -124,6 +127,24 @@ const Wallet = () => {
 
   const handleRowsPerPageChange = (e) => {
     setRowsPerPage(Number(e.target.value)); // Update rowsPerPage based on user selection
+    setIsDropdownOpen(false);
+  };
+
+  const dropdownRef = useRef(null);
+  const [dropdownState, setDropdownState] = useState("dropdown-bottom");
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen((prev) => !prev);
+    if (dropdownRef.current) {
+      const pos = dropdownRef.current.getBoundingClientRect();
+      const offsetBottom = window.innerHeight - pos.bottom;
+
+      if (offsetBottom < 200) {
+        setDropdownState("dropdown-top");
+      } else {
+        setDropdownState("dropdown-bottom");
+      }
+    }
   };
 
   return (
@@ -174,92 +195,106 @@ const Wallet = () => {
         </div>
 
         {/* Transaction Table */}
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border px-4 py-2">Bus Driver Name</th>
-              <th className="border px-4 py-2">Bus Number</th>
-              <th className="border px-4 py-2">Reference Number</th>
-              <th className="border px-4 py-2">Payment Type</th>
-              <th className="border px-4 py-2">Fare Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              Array.from({ length: rowsPerPage }).map((_, index) => (
-                <tr key={index}>
-                  <td className="border px-4 py-2">
-                    <div className="skeleton h-4 w-24"></div>
-                  </td>
-                  <td className="border px-4 py-2">
-                    <div className="skeleton h-4 w-24"></div>
-                  </td>
-                  <td className="border px-4 py-2">
-                    <div className="skeleton h-4 w-24"></div>
-                  </td>
-                  <td className="border px-4 py-2">
-                    <div className="skeleton h-4 w-24"></div>
-                  </td>
-                  <td className="border px-4 py-2">
-                    <div className="skeleton h-4 w-24"></div>
-                  </td>
-                </tr>
-              ))
-            ) : paginatedTransactions.length > 0 ? (
-              paginatedTransactions.map((transaction) => (
-                <tr key={transaction.id}>
-                  <td className="border px-4 py-2">
-                    {transaction.bus_driver_name}
-                  </td>
-                  <td className="border px-4 py-2">{transaction.bus_number}</td>
-                  <td className="border px-4 py-2">
-                    {transaction.reference_number}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {transaction.payment_type}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {formatNumber(transaction.fare_amount)}
-                  </td>
-                </tr>
-              ))
-            ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead>
               <tr>
-                <td colSpan="5" className="border px-4 py-2 text-center">
-                  No transactions found.
-                </td>
+                <th className="border px-4 py-2">Bus Driver Name</th>
+                <th className="border px-4 py-2">Bus Number</th>
+                <th className="border px-4 py-2">Reference Number</th>
+                <th className="border px-4 py-2">Payment Type</th>
+                <th className="border px-4 py-2">Fare Amount</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                Array.from({ length: rowsPerPage }).map((_, index) => (
+                  <tr key={index}>
+                    <td className="border px-4 py-2">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                    <td className="border px-4 py-2">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                    <td className="border px-4 py-2">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                    <td className="border px-4 py-2">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                    <td className="border px-4 py-2">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                  </tr>
+                ))
+              ) : paginatedTransactions.length > 0 ? (
+                paginatedTransactions.map((transaction) => (
+                  <tr key={transaction.id}>
+                    <td className="border px-4 py-2">
+                      {transaction.bus_driver_name}
+                    </td>
+                    <td className="border px-4 py-2">
+                      {transaction.bus_number}
+                    </td>
+                    <td className="border px-4 py-2">
+                      {transaction.reference_number}
+                    </td>
+                    <td className="border px-4 py-2">
+                      {transaction.payment_type}
+                    </td>
+                    <td className="border px-4 py-2">
+                      {formatNumber(transaction.fare_amount)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="border px-4 py-2 text-center">
+                    No transactions found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       {/* Pagination */}
       {!loading && filteredTransactions.length > 0 && (
         <div className="flex justify-end items-center mt-4 space-x-8">
           <div className="text-lg">
             Rows per page:
-            <div className="dropdown dropdown-bottom inline-block ml-2">
-              <div tabIndex={0} role="button" className="btn m-1">
+            <div
+              ref={dropdownRef}
+              className={`dropdown inline-block ml-2 ${dropdownState}`}
+            >
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn m-1"
+                onClick={toggleDropdown}
+              >
                 {rowsPerPage} <span className="ml-2">▼</span>{" "}
                 {/* Indicate dropdown */}
               </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu rounded-box z-[1] shadow"
-              >
-                {rowsOptions.map((option) => (
-                  <li key={option}>
-                    <button
-                      onClick={() =>
-                        handleRowsPerPageChange({ target: { value: option } })
-                      }
-                      className="block px-4 py-2 hover:bg-base-200"
-                    >
-                      {option}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              {isDropdownOpen && ( // Step 2: Conditional rendering of dropdown
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu bg-base-100 rounded-box z-[1] shadow"
+                >
+                  {rowsOptions.map((option) => (
+                    <li key={option}>
+                      <button
+                        onClick={() =>
+                          handleRowsPerPageChange({ target: { value: option } })
+                        }
+                        className="block px-4 py-2 hover:bg-base-200"
+                      >
+                        {option}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
           <div className="text-lg">

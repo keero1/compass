@@ -20,9 +20,7 @@ const Navbar = () => {
   const { currentUser } = useAuth();
 
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(
-    localStorage.getItem("theme") || "nord"
-  );
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "nord");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -71,7 +69,7 @@ const Navbar = () => {
         onChange={() => setIsSidebarOpen((prev) => !prev)}
       />
       <div className="drawer-content">
-        <div className="navbar bg-base-200">
+        <div className="navbar bg-base-200 fixed top-0 left-0 right-0 z-10">
           <div className="flex-none">
             <label
               htmlFor="my-drawer"
@@ -175,13 +173,13 @@ const Navbar = () => {
           </div>
         </div>
         {/* <main className={`flex-1 ${isSidebarOpen ? "m-5" : "ml-5"}`}> */}
-        <main className="flex-1">
+        <main className={`flex-1 mt-16 ${isSidebarOpen ? "ml-52" : "ml-0"}`}>
           <Outlet />
         </main>
       </div>
 
       {/* menu list */}
-      <div className="drawer-side lg:drawer-open lg:static lg:relative">
+      <div className="drawer-side lg:drawer-open lg:static lg:relative z-20">
         {isSidebarOpen ? (
           <label
             htmlFor="my-drawer"
@@ -191,7 +189,7 @@ const Navbar = () => {
         ) : (
           <></>
         )}
-        <ul className="menu menu-lg min-h-full bg-base-200 w-56 rounded-r-lg">
+        <ul className="menu menu-lg min-h-full bg-base-200 w-56 rounded-r-lg fixed top-0 left-0 right-0 z-30">
           <li>
             <Link to="/">
               <h1 className="text-2xl">ComPass</h1>
