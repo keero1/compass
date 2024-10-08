@@ -110,7 +110,6 @@ const Main = props => {
 
     const unsubscribe = firestore()
       .collection('busLocation')
-      .where('timestamp', '<=', fiveMinutesAgo)
       .onSnapshot(async snapshot => {
         let addedMarkers = [];
         let modifiedMarkers = [];
@@ -399,7 +398,7 @@ const Main = props => {
     const {coordinate} = event.nativeEvent;
     const distance = calculateDistance(currentLocation, coordinate);
 
-    if (distance <= 1000) {
+    if (distance > 0) {
       Alert.alert(
         'Place Marker',
         'Do you want to place a marker here?',
@@ -589,7 +588,7 @@ const Main = props => {
                 <Text>
                   Last Update: {bus.details.timestamp.toDate().toLocaleString()}
                 </Text>
-                <Text>Seat Slots: {bus.details.seat_count}</Text>
+                <Text>Seat Slots: {bus.details.seat_count} / 56</Text>
               </Callout>
             </Marker>
           ))}
