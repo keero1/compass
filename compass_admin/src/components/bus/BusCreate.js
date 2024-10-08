@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { doCreateWithEmailAndPassword, doSignOut } from "../../firebase/auth"; // Adjust path to Firebase utility functions
-import { db } from "../../firebase/firebase"; // Adjust path to Firebase configuration
-import {
-  collection,
-  doc,
-  Timestamp,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
+import { db, auth } from "../../firebase/firebase"; // Adjust path to Firebase configuration
+import { collection, getDocs } from "firebase/firestore";
 
 const BusCreate = () => {
   const navigate = useNavigate();
@@ -16,9 +9,10 @@ const BusCreate = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [username, setUsername] = useState("");
   const [route, setRoute] = useState("");
-  const [name, setName] = useState("");
+  const [busType, setBusType] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [routes, setRoutes] = useState([]);
+  const [totalBuses, setTotalBuses] = useState(0);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -36,59 +30,84 @@ const BusCreate = () => {
       }
     };
 
+    const fetchTotalBuses = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "buses"));
+        setTotalBuses(querySnapshot.size + 1);
+      } catch (error) {
+        console.error("Error fetching total buses:", error);
+      }
+    };
+
     fetchRoutes();
+    fetchTotalBuses();
   }, []);
+
+  useEffect(() => {
+    const generateUsername = () => {
+      const formattedName = busName.replace(/\s+/g, "").toLowerCase();
+      const numberFormat = totalBuses.toString().padStart(3, "0");
+      const username = `${formattedName}.${numberFormat}`;
+      setUsername(username);
+    };
+
+    if (busName) {
+      generateUsername();
+    } else {
+      setUsername("");
+    }
+  }, [busName, totalBuses]);
 
   const handleBackClick = () => {
     navigate(-1);
   };
 
-  const generateRandomString = (length) => {
-    const charset =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!";
-    let randomString = "";
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * charset.length);
-      randomString += charset[randomIndex];
-    }
-    return randomString;
-  };
-
   const handleCreateBus = async (event) => {
-    event.preventDefault(); // Prevent form submission if validation fails
+    event.preventDefault();
     setIsSaving(true);
+
+    const adminID = auth.currentUser.uid;
+
     try {
-      const randomEmail = `busdriver_${generateRandomString(10)}@compass.org`;
-      const password = "Password12!"; // Use a secure password in production
-
-      // Create the user and get the user ID
-      const userCredential = await doCreateWithEmailAndPassword(
-        randomEmail,
-        password
-      );
-      const userId = userCredential.user.uid;
-
-      // Use the user ID as the document ID in Firestore
-      await setDoc(doc(db, "buses", userId), {
-        username: username,
-        bus_driver_name: busName,
-        phone_number: phoneNumber,
-        route_id: route,
-        name: name,
-        license_plate: licensePlate,
-        email: randomEmail,
-        company_id: "ComPass XD",
-        created_at: Timestamp.now(), // Use Timestamp.now() to get the current timestamp
+      const response = await fetch("https://compass-backend-coral.vercel.app/api/create-bus", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          busName,
+          phoneNumber,
+          busType,
+          route,
+          licensePlate,
+          totalBuses,
+          adminID,
+        }),
       });
 
-      alert("due to some bug for now. creating bus accounts will sign you off.");
-      
-      doSignOut();
+      if (response.ok) {
+        alert("Bus account created successfully");
+        navigate(-1); // Go back to the previous page
+      } else {
+        const data = await response.json();
+        alert(`Error: ${data.error}`);
+      }
     } catch (error) {
       console.error("Error creating bus account:", error);
+      alert("Failed to create bus account");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleBusNameChange = (e) => {
+    // Split the input value by spaces, capitalize each word, and join them back
+    const value = e.target.value
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+    setBusName(value);
   };
 
   return (
@@ -115,7 +134,7 @@ const BusCreate = () => {
                 className="input input-bordered w-full"
                 placeholder="Enter Driver Name"
                 value={busName}
-                onChange={(e) => setBusName(e.target.value)}
+                onChange={handleBusNameChange}
                 required
               />
             </div>
@@ -133,7 +152,12 @@ const BusCreate = () => {
                   className="input input-bordered pl-16 w-full"
                   placeholder="Enter phone number"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={(e) => {
+                    const numericValue = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+                    if (numericValue.length <= 10) {
+                      setPhoneNumber(numericValue);
+                    }
+                  }}
                   pattern="9\d{9}"
                   title="Format: 9123456789"
                   required
@@ -152,6 +176,7 @@ const BusCreate = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                disabled
               />
             </div>
 
@@ -179,16 +204,21 @@ const BusCreate = () => {
 
             <div>
               <label className="block text-sm font-medium mb-1 text-base-content">
-                Bus Name
+                Bus Type
               </label>
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="Enter name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+              <select
+                className="select select-bordered w-full"
+                placeholder="Select route"
+                value={busType}
+                onChange={(e) => setBusType(e.target.value)}
                 required
-              />
+              >
+                <option value="" disabled>
+                  Select Buy Type
+                </option>
+                <option value="Aircon">Aircon</option>
+                <option value="Ordinary">Ordinary</option>
+              </select>
             </div>
 
             <div>

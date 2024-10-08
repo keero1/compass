@@ -1,13 +1,20 @@
 export default {
-    LOGIN: 'Login',
+  LOGIN: 'Login',
 
-    FORGOT: 'Forgot',
+  FORGOT: 'Forgot',
 
-    MAIN: 'Main',
+  MAIN: 'Main',
 
-    DRAWER: 'Drawer',
+  DRAWER: 'Drawer',
 
-    PROFILE: 'Profile',
+  PROFILE: 'Profile',
 
-    WALLET: 'Wallet',
-}
+  PAYMENT: 'Payment',
+
+  PAYMENTCONFIRMATION: 'PaymentConfirmation',
+  
+  TRANSACTIONS: 'Transactions',
+
+  TRANSACTIONDETAILS: 'TransactionDetails',
+
+};

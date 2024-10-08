@@ -1,9 +1,103 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ClickOutside from "./ClickOutside";
+
+// Firebase imports
+import { db } from "../../firebase/firebase";
+import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 
 const NotificationDropdown = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifying, setNotifying] = useState(true);
+
+  const [profileUpdateRequests, setProfileUpdateRequests] = useState(null);
+
+  const [selectedRequest, setSelectedRequest] = useState(null);
+
+  // use effect
+
+  useEffect(() => {
+    const unsubscribeRequests = fetchRequests();
+    return () => {
+      unsubscribeRequests();
+    };
+  }, []);
+
+  const fetchRequests = () => {
+    const requestsCollection = collection(db, "profileUpdateRequests");
+
+    return onSnapshot(
+      requestsCollection,
+      (snapshot) => {
+        const requestsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setProfileUpdateRequests(requestsData);
+      },
+      (error) => {
+        console.error("Error fetching profile update requests:", error);
+      }
+    );
+  };
+
+  const formatTime = (timestamp) => {
+    const now = Date.now();
+    const seconds = Math.floor((now - timestamp.toDate().getTime()) / 1000);
+
+    const timeUnits = [
+      { limit: 60, divisor: 1, suffix: "second" },
+      { limit: 3600, divisor: 60, suffix: "minute" },
+      { limit: 86400, divisor: 3600, suffix: "hour" },
+      { limit: Infinity, divisor: 86400, suffix: "day" },
+    ];
+
+    for (const { limit, divisor, suffix } of timeUnits) {
+      if (seconds < limit) {
+        const value = Math.floor(seconds / divisor);
+        return `${value} ${suffix}${value !== 1 ? "s" : ""} ago`;
+      }
+    }
+  };
+
+  // approval
+  const handleApproval = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      const requestDocRef = doc(
+        db,
+        "profileUpdateRequests",
+        selectedRequest.id
+      );
+      await updateDoc(requestDocRef, { status: "approved" });
+
+      const busDocRef = doc(db, "buses", selectedRequest.userId);
+      await updateDoc(busDocRef, {
+        bus_driver_name: selectedRequest.requestedDriverName,
+      });
+
+      console.log(`Approved request for ${selectedRequest.currentDriverName}`);
+      closeModal();
+    } catch (error) {
+      console.error("Error updating request or bus:", error);
+    }
+  };
+
+  // modal
+
+  const openModal = (request) => {
+    console.log(request.userId);
+    setSelectedRequest(request);
+    const modal = document.getElementById("notification_modal");
+    modal.showModal();
+  };
+
+  const closeModal = () => {
+    const modal = document.getElementById("notification_modal");
+    modal.close();
+    setSelectedRequest(null);
+  };
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
@@ -42,18 +136,30 @@ const NotificationDropdown = () => {
             Notifications
           </div>
           <div className="max-h-48 overflow-y-auto">
-            <div className="px-4 py-2 border-b border-base-300">
-              <p className="text-sm">User 1 requested to change name</p>
-              <p className="text-xs text-gray-500">1 day ago</p>
-            </div>
-            <div className="px-4 py-2 border-b border-base-300">
-              <p className="text-sm">User 1 requested to reset password</p>
-              <p className="text-xs text-gray-500">1 day ago</p>
-            </div>
-            <div className="px-4 py-2 border-b border-base-300">
-              <p className="text-sm">User 1 requested qweqjwdfasgydcqqwgecvqdsad</p>
-              <p className="text-xs text-gray-500">1 day ago</p>
-            </div>
+            {profileUpdateRequests === null ? (
+              // daisy ui skeleton
+              <div className="flex flex-col gap-2 px-4 py-2">
+                <div className="skeleton h-4 w-28"></div>
+                <div className="skeleton h-4 w-full"></div>
+              </div>
+            ) : (
+              profileUpdateRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="px-4 py-2 border-b border-base-300 cursor-pointer hover:bg-base-200"
+                  onClick={() => openModal(request)}
+                >
+                  <p className="text-sm">
+                    <strong>{request.currentDriverName}</strong> requested to
+                    change name to{" "}
+                    <strong>{request.requestedDriverName}</strong>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatTime(request.requestTime)}
+                  </p>
+                </div>
+              ))
+            )}
           </div>
           <div className="px-4 text-center">
             <button
@@ -65,6 +171,46 @@ const NotificationDropdown = () => {
           </div>
         </div>
       )}
+
+      {/* Modal for Approve/Reject */}
+      <dialog id="notification_modal" className="modal">
+        <div className="modal-box">
+          <form method="dialog">
+            {/* if there is a button in form, it will close the modal */}
+            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+              ✕
+            </button>
+          </form>
+          <h3 className="font-bold text-lg">
+            {selectedRequest
+              ? `${selectedRequest.currentDriverName}'s Request`
+              : "Request"}
+          </h3>
+          <p>
+            {selectedRequest ? `wants to update the name to ` : ""}
+            <strong>
+              {selectedRequest ? selectedRequest.requestedDriverName : ""}
+            </strong>
+          </p>
+          <p>
+            Status:{" "}
+            <strong>{selectedRequest ? selectedRequest.status : ""}</strong>
+          </p>
+          <p>
+            {selectedRequest ? formatTime(selectedRequest.requestTime) : ""}
+          </p>
+          {selectedRequest && selectedRequest.status === "pending" && (
+            <div className="modal-action">
+              <button className="btn btn-primary" onClick={handleApproval}>
+                Approve
+              </button>
+              <button className="btn btn-secondary" onClick={closeModal}>
+                Reject
+              </button>
+            </div>
+          )}
+        </div>
+      </dialog>
     </ClickOutside>
   );
 };

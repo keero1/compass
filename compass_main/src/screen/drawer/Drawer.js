@@ -17,6 +17,8 @@ import firestore from '@react-native-firebase/firestore';
 
 import {IMAGES, ROUTES} from '../../constants';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const Drawer = props => {
   const {navigation} = props;
 
@@ -27,30 +29,27 @@ const Drawer = props => {
   // get the name
 
   const [userDisplayName, setUserDisplayName] = useState(null);
+  const [profilePicture, setProfilePicture] = useState(null);
 
   useEffect(() => {
-    const getUserDisplayName = async () => {
-      const user = auth().currentUser;
+    const getUserData = async () => {
+      try {
+        const busData = await AsyncStorage.getItem('bus-data');
 
-      if (user) {
-        try {
-          const userDoc = await firestore()
-            .collection('buses')
-            .doc(user.uid)
-            .get();
-          if (userDoc.exists) {
-            setUserDisplayName(userDoc.data().bus_driver_name);
-          } else {
-            console.log('No such document!');
-          }
-        } catch (error) {
-          console.error('Error fetching document: ', error);
+        if (busData) {
+          const userData = JSON.parse(busData);
+          setUserDisplayName(userData.bus_driver_name || 'ComPass Driver');
+          setProfilePicture(userData.profile_picture || null);
+        } else {
+          console.log('No bus data found in AsyncStorage');
         }
+      } catch (error) {
+        console.error('Error fetching bus data from AsyncStorage: ', error);
       }
     };
 
-    if (focus == true) {
-      getUserDisplayName();
+    if (focus) {
+      getUserData();
     }
   }, [focus]);
 
@@ -58,8 +57,12 @@ const Drawer = props => {
     navigation.navigate(ROUTES.PROFILE);
   };
 
-  const onWalletPressed = () => {
-    navigation.navigate(ROUTES.WALLET);
+  const onPaymentPressed = () => {
+    navigation.navigate(ROUTES.PAYMENT);
+  };
+
+  const onTransactionPressed = () => {
+    navigation.navigate(ROUTES.TRANSACTIONS);
   };
 
   return (
@@ -67,9 +70,12 @@ const Drawer = props => {
       <View style={styles.root}>
         <View style={styles.profileContainer}>
           <View style={styles.profileContent}>
-            <Image source={IMAGES.logo} style={styles.profileImage} />
+            <Image
+              source={profilePicture ? {uri: profilePicture} : IMAGES.logo}
+              style={styles.profileImage}
+            />
             <View style={styles.textContainer}>
-              <Text style={styles.text}>{userDisplayName || "ComPass Driver"}</Text>
+              <Text style={styles.text}>{userDisplayName}</Text>
               {/* Profile */}
               <TouchableOpacity
                 style={styles.viewProfileButton}
@@ -84,15 +90,19 @@ const Drawer = props => {
         <View style={styles.separator}></View>
 
         {/* Touchable Text Components */}
-        <TouchableOpacity onPress={onWalletPressed}>
-          <Text style={styles.menuItem}>Wallet</Text>
+        <TouchableOpacity onPress={onPaymentPressed}>
+          <Text style={styles.menuItem}>Payment</Text>
         </TouchableOpacity>
-        <TouchableOpacity>
+        {/* Touchable Text Components */}
+        <TouchableOpacity onPress={onTransactionPressed}>
+          <Text style={styles.menuItem}>Transactions</Text>
+        </TouchableOpacity>
+        {/* <TouchableOpacity>
           <Text style={styles.menuItem}>Settings</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onShutdownPressed}>
+        </TouchableOpacity> */}
+        {/* <TouchableOpacity onPress={onShutdownPressed}>
           <Text style={styles.menuItem}>Shutdown</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );

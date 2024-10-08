@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase/firebase";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-import { TrashIcon } from "@heroicons/react/24/solid";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { Link } from "react-router-dom";
 
 const routesCollection = collection(db, "routes");
@@ -18,9 +11,6 @@ const ManageRoute = () => {
   const [showModal, setShowModal] = useState(false);
   const [newRoute, setNewRoute] = useState({ route_name: "", description: "" });
   const [isSaving, setIsSaving] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [routeToDelete, setRouteToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
 
@@ -62,27 +52,6 @@ const ManageRoute = () => {
     }
   };
 
-  const handleDeleteRoute = async () => {
-    if (!routeToDelete) return;
-
-    setIsDeleting(true);
-    try {
-      await deleteDoc(doc(db, "routes", routeToDelete));
-      fetchBusData(); // Refresh the route list
-      setShowDeleteModal(false); // Close the delete confirmation modal
-      setCurrentPage(1); // Reset to the first page
-    } catch (error) {
-      console.error("Error deleting route:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const confirmDeleteRoute = (routeId) => {
-    setRouteToDelete(routeId);
-    setShowDeleteModal(true);
-  };
-
   const handleNextPage = () => {
     setCurrentPage((prevPage) =>
       Math.min(prevPage + 1, Math.ceil(routes.length / rowsPerPage))
@@ -113,18 +82,17 @@ const ManageRoute = () => {
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search Routes..."
-          className="input input-bordered w-full max-w-xs"
-          disabled
-        />
-      </div>
-
       {/* Table */}
-      <div className="overflow-x-auto shadow-lg mt-6">
+      <div className="bg-base-300 overflow-x-auto  shadow-lg rounded-lg p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
+          <input
+            type="text"
+            name="searchQuery"
+            placeholder="Filter by Route Name"
+            className="input input-bordered w-full"
+            disabled
+          />
+        </div>
         <table className="table w-full">
           <thead>
             <tr>
@@ -135,7 +103,7 @@ const ManageRoute = () => {
           <tbody>
             {loading
               ? Array.from({ length: 5 }).map((_, index) => (
-                  <tr key={index} className="hover">
+                  <tr key={index}>
                     <td className="text-lg">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
@@ -145,7 +113,7 @@ const ManageRoute = () => {
                   </tr>
                 ))
               : paginatedRoutes.map((route) => (
-                  <tr key={route.id} className="hover">
+                  <tr key={route.id}>
                     <td className="text-lg max-w-32 whitespace-nowrap overflow-hidden text-ellipsis">
                       {route.route_name}
                     </td>
@@ -160,12 +128,12 @@ const ManageRoute = () => {
                         View
                       </Link>
                     </td>
-                    <td>
+                    {/* <td>
                       <TrashIcon
                         className="size-6 text-red-500 cursor-pointer"
                         onClick={() => confirmDeleteRoute(route.id)}
                       />
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
           </tbody>
@@ -267,36 +235,6 @@ const ManageRoute = () => {
                   ✕
                 </button>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal for Deleting Route */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-          <div className="modal modal-open modal-bottom sm:modal-middle">
-            <div className="modal-box">
-              <h2 className="text-2xl font-bold mb-4">Confirm Deletion</h2>
-              <p>Are you sure you want to delete this route?</p>
-              <div className="modal-action">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(false)}
-                  className="btn"
-                  disabled={isDeleting}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteRoute}
-                  className={`btn btn-error ${
-                    isDeleting ? "btn-disabled" : ""
-                  }`}
-                >
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </button>
-              </div>
             </div>
           </div>
         </div>

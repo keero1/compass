@@ -2,7 +2,17 @@ import React from 'react';
 
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 
-import {Main, Drawer, Settings, Profile, EditProfile} from '../screen';
+import {
+  Main,
+  Drawer,
+  Wallet,
+  Profile,
+  EditProfile,
+  QRCamera,
+  CashIn,
+  TransactionDetails,
+  TransactionHistory,
+} from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/custom/CustomBack';
 
@@ -32,15 +42,71 @@ function HomeNavigator() {
       />
 
       <InsideStack.Screen
-        name={ROUTES.SETTINGS}
-        component={Settings}
+        name={ROUTES.WALLET}
+        component={Wallet}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.CASHIN}
+        component={CashIn}
         options={() => ({
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
           headerTransparent: true,
+          headerTitle: 'Cash In',
         })}
       />
+
+      <InsideStack.Screen
+        name={ROUTES.TRANSACTIONHISTORY}
+        component={TransactionHistory}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'All Transcations',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.TRANSACTIONDETAILS}
+        component={TransactionDetails}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'Transaction Details',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.QRCAMERA}
+        component={QRCamera}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTransparent: true,
+          headerTitle: () => null,
+        })}
+      />
+
+      {/* Profile */}
 
       <InsideStack.Screen
         name={ROUTES.PROFILE}

@@ -7,7 +7,11 @@ import {
   useWindowDimensions,
   Text,
   TouchableOpacity,
+  Modal,
+  TextInput,
   Alert,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 
 import {useIsFocused} from '@react-navigation/native';
@@ -18,14 +22,21 @@ import IMAGES from '../../../constants/images';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const Profile = props => {
   const {navigation} = props;
   const {height} = useWindowDimensions();
 
-  // get the name
+  const [profilePicture, setProfilePicture] = useState(null);
 
   const [userFullName, setUserFullName] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState(null);
   const [userName, setUserName] = useState(null);
+  const [newDriverName, setNewDriverName] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const [loading, setLoading] = useState(false);
 
   const focus = useIsFocused();
 
@@ -35,7 +46,6 @@ const Profile = props => {
 
       if (user) {
         try {
-          // Fetch user document from Firestore
           const userDoc = await firestore()
             .collection('buses')
             .doc(user.uid)
@@ -43,7 +53,9 @@ const Profile = props => {
 
           if (userDoc.exists) {
             setUserFullName(userDoc.data().bus_driver_name);
+            setPhoneNumber(userDoc.data().phone_number);
             setUserName(userDoc.data().username);
+            setProfilePicture(userDoc.data().profile_picture || null);
           } else {
             console.log('User document does not exist');
           }
@@ -53,15 +65,50 @@ const Profile = props => {
       }
     };
 
-    if (focus == true) {
+    if (focus) {
       getUserInfo();
     }
   }, [focus]);
 
-  // edit profile
+  const requestNameChange = async () => {
+    const user = auth().currentUser;
 
-  const EditProfilePressed = type => {
-    // navigation.navigate('EditProfile', {profileDataType: type});
+    if (user && newDriverName.trim() !== '') {
+      setLoading(true);
+      try {
+        // Check for existing pending requests
+        const pendingRequestsSnapshot = await firestore()
+          .collection('profileUpdateRequests')
+          .where('userId', '==', user.uid)
+          .where('status', '==', 'Pending')
+          .get();
+
+        if (!pendingRequestsSnapshot.empty) {
+          Alert.alert('Error', 'You already have a pending request.');
+          setLoading(false);
+          return; // Exit the function if there is a pending request
+        }
+
+        await firestore().collection('profileUpdateRequests').add({
+          userId: user.uid,
+          currentDriverName: userFullName,
+          requestedDriverName: newDriverName,
+          status: 'Pending',
+          requestTime: firestore.FieldValue.serverTimestamp(),
+        });
+
+        Alert.alert('Success', 'Name change request submitted successfully!');
+        setModalVisible(false); // Close modal after submission
+        setNewDriverName(''); // Reset input
+      } catch (error) {
+        console.error('Error submitting name change request:', error);
+        Alert.alert('Error', 'Failed to submit name change request.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      Alert.alert('Error', 'Please enter a valid driver name.');
+    }
   };
 
   const onLogoutPressed = () => {
@@ -69,10 +116,16 @@ const Profile = props => {
       {
         text: 'Logout',
         onPress: async () => {
-          console.log('Sign out');
-          auth()
-            .signOut()
-            .then(() => console.log('User signed out'));
+          try {
+            await AsyncStorage.clear();
+            console.log('Async Storage Cleared');
+
+            auth()
+              .signOut()
+              .then(() => console.log('User signed out'));
+          } catch (error) {
+            console.error('Error during logout:', error);
+          }
         },
       },
       {
@@ -85,22 +138,38 @@ const Profile = props => {
 
   return (
     <SafeAreaView style={styles.main}>
-      <View style={styles.root}>
-        <Image
-          source={IMAGES.logo}
-          style={[styles.logo, {height: height * 0.18}]}
-          resizeMode="contain"
-        />
+      <View style={styles.logoContainer}>
+        <View>
+          <Image
+            source={profilePicture ? {uri: profilePicture} : IMAGES.logo}
+            style={styles.logo}
+          />
+        </View>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.detailsContainer}>
           <View style={styles.sectionBox}>
             <Text style={styles.sectionTitle}>Account Details</Text>
 
             <View style={styles.detailBox}>
-              <View style={styles.detailItem}>
+              <TouchableOpacity
+                style={styles.detailItem}
+                onPress={() => setModalVisible(true)}>
                 <Text style={styles.detailTitle}>Full Name</Text>
-                <Text style={styles.detailText}>{userFullName}</Text>
-              </View>
+                <Text style={styles.detailText}>
+                  {userFullName || 'ComPass Driver'}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.separator} />
+
+              <TouchableOpacity style={styles.detailItem}>
+                <Text style={styles.detailTitle}>Phone Number</Text>
+                <Text style={styles.detailText}>
+                  (+63) {phoneNumber || 912345678}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -112,10 +181,12 @@ const Profile = props => {
                 <Text style={styles.detailTitle}>Username</Text>
                 <Text style={styles.detailText}>{userName || 'user name'}</Text>
               </View>
+
               <View style={styles.separator} />
+
               <TouchableOpacity
                 style={styles.detailItemX}
-                onPress={() => EditProfilePressed('Password')}>
+                onPress={() => console.log('password')}>
                 <Text style={styles.detailTitle}>Password</Text>
               </TouchableOpacity>
             </View>
@@ -132,7 +203,43 @@ const Profile = props => {
             </View>
           </View>
         </View>
-      </View>
+
+        {/* Name Change Modal */}
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Request Name Change</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Enter new driver name"
+                value={newDriverName}
+                onChangeText={setNewDriverName}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  disabled={loading}
+                  onPress={requestNameChange}>
+                  <Text style={styles.modalButtonText}>Submit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  disabled={loading}
+                  onPress={() => {
+                    setNewDriverName('');
+                    setModalVisible(false);
+                  }}>
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -142,25 +249,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F4FB',
   },
-
-  root: {
-    flex: 1,
-    flexGrow: 1,
+  logoContainer: {
     alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 20,
+    marginVertical: 50,
   },
   logo: {
-    width: '70%',
-    maxWidth: 300,
-    maxHeight: 200,
-    marginVertical: 50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingBottom: 20,
   },
   detailsContainer: {
     width: '100%',
   },
   sectionBox: {
-    marginBottom: 20, // Space between sections
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -169,7 +276,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   detailBox: {
-    backgroundColor: '#FFFFFF', // Background color for the details box
+    backgroundColor: '#FFFFFF',
     borderRadius: 5,
   },
   detailItem: {
@@ -186,16 +293,62 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 16,
   },
-
   deleteAccounText: {
     fontSize: 16,
     color: '#FF0000',
   },
-
   separator: {
     height: 1,
-    backgroundColor: '#E0E0E0', // Color for the separator line
-    marginHorizontal: 10, // Space around the separator
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 10,
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#CCC',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: '#176B87',
+    borderRadius: 5,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  modalCancelButton: {
+    backgroundColor: '#FF0000',
   },
 });
 

@@ -1,19 +1,31 @@
 // authentication
 
-export { default as Login} from './auth/Login';
-export { default as Register } from './auth/Register';
-export { default as Forgot } from './auth/Forgot';
+export {default as Login} from './auth/Login';
+export {default as Register} from './auth/Register';
+export {default as Forgot} from './auth/Forgot';
 
 // home
 
-export { default as Main} from './home/main';
+export {default as Main} from './home/main';
 
 // drawer
-export { default as Drawer } from './drawer/Drawer';
-export { default as Settings } from './drawer/Settings';
+export {default as Drawer} from './drawer/Drawer';
+export {default as Wallet} from './drawer/wallet/Wallet';
 
 // drawer child
 
-export { default as Profile } from './drawer/profile/Profile';
+// wallet
 
-export { default as EditProfile } from './drawer/profile/EditProfile';
+export {default as CashIn} from './drawer/wallet/CashIn';
+
+export {default as TransactionHistory} from './drawer/wallet/TransactionHistory';
+
+export {default as TransactionDetails} from './drawer/wallet/TransactionDetails';
+
+export {default as QRCamera} from './drawer/wallet/QRCamera';
+
+// profile
+
+export {default as Profile} from './drawer/profile/Profile';
+
+export {default as EditProfile} from './drawer/profile/EditProfile';

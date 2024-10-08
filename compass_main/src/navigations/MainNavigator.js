@@ -2,7 +2,15 @@ import React from 'react';
 
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 
-import {Main, Drawer, Settings, Profile, EditProfile, Wallet} from '../screen';
+import {
+  Main,
+  Drawer,
+  Profile,
+  Payment,
+  PaymentConfirmation,
+  Transactions,
+  TransactionDetails,
+} from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/inputs/CustomBack';
 
@@ -39,13 +47,51 @@ function HomeNavigator() {
         })}
       />
       <InsideStack.Screen
-        name={ROUTES.WALLET}
-        component={Wallet}
+        name={ROUTES.PAYMENT}
+        component={Payment}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.PAYMENTCONFIRMATION}
+        component={PaymentConfirmation}
         options={() => ({
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
           headerTransparent: true,
+          headerTitle: null,
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.TRANSACTIONS}
+        component={Transactions}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.TRANSACTIONDETAILS}
+        component={TransactionDetails}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
         })}
       />
     </InsideStack.Navigator>

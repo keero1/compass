@@ -1,17 +1,29 @@
 export default {
-    LOGIN: 'Login',
-    REGISTER: 'Register',
-    FORGOT: 'Forgot',
+  LOGIN: 'Login',
+  REGISTER: 'Register',
+  FORGOT: 'Forgot',
 
-    MAIN: 'Main',
+  MAIN: 'Main',
 
-    // DRAWER
-    DRAWER: 'Drawer',
-    SETTINGS: 'Settings',
+  // DRAWER
+  DRAWER: 'Drawer',
+  WALLET: 'Wallet',
 
-    //DRAWER CHILD
+  //DRAWER CHILD
 
-    PROFILE: 'Profile',
+  //Wallet
 
-    EDITPROFILE: 'EditProfile',
-}
+  QRCAMERA: 'QRCamera',
+
+  CASHIN: 'CashIn',
+
+  TRANSACTIONHISTORY: 'TransactionHistory',
+
+  TRANSACTIONDETAILS: 'TransactionDetails',
+
+  //Profile
+
+  PROFILE: 'Profile',
+
+  EDITPROFILE: 'EditProfile',
+};

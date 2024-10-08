@@ -86,8 +86,8 @@ const Drawer = props => {
     navigation.navigate(ROUTES.PROFILE);
   };
 
-  const onSettingsPressed = () => {
-    navigation.navigate(ROUTES.SETTINGS);
+  const onWalletPressed = () => {
+    navigation.navigate(ROUTES.WALLET);
   };
 
   return (
@@ -112,8 +112,8 @@ const Drawer = props => {
         <View style={styles.separator}></View>
 
         {/* Touchable Text Components */}
-        <TouchableOpacity onPress={onSettingsPressed}>
-          <Text style={styles.menuItem}>Settings</Text>
+        <TouchableOpacity onPress={onWalletPressed}>
+          <Text style={styles.menuItem}>Wallet</Text>
         </TouchableOpacity>
         {/* <TouchableOpacity>
           <Text style={styles.menuItem}>Feedback</Text>

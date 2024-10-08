@@ -12,7 +12,6 @@ import {
   WalletIcon,
   TruckIcon,
   MapPinIcon,
-  Cog6ToothIcon,
 } from "@heroicons/react/24/solid";
 
 import NotificationDropdown from "./NotificationDropdown";
@@ -21,9 +20,7 @@ const Navbar = () => {
   const { currentUser } = useAuth();
 
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(
-    localStorage.getItem("theme") || "cupcake"
-  );
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "nord");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -32,7 +29,7 @@ const Navbar = () => {
   }, [theme]);
 
   const handleToggle = (e) => {
-    const newTheme = e.target.checked ? "dracula" : "cupcake";
+    const newTheme = e.target.checked ? "night" : "nord";
     setTheme(newTheme);
   };
 
@@ -40,7 +37,7 @@ const Navbar = () => {
   useEffect(() => {
     const themeCheckbox = document.querySelector("#theme-checkbox");
     if (themeCheckbox) {
-      themeCheckbox.checked = theme === "dracula";
+      themeCheckbox.checked = theme === "night";
     }
   }, [theme]);
 
@@ -72,7 +69,7 @@ const Navbar = () => {
         onChange={() => setIsSidebarOpen((prev) => !prev)}
       />
       <div className="drawer-content">
-        <div className="navbar bg-base-200">
+        <div className="navbar bg-base-200 fixed top-0 left-0 right-0 z-10">
           <div className="flex-none">
             <label
               htmlFor="my-drawer"
@@ -104,7 +101,7 @@ const Navbar = () => {
               <input
                 id="theme-checkbox"
                 type="checkbox"
-                checked={theme === "dracula"}
+                checked={theme === "night"}
                 onChange={handleToggle}
               />
 
@@ -176,13 +173,13 @@ const Navbar = () => {
           </div>
         </div>
         {/* <main className={`flex-1 ${isSidebarOpen ? "m-5" : "ml-5"}`}> */}
-        <main className="flex-1">
+        <main className={`flex-1 mt-16 ${isSidebarOpen ? "ml-52" : "ml-0"}`}>
           <Outlet />
         </main>
       </div>
 
       {/* menu list */}
-      <div className="drawer-side lg:drawer-open lg:static lg:relative">
+      <div className="drawer-side lg:drawer-open lg:static lg:relative z-20">
         {isSidebarOpen ? (
           <label
             htmlFor="my-drawer"
@@ -192,7 +189,7 @@ const Navbar = () => {
         ) : (
           <></>
         )}
-        <ul className="menu menu-lg min-h-full bg-base-200 w-56 rounded-r-lg">
+        <ul className="menu menu-lg min-h-full bg-base-200 w-56 rounded-r-lg fixed top-0 left-0 right-0 z-30">
           <li>
             <Link to="/">
               <h1 className="text-2xl">ComPass</h1>
@@ -223,12 +220,12 @@ const Navbar = () => {
               Manage Routes
             </Link>
           </li>
-          <li>
+          {/* <li>
             <button>
               <Cog6ToothIcon className="size-6" />
               Settings
             </button>
-          </li>
+          </li> */}
         </ul>
       </div>
     </div>

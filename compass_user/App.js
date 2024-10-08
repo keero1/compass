@@ -14,10 +14,13 @@ import auth from '@react-native-firebase/auth';
 import AuthNavigator from './src/navigations/AuthNavigator';
 import HomeNavigator from './src/navigations/HomeNavigator';
 
+import notifee from '@notifee/react-native';
+
 export default function App() {
   // Set an initializing state whilst Firebase connects
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(user => {
@@ -53,9 +56,73 @@ export default function App() {
     }
   }
 
+  async function requestNotificationPermission() {
+    try {
+      const settings = await notifee.requestPermission();
+      if (settings.authorizationStatus >= 1) {
+        console.log('Notification permission granted');
+      } else {
+        console.log('Notification permission denied');
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+
+  // async function checkPowerManagerSettings() {
+  //   const powerManagerInfo = await notifee.getPowerManagerInfo();
+
+  //   if (powerManagerInfo.activity) {
+  //     Alert.alert(
+  //       'Restrictions Detected',
+  //       'To ensure notifications are delivered, please adjust your settings to prevent the app from being killed.',
+  //       [
+  //         {
+  //           text: 'OK, open settings',
+  //           onPress: async () => await notifee.openPowerManagerSettings(),
+  //         },
+  //         {
+  //           text: 'Cancel',
+  //           onPress: () => console.log('Cancel Pressed'),
+  //           style: 'cancel',
+  //         },
+  //       ],
+  //       {cancelable: false},
+  //     );
+  //   }
+  // }
+
   useEffect(() => {
-    requestLocationPermission(); // Request location permission when component mounts
+    requestLocationPermission();
+    requestNotificationPermission();
   }, []);
+
+  async function bootstrap() {
+    const initialNotification = await notifee.getInitialNotification();
+
+    if (initialNotification) {
+      console.log(
+        'Notification caused application to open',
+        initialNotification.notification,
+      );
+      console.log(
+        'Press action used to open the app',
+        initialNotification.pressAction,
+      );
+
+      await notifee.cancelNotification(initialNotification.notification.id);
+    }
+  }
+
+  useEffect(() => {
+    bootstrap()
+      .then(() => setLoading(false))
+      .catch(console.error);
+  }, []);
+
+  if (loading) {
+    return null;
+  }
 
   // TODO : Add a loading design
   if (initializing) {
