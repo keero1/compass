@@ -28,6 +28,8 @@ const Profile = props => {
   const {navigation} = props;
   const {height} = useWindowDimensions();
 
+  const [profilePicture, setProfilePicture] = useState(null);
+
   const [userFullName, setUserFullName] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState(null);
   const [userName, setUserName] = useState(null);
@@ -53,6 +55,7 @@ const Profile = props => {
             setUserFullName(userDoc.data().bus_driver_name);
             setPhoneNumber(userDoc.data().phone_number);
             setUserName(userDoc.data().username);
+            setProfilePicture(userDoc.data().profile_picture || null);
           } else {
             console.log('User document does not exist');
           }
@@ -138,9 +141,8 @@ const Profile = props => {
       <View style={styles.logoContainer}>
         <View>
           <Image
-            source={IMAGES.logo}
+            source={profilePicture ? {uri: profilePicture} : IMAGES.logo}
             style={styles.logo}
-            resizeMode="contain"
           />
         </View>
       </View>
@@ -155,7 +157,9 @@ const Profile = props => {
                 style={styles.detailItem}
                 onPress={() => setModalVisible(true)}>
                 <Text style={styles.detailTitle}>Full Name</Text>
-                <Text style={styles.detailText}>{userFullName || 'ComPass Driver'}</Text>
+                <Text style={styles.detailText}>
+                  {userFullName || 'ComPass Driver'}
+                </Text>
               </TouchableOpacity>
 
               <View style={styles.separator} />
@@ -252,6 +256,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 150,
     height: 150,
+    borderRadius: 75,
   },
   scrollContainer: {
     flexGrow: 1,
