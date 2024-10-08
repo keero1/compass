@@ -65,6 +65,8 @@ const Main = props => {
   const [searchVisible, setSearchVisible] = useState(false);
   const searchBoxHeight = useRef(new Animated.Value(0)).current;
 
+  const [notificationShown, setNotificationShown] = useState(false);
+
   // default location
 
   useEffect(() => {
@@ -232,29 +234,33 @@ const Main = props => {
     });
   }
 
-  // Check bus location in relation to the marker
   useEffect(() => {
     const checkBusProximity = async () => {
       if (!marker || busMarkers.length === 0) {
-        return; // No marker or buses
+        return;
       }
+
+      let notified = false;
 
       busMarkers.forEach(async bus => {
         const distance = calculateDistance(bus.coordinate, marker);
 
-        // Check if the bus is within the 1 km radius of the marker
-        if (distance <= 1000) {
-          // Trigger push notification
-          onDisplayNotification();
+        if (distance <= 1000 && !notified) {
+          if (!notificationShown) {
+            await onDisplayNotification();
+            setNotificationShown(true);
+            notified = true;
 
-          // Remove the marker after triggering the notification
-          const userID = auth().currentUser.uid;
-          try {
-            await firestore().collection('markers').doc(userID).delete();
-            setMarker(null); // Update local state to remove the marker
-          } catch (error) {
-            console.error('Error removing marker from Firestore: ', error);
+            const userID = auth().currentUser.uid;
+            try {
+              await firestore().collection('markers').doc(userID).delete();
+              setMarker(null);
+            } catch (error) {
+              console.error('Error removing marker from Firestore: ', error);
+            }
           }
+        } else if (distance > 1000) {
+          setNotificationShown(false);
         }
       });
     };
