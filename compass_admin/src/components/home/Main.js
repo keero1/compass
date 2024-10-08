@@ -119,7 +119,7 @@ const Main = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [imageCache]);
 
   // interval to refresh buses (incase offline)
   // useEffect(() => {
