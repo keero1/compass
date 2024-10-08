@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase/firebase";
-import {
-  collection,
-  getDocs,
-  addDoc,
-} from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { Link } from "react-router-dom";
 
 const routesCollection = collection(db, "routes");
@@ -86,18 +82,17 @@ const ManageRoute = () => {
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search Routes..."
-          className="input input-bordered w-full max-w-xs"
-          disabled
-        />
-      </div>
-
       {/* Table */}
-      <div className="overflow-x-auto shadow-lg mt-6">
+      <div className="bg-base-300 overflow-x-auto  shadow-lg rounded-lg p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
+          <input
+            type="text"
+            name="searchQuery"
+            placeholder="Filter by Route Name"
+            className="input input-bordered w-full"
+            disabled
+          />
+        </div>
         <table className="table w-full">
           <thead>
             <tr>
@@ -108,7 +103,7 @@ const ManageRoute = () => {
           <tbody>
             {loading
               ? Array.from({ length: 5 }).map((_, index) => (
-                  <tr key={index} className="hover">
+                  <tr key={index}>
                     <td className="text-lg">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
@@ -118,7 +113,7 @@ const ManageRoute = () => {
                   </tr>
                 ))
               : paginatedRoutes.map((route) => (
-                  <tr key={route.id} className="hover">
+                  <tr key={route.id}>
                     <td className="text-lg max-w-32 whitespace-nowrap overflow-hidden text-ellipsis">
                       {route.route_name}
                     </td>

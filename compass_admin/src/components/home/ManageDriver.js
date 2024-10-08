@@ -15,6 +15,10 @@ const ManageDriver = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
 
+  const [filters, setFilters] = useState({
+    searchQuery: "",
+  });
+
   //route
   const fetchRouteData = async () => {
     try {
@@ -61,7 +65,7 @@ const ManageDriver = () => {
     const route = routes.find((r) => r.id === route_id);
     return route ? route.name : "Unknown";
   };
-  
+
   const handleNextPage = () => {
     setCurrentPage((prevPage) =>
       Math.min(prevPage + 1, Math.ceil(buses.length / rowsPerPage))
@@ -77,8 +81,27 @@ const ManageDriver = () => {
     fetchBusData();
   }, []);
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+  };
+
+  const filteredBuses = buses.filter((bus) => {
+    return (
+      bus.bus_driver_name
+        .toLowerCase()
+        .includes(filters.searchQuery.toLowerCase()) ||
+      bus.license_plate
+        .toLowerCase()
+        .includes(filters.searchQuery.toLowerCase())
+    );
+  });
+
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedBuses = buses.slice(startIndex, startIndex + rowsPerPage);
+  const paginatedBuses = filteredBuses.slice(startIndex, startIndex + rowsPerPage);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -93,18 +116,18 @@ const ManageDriver = () => {
         </Link>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search buses..."
-          className="input input-bordered w-full max-w-xs"
-          disabled
-        />
-      </div>
-
       {/* Table */}
-      <div className="overflow-x-auto shadow-lg mt-6">
+      <div className="bg-base-300 overflow-x-auto  shadow-lg rounded-lg p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
+          <input
+            type="text"
+            name="searchQuery"
+            placeholder="Filter by Bus Driver Name or License Number"
+            className="input input-bordered w-full"
+            value={filters.searchQuery}
+            onChange={handleFilterChange}
+          />
+        </div>
         <table className="table w-full">
           <thead>
             <tr>
@@ -117,7 +140,7 @@ const ManageDriver = () => {
           <tbody>
             {loading
               ? Array.from({ length: 5 }).map((_, index) => (
-                  <tr key={index} className="hover">
+                  <tr key={index}>
                     <td className="text-lg">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
@@ -133,7 +156,7 @@ const ManageDriver = () => {
                   </tr>
                 ))
               : paginatedBuses.map((bus) => (
-                  <tr key={bus.id} className="hover">
+                  <tr key={bus.id}>
                     <td className="text-lg">{bus.bus_driver_name}</td>
                     <td className="text-lg">{bus.license_plate}</td>
                     <td className="text-lg">{"(+63) " + bus.phone_number}</td>
@@ -153,12 +176,12 @@ const ManageDriver = () => {
       </div>
 
       {/* Pagination */}
-      {!loading && buses.length > 0 && (
+      {!loading && filteredBuses.length > 0 && (
         <div className="flex justify-end items-center mt-4 space-x-8">
           <div className="text-lg">Rows per page: {rowsPerPage}</div>
           <div className="text-lg">
-            {startIndex + 1}-{Math.min(startIndex + rowsPerPage, buses.length)}{" "}
-            of {buses.length}
+            {startIndex + 1}-{Math.min(startIndex + rowsPerPage, filteredBuses.length)}{" "}
+            of {filteredBuses.length}
           </div>
           <div className="text-lg flex space-x-2">
             <button
@@ -172,7 +195,7 @@ const ManageDriver = () => {
             <button
               onClick={handleNextPage}
               className={`btn btn-sm ${
-                currentPage === Math.ceil(buses.length / rowsPerPage)
+                currentPage === Math.ceil(filteredBuses.length / rowsPerPage)
                   ? "btn-disabled"
                   : ""
               }`}

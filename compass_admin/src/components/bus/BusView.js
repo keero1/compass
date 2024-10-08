@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { db } from "../../firebase/firebase"; // Adjust path to Firebase configuration
+import { db, storage } from "../../firebase/firebase"; // Adjust path to Firebase configuration
 import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import Frieren from "../../assets/images/frieren.png";
 
@@ -17,9 +18,15 @@ const BusView = () => {
     phone_number: "",
     route_id: "",
     license_plate: "",
+    profile_picture: "",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewImage, setPreviewImage] = useState("");
+
+  // image loading
+  const [isImageLoading, setIsImageLoading] = useState(true);
 
   // Fetch all routes
   const fetchRoutes = async () => {
@@ -41,6 +48,7 @@ const BusView = () => {
       const busDoc = await getDoc(doc(db, "buses", busId));
       if (busDoc.exists()) {
         setBusData(busDoc.data());
+        setPreviewImage(busDoc.data().profile_picture || Frieren);
       } else {
         console.error("No such bus!");
       }
@@ -62,6 +70,13 @@ const BusView = () => {
     event.preventDefault();
     setIsSaving(true);
     try {
+      if (selectedFile) {
+        const profilePicRef = ref(storage, `profilePictures/${busId}`);
+        await uploadBytes(profilePicRef, selectedFile);
+        const profilePicUrl = await getDownloadURL(profilePicRef);
+        busData.profile_picture = profilePicUrl;
+      }
+
       await setDoc(doc(db, "buses", busId), busData);
       alert("Bus account updated successfully!");
     } catch (error) {
@@ -70,6 +85,22 @@ const BusView = () => {
       setIsSaving(false);
       navigate(-1);
     }
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0]; // Get the selected file
+    if (file) {
+      setSelectedFile(file); // Set the selected file
+      const reader = new FileReader(); // Create a FileReader to read the file
+      reader.onloadend = () => {
+        setPreviewImage(reader.result); // Set the preview image URL
+      };
+      reader.readAsDataURL(file); // Read the file as a data URL
+    }
+  };
+
+  const handleImageLoad = () => {
+    setIsImageLoading(false);
   };
 
   const handleBackClick = () => {
@@ -95,18 +126,32 @@ const BusView = () => {
         ) : (
           <div className="relative w-24 h-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 mb-4">
             <img
-              src={Frieren}
+              src={previewImage} // Use the preview image
               alt="Profile"
               className="w-full h-full object-cover rounded-full"
+              onLoad={handleImageLoad} // Call handleImageLoad when the image loads
+              style={isImageLoading ? { display: "none" } : {}} // Hide the image if it's still loading
             />
+            {isImageLoading && (
+              <img
+                src={Frieren}
+                alt="Placeholder"
+                className="w-full h-full object-cover rounded-full absolute top-0 left-0"
+              />
+            )}
 
-            <button
-              onClick={() => console.log("clicked")}
-              className="absolute bottom-0 right-0 p-1 bg-primary text-white rounded-full w-8 h-8 tooltip"
+            <label
+              className="absolute bottom-0 right-0 p-1 bg-primary text-white rounded-full w-8 h-8 tooltip cursor-pointer"
               data-tip="Change Picture"
             >
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden" // Hide the default file input
+              />
               +
-            </button>
+            </label>
           </div>
         )}
 
@@ -246,21 +291,25 @@ const BusView = () => {
                     ))}
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1 text-base-content">
-                    Bus Number
+                    Bus Type
                   </label>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    placeholder="Enter name"
+                  <select
+                    className="select select-bordered w-full"
+                    placeholder="Select route"
                     disabled
-                    value={busData.bus_number}
+                    value={busData.bus_type}
                     onChange={(e) =>
-                      setBusData({ ...busData, bus_number: e.target.value })
+                      setBusData({ ...busData, bus_type: e.target.value })
                     }
-                  />
+                  >
+                    <option value="" disabled>
+                      Select Buy Type
+                    </option>
+                    <option value="Aircon">Aircon</option>
+                    <option value="Ordinary">Ordinary</option>
+                  </select>
                 </div>
 
                 <div>

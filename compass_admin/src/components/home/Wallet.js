@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 // Firebase imports
-import { db } from "../../firebase/firebase";
-import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { db, auth } from "../../firebase/firebase";
+import { collection, getDocs, onSnapshot, doc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 const Wallet = () => {
   const [totalEarnings, setTotalEarnings] = useState(0);
@@ -9,6 +10,7 @@ const Wallet = () => {
   const [totalBuses, setTotalBuses] = useState(0);
 
   const [transactionHistory, setTransactionHistory] = useState([]);
+  const [walletBalance, setWalletBalance] = useState(0);
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -20,8 +22,7 @@ const Wallet = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [filters, setFilters] = useState({
-    busDriverName: "",
-    busNumber: "",
+    searchQuery: "",
     paymentType: "",
   });
 
@@ -64,17 +65,68 @@ const Wallet = () => {
     return unsubscribe;
   };
 
+  const fetchAdminWallet = (companyId) => {
+    const walletDoc = doc(db, "company", companyId, "wallet", "wallet");
+
+    const unsubscribe = onSnapshot(walletDoc, (snapshot) => {
+      if (snapshot.exists()) {
+        const walletData = snapshot.data();
+        setWalletBalance(walletData.balance.toFixed(2));
+      } else {
+        console.log("No such wallet document!");
+      }
+    });
+
+    return unsubscribe;
+  };
+
   const fetchBuses = async () => {
     const busesCollection = collection(db, "buses");
     const busesSnapshot = await getDocs(busesCollection);
     setTotalBuses(busesSnapshot.size);
   };
 
+  useEffect(() => {
+    const unsubscribeEarnings = fetchEarnings();
+    const unsubscribeTransactions = fetchTransactionHistory();
+    fetchBuses();
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const companyId = user.uid; // Use the current user's ID as the companyId
+        const unsubscribeWallet = fetchAdminWallet(companyId); // Fetch wallet balance using companyId
+
+        // Unsubscribe from wallet updates when component unmounts
+        return () => unsubscribeWallet();
+      } else {
+        console.log("No user is signed in");
+      }
+    });
+
+    return () => {
+      unsubscribeEarnings();
+      unsubscribeTransactions();
+      unsubscribeAuth();
+    };
+  }, []);
+
+  // other methods
+
   const formatNumber = (number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "PHP",
     }).format(number);
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "N/A";
+    const date = timestamp.toDate();
+    return date.toLocaleDateString("en-PH", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const handleFilterChange = (e) => {
@@ -85,24 +137,16 @@ const Wallet = () => {
     }));
   };
 
-  useEffect(() => {
-    const unsubscribeEarnings = fetchEarnings();
-    const unsubscribeTransactions = fetchTransactionHistory();
-    fetchBuses();
-
-    return () => {
-      unsubscribeEarnings();
-      unsubscribeTransactions();
-    };
-  }, []);
-
   const filteredTransactions = transactionHistory.filter((transaction) => {
-    return (
-      !filters.busDriverName ||
-      transaction.bus_driver_name
-        .toLowerCase()
-        .includes(filters.busDriverName.toLowerCase())
-    );
+    const searchQuery = filters.searchQuery.toLowerCase();
+    const paymentMatch =
+      !filters.paymentType || transaction.payment_type === filters.paymentType;
+    const searchMatch =
+      !searchQuery ||
+      transaction.bus_driver_name.toLowerCase().includes(searchQuery) ||
+      transaction.bus_number.toLowerCase().includes(searchQuery);
+
+    return paymentMatch && searchMatch; // Both conditions must be true
   });
 
   //paginated
@@ -152,77 +196,96 @@ const Wallet = () => {
       {/* Top Row Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {/* Earnings Card */}
-        <div className="bg-base-100 shadow-lg rounded-lg p-4">
+        <div className="bg-base-300 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Earnings</div>
           <div className="text-2xl truncate">{formatNumber(totalEarnings)}</div>
           {/* <div className="text-sm text-green-500">↑ 12% Since last month</div> */}
         </div>
 
         {/* Transactions Card */}
-        <div className="bg-base-100 shadow-lg rounded-lg p-4">
+        <div className="bg-base-300 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Transactions</div>
           <div className="text-2xl truncate">{totalTransactions}</div>
           {/* <div className="text-sm text-red-500">↓ 16% Since last month</div> */}
         </div>
 
         {/* Wallet Card */}
-        <div className="bg-base-100 shadow-lg rounded-lg p-4">
+        <div className="bg-base-300 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Wallet</div>
-          <div className="text-2xl truncate">₱0.00</div>
+          <div className="text-2xl truncate">{formatNumber(walletBalance)}</div>
         </div>
 
         {/* Buses Card */}
-        <div className="bg-base-100 shadow-lg rounded-lg p-4">
+        <div className="bg-base-300 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Buses</div>
           <div className="text-2xl truncate">{totalBuses}</div>
         </div>
       </div>
 
       {/* Transaction History Box */}
-      <div className="bg-base-100 shadow-lg rounded-lg p-4">
+      <div className="bg-base-300 shadow-lg rounded-lg p-4">
         <div className="text-lg font-semibold">Transaction History</div>
 
         {/* Filter Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
           <input
             type="text"
-            name="busDriverName"
-            placeholder="Filter by Bus Driver Name"
-            value={filters.busDriverName}
+            name="searchQuery"
+            placeholder="Filter by Bus Driver Name or Bus Number"
+            value={filters.searchQuery}
             onChange={handleFilterChange}
             className="input input-bordered w-full"
           />
+
+          <select
+            name="paymentType"
+            value={filters.paymentType}
+            onChange={handleFilterChange}
+            className="select select-bordered w-6/12 max-w-xs"
+          >
+            <option value="">All Payment Types</option>{" "}
+            <option value="Cash">Cash</option>
+            <option value="Cashless">Cashless</option>
+          </select>
         </div>
 
         {/* Transaction Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse">
+          <table className="min-w-full border-collapse bor">
             <thead>
               <tr>
-                <th className="border px-4 py-2">Bus Driver Name</th>
-                <th className="border px-4 py-2">Bus Number</th>
-                <th className="border px-4 py-2">Reference Number</th>
-                <th className="border px-4 py-2">Payment Type</th>
-                <th className="border px-4 py-2">Fare Amount</th>
+                <th className="border border-white px-4 py-2">
+                  Bus Driver Name
+                </th>
+                <th className="border border-white px-4 py-2">Bus Number</th>
+                <th className="border border-white px-4 py-2">
+                  Reference Number
+                </th>
+                <th className="border border-white px-4 py-2">Payment Type</th>
+                <th className="border border-white px-4 py-2">Fare Amount</th>
+                <th className="border border-white px-4 py-2">Date</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: rowsPerPage }).map((_, index) => (
                   <tr key={index}>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
+                      <div className="skeleton h-4 w-24"></div>
+                    </td>
+                    <td className="border border-white px-4 py-2">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
                   </tr>
@@ -230,20 +293,23 @@ const Wallet = () => {
               ) : paginatedTransactions.length > 0 ? (
                 paginatedTransactions.map((transaction) => (
                   <tr key={transaction.id}>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       {transaction.bus_driver_name}
                     </td>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       {transaction.bus_number}
                     </td>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       {transaction.reference_number}
                     </td>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       {transaction.payment_type}
                     </td>
-                    <td className="border px-4 py-2">
+                    <td className="border border-white px-4 py-2">
                       {formatNumber(transaction.fare_amount)}
+                    </td>
+                    <td className="border border-white px-4 py-2">
+                      {formatDate(transaction.timestamp)}
                     </td>
                   </tr>
                 ))
@@ -279,7 +345,7 @@ const Wallet = () => {
               {isDropdownOpen && ( // Step 2: Conditional rendering of dropdown
                 <ul
                   tabIndex={0}
-                  className="dropdown-content menu bg-base-100 rounded-box z-[1] shadow"
+                  className="dropdown-content menu bg-base-300 rounded-box z-[1] shadow"
                 >
                   {rowsOptions.map((option) => (
                     <li key={option}>

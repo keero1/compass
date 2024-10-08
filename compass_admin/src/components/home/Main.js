@@ -42,6 +42,8 @@ const Main = () => {
   // for infowindow
   const [infoWindowOpen, setInfoWindowOpen] = useState(null);
 
+  const [imageCache, setImageCache] = useState({});
+
   // route
   const [routes, setRoutes] = useState([]);
 
@@ -82,6 +84,20 @@ const Main = () => {
           const busId = doc.id; // Assuming the document ID is the bus ID
           const busDetails = await fetchBusDetails(busId);
 
+          if (
+            busDetails?.profile_picture &&
+            !imageCache[busDetails.profile_picture]
+          ) {
+            const img = new Image();
+            img.src = busDetails.profile_picture;
+            img.onload = () => {
+              setImageCache((prev) => ({
+                ...prev,
+                [busDetails.profile_picture]: img.src,
+              }));
+            };
+          }
+
           return {
             lat: data.coordinates.latitude,
             lng: data.coordinates.longitude,
@@ -90,7 +106,7 @@ const Main = () => {
             details: busDetails, // Include the bus details
           };
         })
-      )
+      );
       // .then((markers) =>
       //   markers.filter((marker) => {
       //     const timestampDiff = (now - marker.timestamp) / 1000 / 60; // Difference in minutes
@@ -212,7 +228,10 @@ const Main = () => {
                   <div className="avatar flex justify-center mb-2">
                     <div className="w-24 rounded-full overflow-hidden">
                       <img
-                        src={Frieren}
+                        src={
+                          imageCache[infoWindowOpen.details.profile_picture] ||
+                          Frieren
+                        }
                         className="object-cover"
                         alt="Profile"
                       />
