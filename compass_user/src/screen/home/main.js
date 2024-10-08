@@ -140,6 +140,8 @@ const Main = props => {
             return null; // Skip this document
           }
 
+          const profilePicture = busData.profile_picture || IMAGES.logo;
+
           const busInfo = {
             id: doc.id,
             coordinate: {
@@ -152,6 +154,7 @@ const Main = props => {
               route_id: data.route_id,
               timestamp: data.timestamp,
               seat_count: busData.seat_count,
+              profile_picture: profilePicture,
             },
           };
 
@@ -580,7 +583,7 @@ const Main = props => {
                     width={'100%'}
                     height={'100%'}
                     preserveAspectRatio="xMidYMid slice"
-                    href={IMAGES.logo}
+                    href={bus.details.profile_picture}
                   />
                 </Svg>
                 <Text>Driver Name: {bus.details.name}</Text>
