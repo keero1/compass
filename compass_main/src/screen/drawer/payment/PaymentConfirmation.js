@@ -87,7 +87,9 @@ const PaymentConfirmation = ({route}) => {
   // reference
 
   const generateReferenceNumber = () => {
-    return Math.floor(Math.random() * 1000000000);
+    const timestamp = Date.now();
+    const randomNum = Math.floor(Math.random() * 1000);
+    return `${timestamp}${randomNum}`;
   };
 
   const createTransaction = async (data, isCashless = false) => {
