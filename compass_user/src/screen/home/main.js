@@ -548,15 +548,20 @@ const Main = props => {
 
   const markerRefs = useRef([]);
 
+
+  /**
+   * This is for pre-loading the callout (tanginang package yan may bug di nag loload image sa first tap/load ng callout). 
+   * Diko pa natest sa nagalaw na bus since nag a-update yon ng marker HAHAHAHHH
+   */
+
   useEffect(() => {
     if (busMarkers.length > 0) {
-      // DISPLAY LAHAT NG CALLOUTS NG MGA MARKERS 
       busMarkers.forEach((bus, index) => {
         if (markerRefs.current[index]) {
-          markerRefs.current[index].showCallout(); // DISPLAY
+          markerRefs.current[index].showCallout(); // load the callout to cook the image
         }
 
-        markerRefs.current[index].hideCallout(); // HIDE RIN AGAD
+        markerRefs.current[index].hideCallout(); // unload the callout ready to be pressed
       });
     }
   }, [busMarkers]);
