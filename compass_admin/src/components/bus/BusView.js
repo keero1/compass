@@ -4,8 +4,6 @@ import { db, storage } from "../../firebase/firebase"; // Adjust path to Firebas
 import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-import axios from "axios";
-
 import Frieren from "../../assets/images/frieren.png";
 
 const BusView = () => {
