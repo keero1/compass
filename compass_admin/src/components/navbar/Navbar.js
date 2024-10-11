@@ -4,6 +4,8 @@ import Frieren from "../../assets/images/frieren.png";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "../../contexts/authContext";
+import { db } from "../../firebase/firebase";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 import {
   ArrowLeftStartOnRectangleIcon,
@@ -22,6 +24,58 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "nord");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+
+  const [companyName, setCompanyName] = useState(
+    localStorage.getItem("companyName") || "" // Load from localStorage if available
+  );
+
+  // load company name
+
+  const fetchCompanyName = async (uid) => {
+    try {
+      const docRef = doc(db, "company", uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setCompanyName(data.company_name); // Update with the company_name
+        localStorage.setItem("companyName", data.company_name); // Cache the company name
+      } else {
+        console.log("No such document!");
+      }
+    } catch (error) {
+      console.error("Error fetching company data: ", error);
+    }
+  };
+
+  const listenForCompanyUpdates = (uid) => {
+    const docRef = doc(db, "company", uid);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setCompanyName(data.company_name);
+        localStorage.setItem("companyName", data.company_name);
+      }
+    });
+    return unsubscribe;
+  };
+
+  useEffect(() => {
+    let unsubscribe;
+    if (currentUser && currentUser.uid) {
+      if (!companyName) {
+        fetchCompanyName(currentUser.uid);
+      }
+      unsubscribe = listenForCompanyUpdates(currentUser.uid);
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [currentUser]);
+
+  // update theme
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
@@ -44,11 +98,11 @@ const Navbar = () => {
   // Close sidebar on small screens
   useEffect(() => {
     const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 1024);
       if (window.innerWidth >= 1024) {
-        // Adjust width as needed
-        setIsSidebarOpen(true);
+        setIsSidebarOpen(true); // Open sidebar for larger screens
       } else {
-        setIsSidebarOpen(false);
+        setIsSidebarOpen(false); // Close sidebar for small screens
       }
     };
 
@@ -57,6 +111,13 @@ const Navbar = () => {
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const handleSignOut = () => {
+    doSignOut().then(() => {
+      localStorage.removeItem("companyName"); // Clear cache on logout
+      navigate("/");
+    });
+  };
 
   return (
     <div className={`drawer ${isSidebarOpen ? "lg:drawer-open" : ""}`}>
@@ -142,7 +203,7 @@ const Navbar = () => {
                 {currentUser && (
                   <div className="p-2 border-b border-gray-300">
                     <div className="text-lg font-semibold">
-                      {currentUser.displayName || "name"}
+                      {companyName || "ComPass User"}
                     </div>
                     <div className="text-sm">
                       {currentUser.email || "email"}
@@ -158,11 +219,7 @@ const Navbar = () => {
                 <li>
                   <button
                     className="text-red-500"
-                    onClick={() => {
-                      doSignOut().then(() => {
-                        navigate("/");
-                      });
-                    }}
+                    onClick={handleSignOut}
                   >
                     <ArrowLeftStartOnRectangleIcon className="size-6" />
                     Logout
@@ -173,7 +230,11 @@ const Navbar = () => {
           </div>
         </div>
         {/* <main className={`flex-1 ${isSidebarOpen ? "m-5" : "ml-5"}`}> */}
-        <main className={`flex-1 mt-16 ${isSidebarOpen ? "ml-52" : "ml-0"}`}>
+        <main
+          className={`flex-1 mt-16 ${
+            isSidebarOpen && !isSmallScreen ? "ml-52" : "ml-0"
+          }`}
+        >
           <Outlet />
         </main>
       </div>

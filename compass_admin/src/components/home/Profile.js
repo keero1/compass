@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react"; // Import useRef
 import { useAuth } from "../../contexts/authContext";
 import Frieren from "../../assets/images/frieren.png";
 
 // Firebase imports
 import { db } from "../../firebase/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  doSignInWithEmailAndPassword,
+  doPasswordChange,
+} from "../../firebase/auth";
 
 // Utility functions for local storage
 const getCachedData = () => {
@@ -37,6 +41,16 @@ const Profile = () => {
     email: "",
     phone_number: "",
   });
+
+  const [loading, setLoading] = useState(false);
+
+  const [loadingPassword, setLoadingPassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState(null);
+  const [newPassword, setNewPassword] = useState(null);
+  const [confirmPassword, setConfirmPassword] = useState(null);
+
+  // Create a reference to the dialog
+  const dialogRef = useRef(null);
 
   useEffect(() => {
     const fetchCompanyData = async () => {
@@ -77,7 +91,7 @@ const Profile = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
       [name]: value,
     }));
@@ -105,15 +119,57 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (JSON.stringify(formData) === JSON.stringify(companyData)) {
+      console.log("No changes detected");
+      return;
+    }
+
+    setLoading(true);
+
     if (currentUser && currentUser.uid) {
       try {
+        const { email, ...dataToUpdate } = formData; // Exclude the email field from the update
         const docRef = doc(db, "company", currentUser.uid);
-        await updateDoc(docRef, formData);
+        await updateDoc(docRef, dataToUpdate);
         console.log("Document updated successfully!");
         refetchCompanyData();
       } catch (error) {
         console.error("Error updating document: ", error);
+      } finally {
+        setLoading(false);
       }
+    }
+  };
+
+  const handleChangePassword = (e) => {
+    e.preventDefault();
+    handleReauth(oldPassword, newPassword, confirmPassword);
+  };
+
+  const handleReauth = async (oldPasswordX, newPasswordX, confirmPasswordX) => {
+    setLoadingPassword(true);
+    try {
+      await doSignInWithEmailAndPassword(currentUser.email, oldPasswordX);
+
+      if (newPasswordX === confirmPasswordX) {
+        await doPasswordChange(newPasswordX);
+        alert("Password updated successfully!");
+
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+
+        dialogRef.current.close();
+      } else {
+        alert("Passwords do not match!");
+      }
+    } catch (error) {
+      alert(
+        "Error during re-authentication or updating password: " + error.message
+      );
+    } finally {
+      setLoadingPassword(false);
     }
   };
 
@@ -134,7 +190,7 @@ const Profile = () => {
               {companyData.email || "company@email.com"}
             </p>
             <p className="text-sm text-gray-500">
-              {"0" + companyData.phone_number || "09xxxxxxxxx"}
+              {"(+63)"} {companyData.phone_number || "9xxxxxxxxx"}
             </p>
           </div>
         </div>
@@ -152,7 +208,7 @@ const Profile = () => {
                   <input
                     type="text"
                     name="company_name"
-                    placeholder="Santrans Inc."
+                    placeholder="Enter Name"
                     value={formData.company_name}
                     onChange={handleChange}
                     className="input input-bordered w-full"
@@ -168,8 +224,8 @@ const Profile = () => {
                     name="email"
                     placeholder="company_email@example.com"
                     value={formData.email}
-                    onChange={handleChange}
                     className="input input-bordered w-full"
+                    disabled
                   />
                 </div>
 
@@ -177,26 +233,118 @@ const Profile = () => {
                   <label className="label">
                     <span className="label-text">Phone Number</span>
                   </label>
-                  <input
-                    type="text"
-                    name="phone_number"
-                    placeholder="09xxxxxxxxx"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content text-base">
+                      (+63)
+                    </div>
+                    <input
+                      type="text"
+                      name="phone_number"
+                      placeholder="Enter Phone Number"
+                      value={formData.phone_number}
+                      pattern="9\d{9}"
+                      title="Format: 9123456789"
+                      className="input input-bordered pl-14 w-full text-base"
+                      onChange={(e) => {
+                        const numericValue = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+                        if (numericValue.length <= 10) {
+                          setFormData((prevState) => ({
+                            ...prevState,
+                            phone_number: numericValue,
+                          }));
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-control mt-6">
-                  <button type="submit" className="btn btn-primary">
-                    Update Profile
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? "Updating..." : "Update Profile"}
                   </button>
                 </div>
               </form>
+
+              <div className="mt-4">
+                <button
+                  className="btn btn-secondary w-full"
+                  onClick={() => dialogRef.current.showModal()} // Open the modal using ref
+                >
+                  Change Password
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+      {/* Change Password Modal */}
+      <dialog ref={dialogRef} className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Change Password</h3>
+          <form onSubmit={handleChangePassword}>
+            <div className="form-control mb-4">
+              <label className="label">
+                <span className="label-text">Old Password</span>
+              </label>
+              <input
+                type="password"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                placeholder="Enter Old Password"
+                className="input input-bordered"
+                required
+              />
+            </div>
+            <div className="form-control mb-4">
+              <label className="label">
+                <span className="label-text">New Password</span>
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter New Password"
+                className="input input-bordered"
+                required
+              />
+            </div>
+            <div className="form-control mb-4">
+              <label className="label">
+                <span className="label-text">Confirm Password</span>
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm Password"
+                className="input input-bordered"
+                required
+              />
+            </div>
+            <div className="modal-action">
+              <button type="submit" className="btn" disabled={loadingPassword}>
+                {loadingPassword ? "Updating..." : "Change Password"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                  dialogRef.current.close();
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
     </div>
   );
 };

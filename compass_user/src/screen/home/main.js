@@ -14,7 +14,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import {Svg, Image as ImageSvg} from 'react-native-svg';
+import {Svg, Image as ImageSvg, Defs, ClipPath, Circle} from 'react-native-svg';
 
 // ROUTES
 
@@ -242,11 +242,11 @@ const Main = props => {
 
       let notified = false;
 
-      busMarkers.forEach(async bus => {
+      for (const bus of busMarkers) {
         const distance = calculateDistance(bus.coordinate, marker);
 
-        if (distance <= 1000 && !notified) {
-          if (!notificationShown) {
+        if (distance <= 1000) {
+          if (!notificationShown && !notified) {
             await onDisplayNotification();
             setNotificationShown(true);
             notified = true;
@@ -260,9 +260,11 @@ const Main = props => {
             }
           }
         } else if (distance > 1000) {
-          setNotificationShown(false);
+          if (notified) {
+            setNotificationShown(false);
+          }
         }
-      });
+      }
     };
 
     checkBusProximity();
@@ -544,6 +546,26 @@ const Main = props => {
     return distance;
   };
 
+  const markerRefs = useRef([]);
+
+
+  /**
+   * This is for pre-loading the callout (tanginang package yan may bug di nag loload image sa first tap/load ng callout). 
+   * Diko pa natest sa nagalaw na bus since nag a-update yon ng marker HAHAHAHHH
+   */
+
+  useEffect(() => {
+    if (busMarkers.length > 0) {
+      busMarkers.forEach((bus, index) => {
+        if (markerRefs.current[index]) {
+          markerRefs.current[index].showCallout(); // load the callout to cook the image
+        }
+
+        markerRefs.current[index].hideCallout(); // unload the callout ready to be pressed
+      });
+    }
+  }, [busMarkers]);
+
   return (
     <SafeAreaView style={styles.container}>
       <HeaderComponent
@@ -579,17 +601,24 @@ const Main = props => {
           {/* Bus markers */}
           {busMarkers.map((bus, index) => (
             <Marker
+              ref={el => (markerRefs.current[index] = el)}
               key={`${bus.id}-${index}`} // Add index for extra uniqueness
               coordinate={bus.coordinate}
               onPress={() => onBusMarkerPressed(bus.details.route_id)}
               pinColor="blue">
               <Callout style={{alignItems: 'center'}}>
-                <Svg width={100} height={100} style={{margin: 10}}>
+                <Svg width={120} height={120}>
+                  <Defs>
+                    <ClipPath id="clip">
+                      <Circle cx="50%" cy="50%" r="40%" />
+                    </ClipPath>
+                  </Defs>
                   <ImageSvg
-                    width={'100%'}
-                    height={'100%'}
+                    width={120}
+                    height={120}
                     preserveAspectRatio="xMidYMid slice"
                     href={bus.details.profile_picture}
+                    clipPath="url(#clip)"
                   />
                 </Svg>
                 <Text>Driver Name: {bus.details.name}</Text>
