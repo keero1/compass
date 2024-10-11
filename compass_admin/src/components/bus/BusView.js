@@ -28,10 +28,6 @@ const BusView = () => {
   // image loading
   const [isImageLoading, setIsImageLoading] = useState(true);
 
-  // driver name
-
-  const [inputName, setInputName] = useState(null);
-
   // Fetch all routes
   const fetchRoutes = async () => {
     try {
@@ -109,32 +105,6 @@ const BusView = () => {
 
   const handleBackClick = () => {
     navigate(-1);
-  };
-
-  // reset password
-  const handleResetPassword = async () => {
-    try {
-      const response = await fetch(
-        "https://www.compass-santrans.online/api/reset-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username: busData.username }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert(data.message);
-      } else {
-        alert(data.error);
-      }
-    } catch (error) {
-      console.error("Error resetting password:", error);
-    }
   };
 
   return (
@@ -250,6 +220,7 @@ const BusView = () => {
                     type="text"
                     className="input input-bordered w-full"
                     placeholder="Enter bus driver name"
+                    disabled
                     value={busData.bus_driver_name}
                     onChange={(e) =>
                       setBusData({
@@ -272,6 +243,7 @@ const BusView = () => {
                       type="tel"
                       className="input input-bordered pl-16 w-full"
                       placeholder="Enter phone number"
+                      disabled
                       value={busData.phone_number}
                       onChange={(e) =>
                         setBusData({ ...busData, phone_number: e.target.value })
@@ -326,6 +298,7 @@ const BusView = () => {
                   <select
                     className="select select-bordered w-full"
                     placeholder="Select route"
+                    disabled
                     value={busData.bus_type}
                     onChange={(e) =>
                       setBusData({ ...busData, bus_type: e.target.value })
@@ -364,64 +337,9 @@ const BusView = () => {
                 {isSaving ? "Updating..." : "Update"}
               </button>
             </form>
-            <div className="mt-4">
-              <button
-                className="btn btn-secondary w-full"
-                onClick={() =>
-                  document.getElementById("reset_password_modal").showModal()
-                }
-              >
-                Reset password
-              </button>
-            </div>
           </div>
         )}
       </div>
-      {/* Password Reset Modal */}
-      <dialog id="reset_password_modal" className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-lg">Confirm Reset Password</h3>
-          <p className="py-4">
-            Enter the <strong>{busData.bus_driver_name}</strong> to confirm
-          </p>
-          <input
-            type="text"
-            className="input input-bordered w-full mb-4"
-            placeholder="Enter the bus driver name"
-            value={inputName}
-            onChange={(e) => setInputName(e.target.value)} // Update state on input change
-          />
-          <div className="modal-action">
-            <button
-              className="btn"
-              onClick={() => {
-                // Logic to reset password
-                if (inputName === busData.bus_driver_name) {
-                  // Assuming the password logic here
-                  handleResetPassword();
-                  console.log("Password reset for:", inputName);
-                  document.getElementById("reset_password_modal").close();
-                } else {
-                  alert("Name does not match!");
-                  setInputName("");
-                }
-              }}
-            >
-              Confirm
-            </button>
-            <form method="dialog">
-              <button
-                className="btn"
-                onClick={() => {
-                  setInputName("");
-                }}
-              >
-                Close
-              </button>
-            </form>
-          </div>
-        </div>
-      </dialog>
     </div>
   );
 };
