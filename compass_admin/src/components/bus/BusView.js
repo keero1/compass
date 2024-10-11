@@ -112,9 +112,11 @@ const BusView = () => {
   };
 
   const handleResetPassword = async () => {
-    const newPassword = `${busData.bus_driver_name.toLowerCase()}${
-      busData.bus_number
-    }`;
+    const newPassword = `${busData.bus_driver_name
+      .replace(/\s+/g, "")
+      .toLowerCase()}${busData.bus_number}`;
+
+    console.log(newPassword);
 
     try {
       const response = await fetch(
@@ -380,7 +382,7 @@ const BusView = () => {
                   document.getElementById("reset_password_modal").showModal()
                 }
               >
-                Reset passwordX
+                Reset password
               </button>
             </div>
           </div>
