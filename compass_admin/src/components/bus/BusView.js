@@ -116,8 +116,6 @@ const BusView = () => {
       .replace(/\s+/g, "")
       .toLowerCase()}${busData.bus_number}`;
 
-    console.log(newPassword);
-
     try {
       const response = await fetch(
         "https://compass-backend-coral.vercel.app/api/reset-password",
@@ -136,6 +134,7 @@ const BusView = () => {
       if (response.ok) {
         alert("Password reset successfully!");
         setInputName(""); // Clear the input field
+        document.getElementById("reset_password_modal").close(); //close the modal
       } else {
         const data = await response.json();
         alert(`Error: ${data.error}`);
