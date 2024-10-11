@@ -17,6 +17,7 @@ const ManageDriver = () => {
 
   const [filters, setFilters] = useState({
     searchQuery: "",
+    routeFilter: "",
   });
 
   //route
@@ -90,18 +91,25 @@ const ManageDriver = () => {
   };
 
   const filteredBuses = buses.filter((bus) => {
-    return (
+    const searchMatch =
       bus.bus_driver_name
         .toLowerCase()
         .includes(filters.searchQuery.toLowerCase()) ||
       bus.license_plate
         .toLowerCase()
-        .includes(filters.searchQuery.toLowerCase())
-    );
+        .includes(filters.searchQuery.toLowerCase());
+
+    const routeMatch =
+      !filters.routeFilter || bus.route_id === filters.routeFilter;
+
+    return searchMatch && routeMatch;
   });
 
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedBuses = filteredBuses.slice(startIndex, startIndex + rowsPerPage);
+  const paginatedBuses = filteredBuses.slice(
+    startIndex,
+    startIndex + rowsPerPage
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -127,6 +135,20 @@ const ManageDriver = () => {
             value={filters.searchQuery}
             onChange={handleFilterChange}
           />
+          {/* Route dropdown */}
+          <select
+            name="routeFilter"
+            value={filters.routeFilter}
+            onChange={handleFilterChange}
+            className="select select-bordered w-6/12 max-w-xs"
+          >
+            <option value="">All Routes</option>
+            {routes.map((route) => (
+              <option key={route.id} value={route.id}>
+                {route.name}
+              </option>
+            ))}
+          </select>
         </div>
         <table className="table w-full">
           <thead>
@@ -180,8 +202,9 @@ const ManageDriver = () => {
         <div className="flex justify-end items-center mt-4 space-x-8">
           <div className="text-lg">Rows per page: {rowsPerPage}</div>
           <div className="text-lg">
-            {startIndex + 1}-{Math.min(startIndex + rowsPerPage, filteredBuses.length)}{" "}
-            of {filteredBuses.length}
+            {startIndex + 1}-
+            {Math.min(startIndex + rowsPerPage, filteredBuses.length)} of{" "}
+            {filteredBuses.length}
           </div>
           <div className="text-lg flex space-x-2">
             <button

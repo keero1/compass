@@ -220,7 +220,6 @@ const BusView = () => {
                     type="text"
                     className="input input-bordered w-full"
                     placeholder="Enter bus driver name"
-                    disabled
                     value={busData.bus_driver_name}
                     onChange={(e) =>
                       setBusData({
@@ -243,7 +242,6 @@ const BusView = () => {
                       type="tel"
                       className="input input-bordered pl-16 w-full"
                       placeholder="Enter phone number"
-                      disabled
                       value={busData.phone_number}
                       onChange={(e) =>
                         setBusData({ ...busData, phone_number: e.target.value })
@@ -298,7 +296,6 @@ const BusView = () => {
                   <select
                     className="select select-bordered w-full"
                     placeholder="Select route"
-                    disabled
                     value={busData.bus_type}
                     onChange={(e) =>
                       setBusData({ ...busData, bus_type: e.target.value })

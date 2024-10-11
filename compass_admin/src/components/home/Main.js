@@ -49,6 +49,8 @@ const Main = () => {
 
   const mapRef = useRef(null);
 
+  const [clickedMarkerIndex, setClickedMarkerIndex] = useState(null);
+
   // bus location
 
   // fetch data
@@ -76,7 +78,7 @@ const Main = () => {
 
     const unsubscribe = onSnapshot(busLocationCollection, async (snapshot) => {
       console.log("snapshot triggered");
-      const now = new Date();
+      // const now = new Date();
 
       const newMarkers = await Promise.all(
         snapshot.docs.map(async (doc) => {
@@ -179,6 +181,14 @@ const Main = () => {
 
   // click handlers
 
+  const handleMarkerClick = (index) => {
+    setClickedMarkerIndex(index); // Track the clicked marker index
+    setInfoWindowOpen({
+      details: markers[index].details,
+      markerRef: markerInstancesRef.current[index],
+    });
+  };
+
   const handleHoverMouse = (index) => {
     const markerRef = markerInstancesRef.current[index];
     setInfoWindowOpen({
@@ -187,8 +197,16 @@ const Main = () => {
     });
   };
 
+  const handleMouseOut = () => {
+    // Close the InfoWindow only if a marker hasn't been clicked
+    if (clickedMarkerIndex === null) {
+      setInfoWindowOpen(null);
+    }
+  };
+
   const onMapClick = () => {
     setInfoWindowOpen(null);
+    setClickedMarkerIndex(null);
   };
 
   return (
@@ -214,7 +232,8 @@ const Main = () => {
                 key={index}
                 position={{ lat: marker.lat, lng: marker.lng }}
                 onMouseOver={() => handleHoverMouse(index)}
-                onMouseOut={() => setInfoWindowOpen(null)}
+                onMouseOut={handleMouseOut}
+                onClick={() => handleMarkerClick(index)}
                 ref={(el) => (markerInstancesRef.current[index] = el)}
               />
             ))}
@@ -223,6 +242,7 @@ const Main = () => {
               <InfoWindow
                 anchor={infoWindowOpen.markerRef}
                 onCloseClick={() => setInfoWindowOpen(null)}
+                disableAutoPan
               >
                 <div>
                   <div className="avatar flex justify-center mb-2">
