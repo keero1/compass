@@ -69,7 +69,7 @@ const BusCreate = () => {
     const adminID = auth.currentUser.uid;
 
     try {
-      const response = await fetch("https://www.compass-santrans.online/api/create-bus", {
+      const response = await fetch("https://compass-backend-coral.vercel.app/api/create-bus", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

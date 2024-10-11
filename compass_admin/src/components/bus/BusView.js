@@ -118,7 +118,7 @@ const BusView = () => {
 
     try {
       const response = await fetch(
-        "https://www.compass-santrans.online/api/reset-password",
+        "https://compass-backend-coral.vercel.app/api/reset-password",
         {
           method: "POST",
           headers: {
