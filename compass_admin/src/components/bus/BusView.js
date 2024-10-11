@@ -380,7 +380,7 @@ const BusView = () => {
                   document.getElementById("reset_password_modal").showModal()
                 }
               >
-                Reset password
+                Reset passwordX
               </button>
             </div>
           </div>
