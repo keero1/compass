@@ -11,9 +11,11 @@ import {
 
 import {useIsFocused} from '@react-navigation/native';
 
-//firebase
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import {
+  ArrowRightCircleIcon,
+  BanknotesIcon,
+  CreditCardIcon,
+} from 'react-native-heroicons/solid';
 
 import {IMAGES, ROUTES} from '../../constants';
 
@@ -86,23 +88,20 @@ const Drawer = props => {
           </View>
         </View>
 
-        {/* Line separator */}
         <View style={styles.separator}></View>
 
-        {/* Touchable Text Components */}
-        <TouchableOpacity onPress={onPaymentPressed}>
+        <TouchableOpacity
+          onPress={onPaymentPressed}
+          style={styles.menuItemContainer}>
+          <BanknotesIcon size={30} color="gray" />
           <Text style={styles.menuItem}>Payment</Text>
         </TouchableOpacity>
-        {/* Touchable Text Components */}
-        <TouchableOpacity onPress={onTransactionPressed}>
+        <TouchableOpacity
+          onPress={onTransactionPressed}
+          style={styles.menuItemContainer}>
+          <ArrowRightCircleIcon size={30} color="gray" />
           <Text style={styles.menuItem}>Transactions</Text>
         </TouchableOpacity>
-        {/* <TouchableOpacity>
-          <Text style={styles.menuItem}>Settings</Text>
-        </TouchableOpacity> */}
-        {/* <TouchableOpacity onPress={onShutdownPressed}>
-          <Text style={styles.menuItem}>Shutdown</Text>
-        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );
@@ -143,7 +142,7 @@ const styles = StyleSheet.create({
   },
 
   text: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -173,9 +172,15 @@ const styles = StyleSheet.create({
   },
 
   // Menu items
-  menuItem: {
-    fontSize: 20,
+  menuItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 10,
+  },
+
+  menuItem: {
+    fontSize: 25,
+    marginLeft: 10, // Add margin to the left for spacing
   },
 });
 
