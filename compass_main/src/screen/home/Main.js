@@ -15,7 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import ROUTES from '../../constants/routes';
 
 // MAP
-import MapView, {PROVIDER_GOOGLE} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 // firebase
@@ -31,6 +31,8 @@ const Main = props => {
   const [initialRegion, setInitialRegion] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapRegion, setMapRegion] = useState(null);
+
+  const [markers, setMarkers] = useState([]);
 
   // Seat count
   const maxSeatCount = 56;
@@ -110,6 +112,28 @@ const Main = props => {
       console.error('Error updating bus location:', error);
     }
   };
+
+  // marker
+  const fetchMarkers = async () => {
+    try {
+      const markersSnapshot = await firestore().collection('markers').get();
+      const markersData = markersSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          latitude: data.coordinates.latitude,
+          longitude: data.coordinates.longitude,
+          timestamp: data.timestamp,
+        };
+      });
+      setMarkers(markersData);
+    } catch (error) {
+      console.error('Error fetching markers:', error);
+    }
+  };
+  useEffect(() => {
+    fetchMarkers();
+  }, []);
 
   // seat count
   const fetchSeatCount = async () => {
@@ -195,7 +219,20 @@ const Main = props => {
           pitchEnabled={false}
           showsCompass={false}
           followsUserLocation
-          toolbarEnabled={false}></MapView>
+          toolbarEnabled={false}>
+          {/* Render markers on the map */}
+          {markers.map(marker => (
+            <Marker
+              key={marker.id}
+              coordinate={{
+                latitude: marker.latitude,
+                longitude: marker.longitude,
+              }}
+              title={marker.title} // Assuming you have title field
+              description={marker.description} // Assuming you have description field
+            />
+          ))}
+        </MapView>
         <TouchableOpacity onPress={centerToUser} style={styles.centerButton}>
           <Icon name="my-location" size={30} color="black" />
         </TouchableOpacity>

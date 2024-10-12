@@ -36,6 +36,13 @@ const Profile = props => {
   const [newDriverName, setNewDriverName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
+  // password
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordChangeModalVisible, setPasswordChangeModalVisible] =
+    useState(false);
+
   const [loading, setLoading] = useState(false);
 
   const focus = useIsFocused();
@@ -101,7 +108,7 @@ const Profile = props => {
         setModalVisible(false); // Close modal after submission
         setNewDriverName(''); // Reset input
       } catch (error) {
-        console.error('Error submitting name change request:', error);
+        console.log('Error submitting name change request:', error);
         Alert.alert('Error', 'Failed to submit name change request.');
       } finally {
         setLoading(false);
@@ -136,6 +143,41 @@ const Profile = props => {
     ]);
   };
 
+  // change password
+  const handleChangePassword = async () => {
+    const user = auth().currentUser;
+
+    if (newPassword === confirmNewPassword) {
+      setLoading(true);
+      try {
+        // Reauthenticate the user
+        const credential = auth.EmailAuthProvider.credential(
+          user.email,
+          currentPassword,
+        );
+        await user.reauthenticateWithCredential(credential);
+
+        // Update password
+        await user.updatePassword(newPassword);
+        Alert.alert('Success', 'Password changed successfully!');
+        setPasswordChangeModalVisible(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } catch (error) {
+        console.log('Error changing password:', error);
+        Alert.alert(
+          'Error',
+          'Failed to change password. Please check your current password and try again.',
+        );
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      Alert.alert('Error', 'New passwords do not match.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.logoContainer}>
@@ -164,12 +206,12 @@ const Profile = props => {
 
               <View style={styles.separator} />
 
-              <TouchableOpacity style={styles.detailItem}>
+              <View style={styles.detailItem}>
                 <Text style={styles.detailTitle}>Phone Number</Text>
                 <Text style={styles.detailText}>
                   (+63) {phoneNumber || 912345678}
                 </Text>
-              </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -186,7 +228,7 @@ const Profile = props => {
 
               <TouchableOpacity
                 style={styles.detailItemX}
-                onPress={() => console.log('password')}>
+                onPress={() => setPasswordChangeModalVisible(true)}>
                 <Text style={styles.detailTitle}>Password</Text>
               </TouchableOpacity>
             </View>
@@ -232,6 +274,61 @@ const Profile = props => {
                   onPress={() => {
                     setNewDriverName('');
                     setModalVisible(false);
+                  }}>
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Change Password Modal */}
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={passwordChangeModalVisible}
+          onRequestClose={() => setPasswordChangeModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Change Password</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Current Password"
+                secureTextEntry
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="New Password"
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Confirm New Password"
+                secureTextEntry
+                value={confirmNewPassword}
+                onChangeText={setConfirmNewPassword}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  disabled={loading}
+                  onPress={handleChangePassword}>
+                  <Text style={styles.modalButtonText}>
+                    {loading ? 'Changing Password...' : 'Change Password'}{' '}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  disabled={loading}
+                  onPress={() => {
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmNewPassword('');
+                    setPasswordChangeModalVisible(false);
                   }}>
                   <Text style={styles.modalButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -349,6 +446,9 @@ const styles = StyleSheet.create({
   },
   modalCancelButton: {
     backgroundColor: '#FF0000',
+    // Add the same centering properties if not already included
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

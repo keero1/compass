@@ -92,6 +92,8 @@ const Transactions = props => {
       reference_number: transaction.reference_number,
       payment_type: transaction.payment_type,
       passenger_type: transaction.passenger_type,
+      origin: transaction.origin,
+      destination: transaction.destination,
     });
   };
 

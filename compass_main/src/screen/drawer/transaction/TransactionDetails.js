@@ -1,5 +1,11 @@
 import React from 'react';
-import {Text, View, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+} from 'react-native';
 
 const TransactionDetails = ({route}) => {
   const {
@@ -8,6 +14,8 @@ const TransactionDetails = ({route}) => {
     reference_number,
     payment_type,
     passenger_type,
+    origin,
+    destination,
   } = route.params;
 
   // Convert the timestamp back to a Date object
@@ -48,6 +56,10 @@ const TransactionDetails = ({route}) => {
 
         <View style={styles.sectionBox}>
           <View style={styles.detailBox}>
+            <View style={styles.detailItemX}>
+              <Text style={styles.detailTitle}>Travel</Text>
+              <Text style={styles.detailTextSameLine}>{`${origin} - ${destination}`}</Text>
+            </View>
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Payment Type</Text>
               <Text style={styles.detailTextSameLine}>{payment_type}</Text>
@@ -133,7 +145,7 @@ const styles = StyleSheet.create({
   reprintButton: {
     position: 'absolute',
     bottom: 20,
-    left: 20,
+    right: 20,
     backgroundColor: '#176B87',
     paddingVertical: 15,
     paddingHorizontal: 20,
