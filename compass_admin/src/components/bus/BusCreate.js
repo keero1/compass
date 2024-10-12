@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "../../firebase/firebase"; // Adjust path to Firebase configuration
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+
+import { useAuth } from "../../contexts/authContext";
 
 const BusCreate = () => {
   const navigate = useNavigate();
+
+  const { currentUser } = useAuth();
+
   const [busName, setBusName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [username, setUsername] = useState("");
@@ -62,6 +67,20 @@ const BusCreate = () => {
     navigate(-1);
   };
 
+  const logAdminAction = async (actionType, actionDetails) => {
+    const adminID = currentUser.uid;
+    try {
+      await addDoc(collection(db, "adminLogs"), {
+        actionType,
+        actionDetails,
+        adminID,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      console.error("Error logging admin action:", error);
+    }
+  };
+
   const handleCreateBus = async (event) => {
     event.preventDefault();
     setIsSaving(true);
@@ -69,24 +88,29 @@ const BusCreate = () => {
     const adminID = auth.currentUser.uid;
 
     try {
-      const response = await fetch("https://compass-backend-coral.vercel.app/api/create-bus", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          busName,
-          phoneNumber,
-          busType,
-          route,
-          licensePlate,
-          totalBuses,
-          adminID,
-        }),
-      });
+      const response = await fetch(
+        "https://compass-backend-coral.vercel.app/api/create-bus",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            busName,
+            phoneNumber,
+            busType,
+            route,
+            licensePlate,
+            totalBuses,
+            adminID,
+          }),
+        }
+      );
 
       if (response.ok) {
         alert("Bus account created successfully");
+        await logAdminAction("create_bus", `created bus account: ${busName}`);
+
         navigate(-1); // Go back to the previous page
       } else {
         const data = await response.json();

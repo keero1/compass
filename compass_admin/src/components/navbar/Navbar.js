@@ -73,7 +73,7 @@ const Navbar = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [currentUser]);
+  }, [currentUser, companyName]);
 
   // update theme
 

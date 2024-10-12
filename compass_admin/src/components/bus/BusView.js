@@ -1,14 +1,24 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db, storage } from "../../firebase/firebase"; // Adjust path to Firebase configuration
-import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+} from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+import { useAuth } from "../../contexts/authContext";
 
 import Frieren from "../../assets/images/frieren.png";
 
 const BusView = () => {
   const navigate = useNavigate();
   const { busId } = useParams();
+  const { currentUser } = useAuth();
 
   const [routes, setRoutes] = useState([]);
   const [busData, setBusData] = useState({
@@ -43,6 +53,22 @@ const BusView = () => {
       setRoutes(routesData);
     } catch (error) {
       console.error("Error fetching routes:", error);
+    }
+  };
+
+  const logAdminAction = async (action, details) => {
+    try {
+      const adminId = currentUser.uid;
+
+      await addDoc(collection(db, "adminLogs"), {
+        action,
+        busId,
+        timestamp: new Date(),
+        adminId,
+        details,
+      });
+    } catch (error) {
+      console.error("Error logging admin action: ", error);
     }
   };
 
@@ -83,6 +109,11 @@ const BusView = () => {
 
       await setDoc(doc(db, "buses", busId), busData);
       alert("Bus account updated successfully!");
+
+      await logAdminAction(
+        "update_bus",
+        `Updated bus details for ${busData.bus_driver_name}`
+      );
     } catch (error) {
       console.error("Error updating bus account:", error);
     } finally {
@@ -135,6 +166,11 @@ const BusView = () => {
         alert("Password reset successfully!");
         setInputName(""); // Clear the input field
         document.getElementById("reset_password_modal").close(); //close the modal
+
+        await logAdminAction(
+          "reset_password",
+          `Reset password for ${busData.bus_driver_name}`
+        );
       } else {
         const data = await response.json();
         alert(`Error: ${data.error}`);
