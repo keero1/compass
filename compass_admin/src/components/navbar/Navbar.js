@@ -14,12 +14,14 @@ import {
   WalletIcon,
   TruckIcon,
   MapPinIcon,
+  NewspaperIcon,
+  UsersIcon,
 } from "@heroicons/react/24/solid";
 
 import NotificationDropdown from "./NotificationDropdown";
 
 const Navbar = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userRole } = useAuth();
 
   const navigate = useNavigate();
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "nord");
@@ -39,8 +41,8 @@ const Navbar = () => {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setCompanyName(data.company_name); // Update with the company_name
-        localStorage.setItem("companyName", data.company_name); // Cache the company name
+        setCompanyName(data.company_name);
+        localStorage.setItem("companyName", data.company_name);
       } else {
         console.log("No such document!");
       }
@@ -217,10 +219,7 @@ const Navbar = () => {
                   </Link>
                 </li>
                 <li>
-                  <button
-                    className="text-red-500"
-                    onClick={handleSignOut}
-                  >
+                  <button className="text-red-500" onClick={handleSignOut}>
                     <ArrowLeftStartOnRectangleIcon className="size-6" />
                     Logout
                   </button>
@@ -272,21 +271,35 @@ const Navbar = () => {
           <li>
             <Link to="manage-driver">
               <TruckIcon className="size-6" />
-              Manage Drivers
+              Manage drivers
             </Link>
           </li>
           <li>
             <Link to="manage-route">
               <MapPinIcon className="size-6" />
-              Manage Routes
+              Manage routes
             </Link>
           </li>
-          {/* <li>
-            <button>
-              <Cog6ToothIcon className="size-6" />
-              Settings
-            </button>
-          </li> */}
+          {/* Super Admin Controls */}
+          {userRole === "superadmin" && (
+            <>
+              <li className="mt-4">
+                <h2 className="text-base">SUPER ADMIN</h2>
+              </li>
+              {/* <li>
+                <Link>
+                  <UsersIcon className="size-6" />
+                  Manage admins
+                </Link>
+              </li> */}
+              <li>
+                <Link to="admin-logs">
+                  <NewspaperIcon className="size-6" />
+                  Admin logs
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </div>

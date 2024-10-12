@@ -22,6 +22,9 @@ import ManageRoute from "./components/home/ManageRoute";
 // import NotFound from "./components/pages/NotFound";
 import Profile from "./components/home/Profile";
 
+// super admin
+import AdminLogs from "./components/super-admin/AdminLogs";
+
 import RouteView from "./components/route/RouteView";
 import BusCreate from "./components/bus/BusCreate";
 import BusView from "./components/bus/BusView";
@@ -40,6 +43,8 @@ function App() {
             <Route path="/manage-route" element={<ManageRoute />} />
             {/* Profile */}
             <Route path="/profile" element={<Profile />} />
+            {/* super admin */}
+            <Route path="/admin-logs" element={<AdminLogs />} />
           </Route>
           <Route path="/" element={<PrivateRouteButOutsideMainRoute />}>
             {/* no navbar pages */}
@@ -47,10 +52,7 @@ function App() {
               path="/manage-route/route-view/:routeId"
               element={<RouteView />}
             />
-            <Route
-              path="/manage-driver/create-bus"
-              element={<BusCreate />}
-            />
+            <Route path="/manage-driver/create-bus" element={<BusCreate />} />
             <Route
               path="/manage-driver/bus-view/:busId"
               element={<BusView />}
