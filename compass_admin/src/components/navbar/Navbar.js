@@ -282,7 +282,7 @@ const Navbar = () => {
           {/* Super Admin Controls */}
           {userRole === "superadmin" && (
             <>
-              <li className="mt-4">
+              <li className="mt-4 pointer-events-none">
                 <h2 className="text-base">SUPER ADMIN</h2>
               </li>
               {/* <li>
