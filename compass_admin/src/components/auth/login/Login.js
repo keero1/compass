@@ -146,6 +146,7 @@ const Login = () => {
                       className="text-primary hover:underline cursor-pointer"
                       onClick={() => {
                         setEmail("");
+                        setPassword("");
                         setIsForgotPassword(true);
                       }} // Open forgot password form
                     >

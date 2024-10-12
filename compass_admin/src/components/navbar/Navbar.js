@@ -15,7 +15,6 @@ import {
   TruckIcon,
   MapPinIcon,
   NewspaperIcon,
-  UsersIcon,
 } from "@heroicons/react/24/solid";
 
 import NotificationDropdown from "./NotificationDropdown";

@@ -21,25 +21,22 @@ export function AuthProvider({ children }) {
   );
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, initializeUser);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser({ ...user });
+        setUserLoggedIn(true);
+        await fetchUserRole(user.uid);
+      } else {
+        setCurrentUser(null);
+        setUserLoggedIn(false);
+        setUserRole(""); // Clear user role when user logs out
+        localStorage.removeItem("userRole"); // Remove role from localStorage on logout
+      }
+      setLoading(false);
+    });
     return unsubscribe;
   }, []);
-
-  async function initializeUser(user) {
-    if (user) {
-      setCurrentUser({ ...user });
-      setUserLoggedIn(true);
-
-      await fetchUserRole(user.uid);
-    } else {
-      setCurrentUser(null);
-      setUserLoggedIn(false);
-      setUserRole(""); // Clear user role when user logs out
-      localStorage.removeItem("userRole"); // Remove role from localStorage on logout
-    }
-    setLoading(false);
-  }
-
+  
   async function fetchUserRole(uid) {
     try {
       const docRef = doc(db, "company", uid);
@@ -58,8 +55,8 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
-    userLoggedIn,
     userRole,
+    userLoggedIn,
     loading,
   };
 
