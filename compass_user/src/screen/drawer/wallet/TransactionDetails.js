@@ -2,8 +2,14 @@ import React from 'react';
 import {Text, View, StyleSheet, SafeAreaView} from 'react-native';
 
 const TransactionDetails = ({route}) => {
-  const {fare_amount, timestamp, reference_number, bus_driver_name} =
-    route.params;
+  const {
+    fare_amount,
+    timestamp,
+    reference_number,
+    bus_driver_name,
+    origin,
+    destination,
+  } = route.params;
 
   // Convert the timestamp back to a Date object
   const date = new Date(timestamp);
@@ -43,6 +49,13 @@ const TransactionDetails = ({route}) => {
 
         <View style={styles.sectionBox}>
           <View style={styles.detailBox}>
+            <View style={styles.detailItemX}>
+              <Text style={styles.detailTitle}>Travel</Text>
+              <Text
+                style={
+                  styles.detailTextSameLine
+                }>{`${origin} - ${destination}`}</Text>
+            </View>
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Bus Driver Name</Text>
               <Text style={styles.detailTextSameLine}>{bus_driver_name}</Text>

@@ -124,6 +124,8 @@ const Wallet = props => {
       timestamp: transaction.timestamp.toISOString(), // Convert to ISO string
       reference_number: transaction.reference_number,
       bus_driver_name: transaction.bus_driver_name,
+      origin: transaction.origin,
+      destination: transaction.destination,
     });
   };
 

@@ -36,6 +36,7 @@ const TransactionHistory = props => {
           fare_amount: data.fare_amount,
           timestamp: data.timestamp ? data.timestamp.toDate() : null,
           bus_driver_name: data.bus_driver_name,
+          reference_number: data.reference_number,
         };
       });
 
@@ -79,6 +80,8 @@ const TransactionHistory = props => {
       timestamp: transaction.timestamp.toISOString(), // Convert to ISO string
       reference_number: transaction.reference_number,
       bus_driver_name: transaction.bus_driver_name,
+      origin: transaction.origin,
+      destination: transaction.destination,
     });
   };
 
