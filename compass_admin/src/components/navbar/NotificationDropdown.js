@@ -13,6 +13,8 @@ const NotificationDropdown = () => {
 
   const [selectedRequest, setSelectedRequest] = useState(null);
 
+  const [showMore, setShowMore] = useState(false);
+
   // use effect
 
   useEffect(() => {
@@ -99,6 +101,10 @@ const NotificationDropdown = () => {
     setSelectedRequest(null);
   };
 
+  const handleShowMore = () => {
+    setShowMore((prevShowMore) => !prevShowMore);
+  };
+
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
       <button
@@ -135,43 +141,46 @@ const NotificationDropdown = () => {
           <div className="px-4 py-2 text-lg font-semibold border-b border-base-300">
             Notifications
           </div>
-          <div className="max-h-48 overflow-y-auto">
+          <div className="max-h-58 overflow-y-auto">
             {profileUpdateRequests === null ? (
-              // daisy ui skeleton
+              // Daisy UI skeleton
               <div className="flex flex-col gap-2 px-4 py-2">
                 <div className="skeleton h-4 w-28"></div>
                 <div className="skeleton h-4 w-full"></div>
               </div>
             ) : (
-              profileUpdateRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="px-4 py-2 border-b border-base-300 cursor-pointer hover:bg-base-200"
-                  onClick={() => openModal(request)}
-                >
-                  <p className="text-sm">
-                    <strong>{request.currentDriverName}</strong> requested to
-                    change name to{" "}
-                    <strong>{request.requestedDriverName}</strong>
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {formatTime(request.requestTime)}
-                  </p>
-                </div>
-              ))
+              <>
+                {(showMore
+                  ? profileUpdateRequests
+                  : profileUpdateRequests.slice(0, 3)
+                ).map((request) => (
+                  <div
+                    key={request.id}
+                    className="px-4 py-2 border-b border-base-300 cursor-pointer hover:bg-base-200"
+                    onClick={() => openModal(request)}
+                  >
+                    <p className="text-sm">
+                      <strong>{request.currentDriverName}</strong> requested to
+                      change name to{" "}
+                      <strong>{request.requestedDriverName}</strong>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatTime(request.requestTime)}
+                    </p>
+                  </div>
+                ))}
+                {profileUpdateRequests.length > 3 && (
+                  <div className="px-4 text-center">
+                    <button className="btn btn-link" onClick={handleShowMore}>
+                      {showMore ? "Show less" : "Show more notifications"}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
-          </div>
-          <div className="px-4 text-center">
-            <button
-              className="btn btn-link"
-              onClick={() => console.log("See all recent activity clicked")}
-            >
-              See all recent activity
-            </button>
           </div>
         </div>
       )}
-
       {/* Modal for Approve/Reject */}
       <dialog id="notification_modal" className="modal">
         <div className="modal-box">

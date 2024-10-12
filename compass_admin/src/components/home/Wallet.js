@@ -65,13 +65,13 @@ const Wallet = () => {
     return unsubscribe;
   };
 
-  const fetchAdminWallet = (companyId) => {
-    const walletDoc = doc(db, "company", companyId, "wallet", "wallet");
+  const fetchAdminWallet = () => {
+    const walletDoc = doc(db, "wallet", "wallet");
 
     const unsubscribe = onSnapshot(walletDoc, (snapshot) => {
       if (snapshot.exists()) {
         const walletData = snapshot.data();
-        setWalletBalance(walletData.balance.toFixed(2));
+        setWalletBalance(walletData.balance);
       } else {
         console.log("No such wallet document!");
       }
