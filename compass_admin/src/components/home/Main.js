@@ -19,6 +19,8 @@ import {
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
 
 import Frieren from "../../assets/images/frieren.png";
+import bus1 from "../../assets/images/bus1_final.png";
+import bus2 from "../../assets/images/bus2_final.png";
 
 import "./Main.css";
 
@@ -227,16 +229,32 @@ const Main = () => {
             }}
             onClick={onMapClick}
           >
-            {markers.map((marker, index) => (
-              <Marker
-                key={index}
-                position={{ lat: marker.lat, lng: marker.lng }}
-                onMouseOver={() => handleHoverMouse(index)}
-                onMouseOut={handleMouseOut}
-                onClick={() => handleMarkerClick(index)}
-                ref={(el) => (markerInstancesRef.current[index] = el)}
-              />
-            ))}
+            {markers.map((marker, index) => {
+              // Determine the appropriate bus icon based on the route ID
+              const icon =
+                marker.details.route_id === routes[0].id
+                  ? {
+                      url: bus1, // URL to the icon
+                      scaledSize: new window.google.maps.Size(40, 40), // Resize the icon
+                    }
+                  : {
+                      url: bus2, // URL to the icon
+                      scaledSize: new window.google.maps.Size(40, 40), // Resize the icon
+                    };
+                    
+
+              return (
+                <Marker
+                  key={index}
+                  position={{ lat: marker.lat, lng: marker.lng }}
+                  onMouseOver={() => handleHoverMouse(index)}
+                  onMouseOut={handleMouseOut}
+                  onClick={() => handleMarkerClick(index)}
+                  ref={(el) => (markerInstancesRef.current[index] = el)}
+                  icon={icon} // Set the icon for the marker
+                />
+              );
+            })}
 
             {infoWindowOpen && (
               <InfoWindow
