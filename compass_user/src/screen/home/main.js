@@ -22,7 +22,7 @@ import ROUTES from '../../constants/routes';
 
 import IMAGES from '../../constants/images';
 
-import notifee, {AndroidImportance} from '@notifee/react-native';
+import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
 
 // MAP
 import MapView, {
@@ -59,13 +59,15 @@ const Main = props => {
 
   // bus location
   const [busMarkers, setBusMarkers] = useState([]);
+  const [markerProximityRadius, setMarkerProximityRadius] = useState(1000);
+  const [isNotificationTriggered, setIsNotificationTriggered] = useState(false);
+  const [notificationBusCoordinate, setNotificationBusCoordinate] =
+    useState(null);
 
   // search box
 
   const [searchVisible, setSearchVisible] = useState(false);
   const searchBoxHeight = useRef(new Animated.Value(0)).current;
-
-  const [notificationShown, setNotificationShown] = useState(false);
 
   // default location
 
@@ -205,7 +207,8 @@ const Main = props => {
 
   // notification
 
-  async function onDisplayNotification() {
+  async function onDisplayNotification(busCoordinate) {
+    setNotificationBusCoordinate(busCoordinate);
     // Request permissions (required for iOS)
     await notifee.requestPermission();
 
@@ -219,7 +222,7 @@ const Main = props => {
     // Display a notification
     await notifee.displayNotification({
       title: 'Bus Nearby!',
-      body: 'A Bus is within 1 KM of your marker location. please be ready',
+      body: 'A Bus is within your selected proximity of your marker location.',
       android: {
         channelId,
         importance: AndroidImportance.HIGH,
@@ -240,35 +243,20 @@ const Main = props => {
         return;
       }
 
-      let notified = false;
-
       for (const bus of busMarkers) {
         const distance = calculateDistance(bus.coordinate, marker);
 
-        if (distance <= 1000) {
-          if (!notificationShown && !notified) {
-            await onDisplayNotification();
-            setNotificationShown(true);
-            notified = true;
-
-            const userID = auth().currentUser.uid;
-            try {
-              await firestore().collection('markers').doc(userID).delete();
-              setMarker(null);
-            } catch (error) {
-              console.error('Error removing marker from Firestore: ', error);
-            }
-          }
-        } else if (distance > 1000) {
-          if (notified) {
-            setNotificationShown(false);
-          }
+        if (distance <= markerProximityRadius && !isNotificationTriggered) {
+          await onDisplayNotification(bus.coordinate);
+          setIsNotificationTriggered(true); // Mark the notification as triggered
+          console.log('notification triggered');
+          break;
         }
       }
     };
 
     checkBusProximity();
-  }, [busMarkers, marker]);
+  }, [busMarkers, marker, markerProximityRadius, isNotificationTriggered]);
 
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -326,6 +314,41 @@ const Main = props => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleNotificationPress = async () => {
+      if (notificationBusCoordinate && marker) {
+        const coordinates = [
+          [marker.latitude, marker.longitude],
+          [
+            notificationBusCoordinate.latitude,
+            notificationBusCoordinate.longitude,
+          ],
+        ];
+
+        const route = await getRoute(coordinates);
+
+        setRouteCoordinates(route);
+        setNotificationBusCoordinate(null);
+
+        mapRef.current.animateToRegion({
+          latitude: marker.latitude,
+          longitude: marker.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+      }
+    };
+
+    const unsubscribe = notifee.onForegroundEvent(({type}) => {
+      if (type === EventType.PRESS) {
+        handleNotificationPress();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [notificationBusCoordinate, marker]);
   // SEARCH
 
   const showSearchBox = () => {
@@ -391,13 +414,13 @@ const Main = props => {
 
   // SEARCH END
   const onMapPress = event => {
+    const {coordinate} = event.nativeEvent;
+
     if (routeCoordinates.length > 0) {
       setRouteCoordinates([]);
       return;
     }
 
-    // user id
-    const userID = auth().currentUser.uid;
     if (marker) {
       Alert.alert(
         'Marker Already Placed',
@@ -406,51 +429,62 @@ const Main = props => {
       return;
     }
 
-    const {coordinate} = event.nativeEvent;
     const distance = calculateDistance(currentLocation, coordinate);
 
-    if (distance > 0) {
-      Alert.alert(
-        'Place Marker',
-        'Do you want to place a marker here?',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'OK',
-            onPress: async () => {
-              setMarker(coordinate);
-
-              try {
-                await firestore()
-                  .collection('markers')
-                  .doc(userID)
-                  .set({
-                    coordinates: {
-                      latitude: coordinate.latitude,
-                      longitude: coordinate.longitude,
-                    },
-                    timestamp: firestore.FieldValue.serverTimestamp(),
-                  });
-              } catch (error) {
-                console.error('Error updating Firestore document: ', error);
-                Alert.alert(
-                  'Update Failed',
-                  'Failed to update marker location.',
-                );
-              }
-            },
-          },
-        ],
-        {cancelable: true},
-      );
-    } else {
+    if (distance < 0) {
       Alert.alert(
         'Out of Range',
         'Marker can only be placed within 1000 meters from your current location.',
       );
+      return;
+    }
+
+    Alert.alert(
+      'Proximity Alert',
+      'Select the radius for proximity alerts:',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => {
+            console.log('Marker placement cancelled by user.');
+          },
+        },
+        {
+          text: '1 km',
+          onPress: async () => await handleMarkerPlacement(coordinate, 1000),
+        },
+        {
+          text: '3 km',
+          onPress: async () => await handleMarkerPlacement(coordinate, 3000),
+        },
+      ],
+      {cancelable: true},
+    );
+  };
+
+  const handleMarkerPlacement = async (coordinate, radius) => {
+    try {
+      const userID = auth().currentUser.uid;
+
+      await firestore()
+        .collection('markers')
+        .doc(userID)
+        .set({
+          coordinates: {
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude,
+          },
+          radius: radius,
+          timestamp: firestore.FieldValue.serverTimestamp(),
+        });
+
+      setMarker(coordinate);
+      setMarkerProximityRadius(radius);
+      setIsNotificationTriggered(false);
+    } catch (error) {
+      console.error('Error updating Firestore document: ', error);
+      Alert.alert('Update Failed', 'Failed to update marker location.');
     }
   };
 
@@ -469,6 +503,8 @@ const Main = props => {
           text: 'Delete',
           onPress: async () => {
             setMarker(null);
+            setIsNotificationTriggered(false);
+            setRouteCoordinates([]);
 
             try {
               await firestore().collection('markers').doc(userID).delete();
@@ -600,17 +636,15 @@ const Main = props => {
           {/* Bus markers */}
           {busMarkers.map((bus, index) => {
             const busIcon =
-              bus.details.route_id === routes[0].id
-                ? IMAGES.bus_icon1
-                : IMAGES.bus_icon2;
-                
+              bus.details.route_id === routes[0].id ? 'bus1' : 'bus2';
+
             return (
               <Marker
                 ref={el => (markerRefs.current[index] = el)}
                 key={`${bus.id}-${index}`} // Add index for extra uniqueness
                 coordinate={bus.coordinate}
                 onPress={() => onBusMarkerPressed(bus.details.route_id)}
-                image={busIcon}
+                image={{uri: busIcon}}
                 pinColor="blue">
                 <Callout style={{alignItems: 'center'}}>
                   <Svg width={120} height={120}>

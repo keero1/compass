@@ -173,7 +173,6 @@ const CashIn = () => {
         </KeyboardAvoidingView>
       ) : (
         <SafeAreaView style={styles.main}>
-          <Image source={IMAGES.cash} style={styles.cashImage} />
 
           <View style={styles.inputContainer}>
             <Text style={styles.pesoSign}>₱</Text>

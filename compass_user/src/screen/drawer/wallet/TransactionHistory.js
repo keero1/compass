@@ -5,6 +5,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
@@ -15,11 +16,13 @@ import {ScrollView} from 'react-native-gesture-handler';
 const TransactionHistory = props => {
   const {navigation} = props;
 
-  const [transactions, setTransactions] = useState([]);
-
   const user = auth().currentUser;
 
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   const fetchTransactions = async () => {
+    setLoading(true);
     try {
       const transactionSnapshot = await firestore()
         .collection('transactions')
@@ -43,6 +46,8 @@ const TransactionHistory = props => {
       setTransactions(transactionData);
     } catch (error) {
       console.log('Error fetching transactions: ', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,34 +92,41 @@ const TransactionHistory = props => {
 
   return (
     <SafeAreaView style={styles.main}>
-      <ScrollView style={styles.detailsContainer}>
-        {Object.entries(groupedTransactions).map(([date, transactions]) => (
-          <View key={date} style={styles.sectionBox}>
-            <Text style={styles.sectionTitle}>{date}</Text>
-            {transactions.map(transaction => (
-              <TouchableOpacity
-                key={transaction.id}
-                style={styles.detailBox}
-                onPress={() => handleTransactionPress(transaction)}>
-                <View style={styles.detailItem}>
-                  <Text
-                    style={
-                      styles.detailTitle
-                    }>{`${transaction.origin} - ${transaction.destination}`}</Text>
-                  <Text style={styles.detailText}>
-                    {formatNumber(transaction.fare_amount)} {' >'}
-                  </Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailTitle}>
-                    To {transaction.bus_driver_name}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ))}
-      </ScrollView>
+      {loading ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text style={styles.loadingText}>Loading transactions...</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.detailsContainer}>
+          {Object.entries(groupedTransactions).map(([date, transactions]) => (
+            <View key={date} style={styles.sectionBox}>
+              <Text style={styles.sectionTitle}>{date}</Text>
+              {transactions.map(transaction => (
+                <TouchableOpacity
+                  key={transaction.id}
+                  style={styles.detailBox}
+                  onPress={() => handleTransactionPress(transaction)}>
+                  <View style={styles.detailItem}>
+                    <Text
+                      style={
+                        styles.detailTitle
+                      }>{`${transaction.origin} - ${transaction.destination}`}</Text>
+                    <Text style={styles.detailText}>
+                      {formatNumber(transaction.fare_amount)} {' >'}
+                    </Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailTitle}>
+                      To {transaction.bus_driver_name}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -157,6 +169,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'right',
     marginLeft: 10,
+    color: '#000000',
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
     color: '#000000',
   },
 });
