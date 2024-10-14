@@ -26,6 +26,8 @@ import {IMAGES} from '../../../constants/';
 const CashIn = () => {
   const navigation = useNavigation();
 
+  const userId = auth().currentUser.uid;
+
   const [scaleValue] = useState(new Animated.Value(1));
   const [amount, setAmount] = useState('');
   const [paymentUrl, setPaymentUrl] = useState(null);
@@ -59,8 +61,8 @@ const CashIn = () => {
         data: {
           attributes: {
             amount: parseInt(amount) * 100,
-            description: `Payment of PHP ${amount}`,
-            remarks: 'Cash in remarks',
+            description: `Payment of PHP ${amount} from ${userId}`,
+            remarks: `'Cash in remarks'`,
           },
         },
       };
@@ -121,6 +123,12 @@ const CashIn = () => {
         balance: firestore.FieldValue.increment(+amount),
         last_updated: firestore.FieldValue.serverTimestamp(),
       });
+
+    await firestore().collection('cashInTransactions').add({
+      userId: user.uid,
+      amount: amount,
+      timestamp: firestore.FieldValue.serverTimestamp(),
+    });
   };
 
   //animation
@@ -173,7 +181,6 @@ const CashIn = () => {
         </KeyboardAvoidingView>
       ) : (
         <SafeAreaView style={styles.main}>
-
           <View style={styles.inputContainer}>
             <Text style={styles.pesoSign}>₱</Text>
             <TextInput

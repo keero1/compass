@@ -19,6 +19,11 @@ import {IMAGES, ROUTES} from '../../constants';
 // Google
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 
+import {
+  ArrowLeftStartOnRectangleIcon,
+  BanknotesIcon,
+} from 'react-native-heroicons/solid';
+
 const Drawer = props => {
   const {navigation} = props;
 
@@ -112,14 +117,20 @@ const Drawer = props => {
         <View style={styles.separator}></View>
 
         {/* Touchable Text Components */}
-        <TouchableOpacity onPress={onWalletPressed}>
+        <TouchableOpacity
+          onPress={onWalletPressed}
+          style={styles.menuItemContainer}>
+          <BanknotesIcon size={25} color="gray" />
           <Text style={styles.menuItem}>Wallet</Text>
         </TouchableOpacity>
         {/* <TouchableOpacity>
           <Text style={styles.menuItem}>Feedback</Text>
         </TouchableOpacity> */}
-        <TouchableOpacity onPress={onLogoutPressed}>
-          <Text style={styles.menuItem}>Logout</Text>
+        <TouchableOpacity
+          onPress={onLogoutPressed}
+          style={styles.menuItemContainer}>
+          <ArrowLeftStartOnRectangleIcon size={25} color="red" />
+          <Text style={styles.menuItemLogout}>Logout</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -191,9 +202,19 @@ const styles = StyleSheet.create({
   },
 
   // Menu items
-  menuItem: {
-    fontSize: 20,
+  menuItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 10,
+  },
+  menuItem: {
+    fontSize: 25,
+    marginLeft: 10,
+  },
+  menuItemLogout: {
+    fontSize: 25,
+    color: 'red',
+    marginLeft: 10,
   },
 });
 

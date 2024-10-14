@@ -1,5 +1,16 @@
 import React from 'react';
-import {Text, View, StyleSheet, SafeAreaView} from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+
+import Clipboard from '@react-native-clipboard/clipboard';
+
+import {ClipboardDocumentIcon} from 'react-native-heroicons/solid';
 
 const TransactionDetails = ({route}) => {
   const {
@@ -31,6 +42,11 @@ const TransactionDetails = ({route}) => {
     const timePart = date.toLocaleTimeString('en-US', timeOptions);
 
     return `${datePart}, ${timePart}`;
+  };
+
+  const copyToClipboard = () => {
+    Clipboard.setString(reference_number);
+    Alert.alert('Copied', 'Reference number has been copied to clipboard!');
   };
 
   return (
@@ -72,9 +88,14 @@ const TransactionDetails = ({route}) => {
             <View style={styles.detailBox}>
               <View style={styles.detailItemX}>
                 <Text style={styles.detailTitle}>Reference Number</Text>
-                <Text style={styles.detailTextSameLine}>
-                  {reference_number}
-                </Text>
+                <View style={styles.referenceContainer}>
+                  <TouchableOpacity onPress={copyToClipboard}>
+                    <ClipboardDocumentIcon size={20} color="gray" />
+                  </TouchableOpacity>
+                  <Text style={styles.detailTextSameLine}>
+                    {reference_number}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
@@ -129,6 +150,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'right',
     marginLeft: 10,
+  },
+  referenceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
