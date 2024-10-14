@@ -223,7 +223,7 @@ const Main = props => {
       android: {
         channelId,
         importance: AndroidImportance.HIGH,
-        smallIcon: 'ic_launcher',
+        smallIcon: 'ic_notification',
         pressAction: {
           id: 'default',
         },
@@ -548,9 +548,8 @@ const Main = props => {
 
   const markerRefs = useRef([]);
 
-
   /**
-   * This is for pre-loading the callout (tanginang package yan may bug di nag loload image sa first tap/load ng callout). 
+   * This is for pre-loading the callout (tanginang package yan may bug di nag loload image sa first tap/load ng callout).
    * Diko pa natest sa nagalaw na bus since nag a-update yon ng marker HAHAHAHHH
    */
 
@@ -599,37 +598,46 @@ const Main = props => {
           )}
 
           {/* Bus markers */}
-          {busMarkers.map((bus, index) => (
-            <Marker
-              ref={el => (markerRefs.current[index] = el)}
-              key={`${bus.id}-${index}`} // Add index for extra uniqueness
-              coordinate={bus.coordinate}
-              onPress={() => onBusMarkerPressed(bus.details.route_id)}
-              pinColor="blue">
-              <Callout style={{alignItems: 'center'}}>
-                <Svg width={120} height={120}>
-                  <Defs>
-                    <ClipPath id="clip">
-                      <Circle cx="50%" cy="50%" r="40%" />
-                    </ClipPath>
-                  </Defs>
-                  <ImageSvg
-                    width={120}
-                    height={120}
-                    preserveAspectRatio="xMidYMid slice"
-                    href={bus.details.profile_picture}
-                    clipPath="url(#clip)"
-                  />
-                </Svg>
-                <Text>Driver Name: {bus.details.name}</Text>
-                <Text>License Plate: {bus.details.license_plate}</Text>
-                <Text>
-                  Last Update: {bus.details.timestamp.toDate().toLocaleString()}
-                </Text>
-                <Text>Seat Slots: {bus.details.seat_count} / 56</Text>
-              </Callout>
-            </Marker>
-          ))}
+          {busMarkers.map((bus, index) => {
+            const busIcon =
+              bus.details.route_id === routes[0].id
+                ? IMAGES.bus_icon1
+                : IMAGES.bus_icon2;
+                
+            return (
+              <Marker
+                ref={el => (markerRefs.current[index] = el)}
+                key={`${bus.id}-${index}`} // Add index for extra uniqueness
+                coordinate={bus.coordinate}
+                onPress={() => onBusMarkerPressed(bus.details.route_id)}
+                image={busIcon}
+                pinColor="blue">
+                <Callout style={{alignItems: 'center'}}>
+                  <Svg width={120} height={120}>
+                    <Defs>
+                      <ClipPath id="clip">
+                        <Circle cx="50%" cy="50%" r="40%" />
+                      </ClipPath>
+                    </Defs>
+                    <ImageSvg
+                      width={120}
+                      height={120}
+                      preserveAspectRatio="xMidYMid slice"
+                      href={bus.details.profile_picture}
+                      clipPath="url(#clip)"
+                    />
+                  </Svg>
+                  <Text>Driver Name: {bus.details.name}</Text>
+                  <Text>License Plate: {bus.details.license_plate}</Text>
+                  <Text>
+                    Last Update:{' '}
+                    {bus.details.timestamp.toDate().toLocaleString()}
+                  </Text>
+                  <Text>Seat Slots: {bus.details.seat_count} / 56</Text>
+                </Callout>
+              </Marker>
+            );
+          })}
 
           {/* Draw polyline */}
           {routeCoordinates.length > 0 && (

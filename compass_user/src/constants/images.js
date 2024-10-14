@@ -1,5 +1,7 @@
 export default {
-  logo: require('../../assets/images/frieren.png'),
+  logo: require('../../assets/images/logo.png'),
   google: require('../../assets/images/google.png'),
   cash: require('../../assets/images/cash-money.png'),
+  bus_icon1: require('../../assets/images/bus1.png'),
+  bus_icon2: require('../../assets/images/bus2.png'),
 };
