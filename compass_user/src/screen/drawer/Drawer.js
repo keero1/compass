@@ -95,7 +95,7 @@ const Drawer = props => {
       <View style={styles.root}>
         <View style={styles.profileContainer}>
           <View style={styles.profileContent}>
-            <Image source={IMAGES.logo} style={styles.profileImage} />
+            <Image source={IMAGES.frieren} style={styles.profileImage} />
             <View style={styles.textContainer}>
               <Text style={styles.text}>{userDisplayName}</Text>
               {/* Profile */}

@@ -87,7 +87,7 @@ const Profile = props => {
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
         <Image
-          source={IMAGES.logo}
+          source={IMAGES.frieren}
           style={[styles.logo, {height: height * 0.18}]}
           resizeMode="contain"
         />
