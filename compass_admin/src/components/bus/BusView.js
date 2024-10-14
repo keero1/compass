@@ -31,6 +31,7 @@ const BusView = () => {
     profile_picture: "",
     bus_number: "",
   });
+  const [originalBusData, setOriginalBusData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -78,6 +79,7 @@ const BusView = () => {
       const busDoc = await getDoc(doc(db, "buses", busId));
       if (busDoc.exists()) {
         setBusData(busDoc.data());
+        setOriginalBusData(busDoc.data());
         setPreviewImage(busDoc.data().profile_picture || Frieren);
       } else {
         console.error("No such bus!");
@@ -99,6 +101,8 @@ const BusView = () => {
   const handleUpdateBus = async (event) => {
     event.preventDefault();
     setIsSaving(true);
+
+    const routeChanged = busData.route_id !== originalBusData.route_id;
     try {
       if (selectedFile) {
         const profilePicRef = ref(storage, `profilePictures/${busId}`);
@@ -107,7 +111,30 @@ const BusView = () => {
         busData.profile_picture = profilePicUrl;
       }
 
+      console.log(routeChanged);
+
       await setDoc(doc(db, "buses", busId), busData);
+
+      // if the route is changed, we update the busLocation also
+
+      if (routeChanged) {
+        const busLocationDocRef = doc(db, "busLocation", busId);
+
+        const busLocationDoc = await getDoc(busLocationDocRef);
+
+        if (busLocationDoc.exists()) {
+          // If bus_id exists, update the route_id (cause when creating new account, they dont have data in busLocation yet it must be initialize when the app is logged in)
+          await setDoc(
+            busLocationDocRef,
+            { route_id: busData.route_id },
+            { merge: true }
+          );
+          console.log("Route ID updated in busLocation.");
+        } else {
+          console.log("Bus ID does not exist in busLocation collection.");
+        }
+      }
+
       alert("Bus account updated successfully!");
 
       await logAdminAction(
@@ -179,6 +206,10 @@ const BusView = () => {
       console.error("Error resetting password:", error);
       alert("Failed to reset password. Please try again.");
     }
+  };
+
+  const hasDataChanged = () => {
+    return JSON.stringify(busData) !== JSON.stringify(originalBusData);
   };
 
   return (
@@ -404,8 +435,9 @@ const BusView = () => {
               <button
                 type="submit"
                 className={`btn w-full mt-6 ${
-                  isSaving ? "btn-disabled" : "btn-primary"
+                  isSaving || !hasDataChanged() ? "btn-disabled" : "btn-primary"
                 }`}
+                disabled={isSaving || !hasDataChanged()}
               >
                 {isSaving ? "Updating..." : "Update"}
               </button>
