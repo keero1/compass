@@ -183,7 +183,7 @@ const Profile = props => {
       <View style={styles.logoContainer}>
         <View>
           <Image
-            source={profilePicture ? {uri: profilePicture} : IMAGES.logo}
+            source={profilePicture ? {uri: profilePicture} : IMAGES.frieren}
             style={styles.logo}
           />
         </View>

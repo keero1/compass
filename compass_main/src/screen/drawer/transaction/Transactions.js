@@ -100,47 +100,54 @@ const Transactions = props => {
   return (
     <SafeAreaView style={styles.main}>
       {!loading ? (
-        <ScrollView style={styles.detailsContainer}>
-          {Object.entries(groupedTransactions).length > 0 ? (
-            Object.entries(groupedTransactions).map(([date, transactions]) => (
-              <View key={date} style={styles.sectionBox}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>{date}</Text>
-                  <Text style={styles.transactionCount}>
-                    {transactions.length}{' '}
-                    {transactions.length === 1 ? 'Transaction' : 'Transactions'}
-                  </Text>
-                </View>
-                {transactions.map(transaction => (
-                  <TouchableOpacity
-                    key={transaction.id}
-                    style={styles.detailBox}
-                    onPress={() => handleTransactionPress(transaction)}>
-                    <View style={styles.detailItem}>
-                      <Text
-                        style={
-                          styles.detailTitle
-                        }>{`${transaction.origin} - ${transaction.destination}`}</Text>
-                      <Text style={styles.detailText}>
-                        {formatNumber(transaction.fare_amount)} {' >'}
-                      </Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailTitle}>
-                        {transaction.passenger_type} :{' '}
-                        {transaction.payment_type}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ))
-          ) : (
+        <>
+          {transactions.length === 0 ? ( // Check if there are no transactions
             <View style={styles.noTransactionsContainer}>
               <Text style={styles.noTransactionsText}>No Transactions</Text>
             </View>
+          ) : (
+            <ScrollView style={styles.detailsContainer}>
+              {Object.entries(groupedTransactions).length > 0 &&
+                Object.entries(groupedTransactions).map(
+                  ([date, transactions]) => (
+                    <View key={date} style={styles.sectionBox}>
+                      <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>{date}</Text>
+                        <Text style={styles.transactionCount}>
+                          {transactions.length}{' '}
+                          {transactions.length === 1
+                            ? 'Transaction'
+                            : 'Transactions'}
+                        </Text>
+                      </View>
+                      {transactions.map(transaction => (
+                        <TouchableOpacity
+                          key={transaction.id}
+                          style={styles.detailBox}
+                          onPress={() => handleTransactionPress(transaction)}>
+                          <View style={styles.detailItem}>
+                            <Text
+                              style={
+                                styles.detailTitle
+                              }>{`${transaction.origin} - ${transaction.destination}`}</Text>
+                            <Text style={styles.detailText}>
+                              {formatNumber(transaction.fare_amount)} {' >'}
+                            </Text>
+                          </View>
+                          <View style={styles.detailItem}>
+                            <Text style={styles.detailTitle}>
+                              {transaction.passenger_type} :{' '}
+                              {transaction.payment_type}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ),
+                )}
+            </ScrollView>
           )}
-        </ScrollView>
+        </>
       ) : (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" />
@@ -199,19 +206,20 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: '#000000',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   noTransactionsContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   noTransactionsText: {
-    fontSize: 18,
+    fontSize: 20,
     color: '#666',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontWeight: 'bold',
   },
 });
 
