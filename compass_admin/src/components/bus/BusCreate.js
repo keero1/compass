@@ -108,8 +108,6 @@ const BusCreate = () => {
       );
 
       if (response.ok) {
-        const data = await response.json();
-        console.log(data.busId);
         alert("Bus account created successfully");
         await logAdminAction("create_bus", `created bus account: ${busName}`);
 
