@@ -29,11 +29,14 @@ import RouteView from "./components/route/RouteView";
 import BusCreate from "./components/bus/BusCreate";
 import BusView from "./components/bus/BusView";
 
+import DownloadPage from "./components/download/DownloadPage";
+
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/download-app" element={<DownloadPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PrivateRoute />}>
             <Route index element={<Home />} />
