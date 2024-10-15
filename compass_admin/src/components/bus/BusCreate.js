@@ -67,14 +67,15 @@ const BusCreate = () => {
     navigate(-1);
   };
 
-  const logAdminAction = async (actionType, actionDetails) => {
-    const adminID = currentUser.uid;
+  const logAdminAction = async (action, details, busId) => {
+    const adminId = currentUser.uid;
     try {
       await addDoc(collection(db, "adminLogs"), {
-        actionType,
-        actionDetails,
-        adminID,
+        action,
+        busId,
         timestamp: new Date(),
+        adminId,
+        details,
       });
     } catch (error) {
       console.error("Error logging admin action:", error);
@@ -108,8 +109,9 @@ const BusCreate = () => {
       );
 
       if (response.ok) {
+        const data = await response.json();
         alert("Bus account created successfully");
-        await logAdminAction("create_bus", `created bus account: ${busName}`);
+        await logAdminAction("create_bus", `created bus account: ${busName}`, data.busId);
 
         navigate(-1); // Go back to the previous page
       } else {

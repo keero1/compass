@@ -20,7 +20,6 @@ const AdminLogs = () => {
   const fetchAdminLogs = async () => {
     try {
       const querySnapshot = await getDocs(adminLogsCollection);
-      console.log("Query Snapshot:", querySnapshot); // Debugging line
       const fetchedLogs = await Promise.all(
         querySnapshot.docs.map(async (document) => {
           const data = document.data();
