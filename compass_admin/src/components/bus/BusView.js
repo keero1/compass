@@ -435,9 +435,11 @@ const BusView = () => {
               <button
                 type="submit"
                 className={`btn w-full mt-6 ${
-                  isSaving || !hasDataChanged() ? "btn-disabled" : "btn-primary"
+                  isSaving || (!hasDataChanged() && !selectedFile)
+                    ? "btn-disabled"
+                    : "btn-primary"
                 }`}
-                disabled={isSaving || !hasDataChanged()}
+                disabled={isSaving || (!hasDataChanged() && !selectedFile)}
               >
                 {isSaving ? "Updating..." : "Update"}
               </button>
@@ -448,6 +450,7 @@ const BusView = () => {
                 onClick={() =>
                   document.getElementById("reset_password_modal").showModal()
                 }
+                disabled={isSaving}
               >
                 Reset password
               </button>
