@@ -114,25 +114,29 @@ const Main = props => {
   };
 
   // marker
-  const fetchMarkers = async () => {
-    try {
-      const markersSnapshot = await firestore().collection('markers').get();
-      const markersData = markersSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          latitude: data.coordinates.latitude,
-          longitude: data.coordinates.longitude,
-          timestamp: data.timestamp,
-        };
-      });
-      setMarkers(markersData);
-    } catch (error) {
-      console.error('Error fetching markers:', error);
-    }
-  };
   useEffect(() => {
-    fetchMarkers();
+    const unsubscribe = firestore()
+      .collection('markers')
+      .onSnapshot(
+        snapshot => {
+          const markersData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              latitude: data.coordinates.latitude,
+              longitude: data.coordinates.longitude,
+              timestamp: data.timestamp,
+            };
+          });
+          setMarkers(markersData);
+        },
+        error => {
+          console.error('Error fetching markers:', error);
+        },
+      );
+
+    // Cleanup function to unsubscribe from the listener on unmount
+    return () => unsubscribe();
   }, []);
 
   // seat count
