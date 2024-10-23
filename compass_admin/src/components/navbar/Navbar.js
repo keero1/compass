@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { doSignOut } from "../../firebase/auth";
-import Frieren from "../../assets/images/frieren.png";
+import User from "../../assets/images/user_icon.png"
 import { useEffect, useState } from "react";
 
 import { useAuth } from "../../contexts/authContext";
@@ -193,8 +193,8 @@ const Navbar = () => {
                 role="button"
                 className="btn btn-ghost btn-circle avatar"
               >
-                <div className="w-10 rounded-full">
-                  <img alt="Tailwind CSS Navbar component" src={Frieren} />
+                <div className="w-8 rounded-full">
+                  <img alt="User Profile" src={User} />
                 </div>
               </div>
               <ul

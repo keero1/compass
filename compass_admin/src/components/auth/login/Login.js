@@ -13,7 +13,7 @@ import { db } from "../../../firebase/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
 // image
-import backgroundImage from "../../../assets/images/bg_cover.png";
+import backgroundImage from "../../../assets/images/santrans.jpg";
 
 // icons
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import icons

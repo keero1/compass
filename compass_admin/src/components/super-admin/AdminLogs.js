@@ -134,7 +134,7 @@ const AdminLogs = () => {
               <th className="text-left text-xl">Admin Email</th>
               <th className="text-left text-xl">Bus Driver Name</th>
               <th className="text-left text-xl">Details</th>
-              <th className="text-left text-xl">Timestamp</th>
+              <th className="text-left text-xl">Date</th>
             </tr>
           </thead>
           <tbody>

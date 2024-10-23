@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"; // Import useRef
 import { useAuth } from "../../contexts/authContext";
-import Frieren from "../../assets/images/frieren.png";
+import User from "../../assets/images/user_icon.png";
 
 // Firebase imports
 import { db } from "../../firebase/firebase";
@@ -179,7 +179,7 @@ const Profile = () => {
         <div className="flex flex-col md:flex-row items-center justify-center">
           <div className="avatar mb-6 md:mb-0 md:mr-6">
             <div className="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-              <img src={Frieren} alt="Profile" />
+              <img src={User} alt="Profile" />
             </div>
           </div>
           <div className="text-center md:text-left">
