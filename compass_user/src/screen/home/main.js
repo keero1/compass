@@ -1,18 +1,6 @@
 import React, {useRef, useEffect, useState} from 'react';
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
-  Animated,
-  TextInput,
-  FlatList,
-  Text,
-  BackHandler,
-} from 'react-native';
+import {StyleSheet, View, Dimensions, Alert, Text} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {Svg, Image as ImageSvg, Defs, ClipPath, Circle} from 'react-native-svg';
 
@@ -49,10 +37,7 @@ const Main = props => {
   const [initialRegion, setInitialRegion] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
 
-  // search
-  const [searchQuery, setSearchQuery] = useState('');
   const [routes, setRoutes] = useState([]);
-  const [filteredRoutes, setFilteredRoutes] = useState([]);
 
   // marker
   const [marker, setMarker] = useState(null);
@@ -63,11 +48,6 @@ const Main = props => {
   const [isNotificationTriggered, setIsNotificationTriggered] = useState(false);
   const [notificationBusCoordinate, setNotificationBusCoordinate] =
     useState(null);
-
-  // search box
-
-  const [searchVisible, setSearchVisible] = useState(false);
-  const searchBoxHeight = useRef(new Animated.Value(0)).current;
 
   // default location
 
@@ -80,7 +60,6 @@ const Main = props => {
         ...doc.data(),
       }));
       setRoutes(allRoutes);
-      setFilteredRoutes(allRoutes);
     };
 
     fetchRoutes();
@@ -259,33 +238,6 @@ const Main = props => {
   }, [busMarkers, marker, markerProximityRadius, isNotificationTriggered]);
 
   useEffect(() => {
-    if (searchQuery.length > 0) {
-      const filtered = routes.filter(route =>
-        route.route_name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-      setFilteredRoutes(filtered);
-    } else {
-      setFilteredRoutes(routes);
-    }
-  }, [searchQuery, routes]);
-
-  useEffect(() => {
-    const handleBackPress = () => {
-      if (searchVisible) {
-        hideSearchBox();
-        return true;
-      }
-      return false;
-    };
-
-    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
-
-    return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
-    };
-  }, [searchVisible]);
-
-  useEffect(() => {
     let watchId;
 
     // Start watching user's location
@@ -349,70 +301,7 @@ const Main = props => {
       unsubscribe();
     };
   }, [notificationBusCoordinate, marker]);
-  // SEARCH
 
-  const showSearchBox = () => {
-    setSearchVisible(true);
-    Animated.timing(searchBoxHeight, {
-      toValue: screenHeight * 0.95,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const hideSearchBox = () => {
-    setSearchQuery('');
-    Animated.timing(searchBoxHeight, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start(() => setSearchVisible(false));
-  };
-
-  const handleRouteItemClick = async routeId => {
-    try {
-      // Query buses that match the selected route ID
-      const snapshot = await firestore()
-        .collection('busLocation')
-        .where('route_id', '==', routeId) // Assuming each bus document has a routeId field
-        .get();
-
-      const buses = [];
-      const currentTime = new Date();
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const lastSeen = data.timestamp.toDate();
-        const diffInSeconds = (currentTime - lastSeen) / 1000;
-
-        if (diffInSeconds <= 300) {
-          // 5 minutes
-          buses.push({
-            id: doc.id,
-            coordinate: {
-              latitude: data.coordinates.latitude,
-              longitude: data.coordinates.longitude,
-            },
-          });
-        }
-      });
-
-      if (buses.length === 0) {
-        Alert.alert(
-          'No Buses Online',
-          'No bus available right now for this route.',
-        );
-      } else {
-        // setBusMarkers(buses); // Update bus markers
-        Alert.alert('Number of buses online: ' + buses.length, 'bus xd');
-      }
-    } catch (error) {
-      console.error('Error fetching bus locations:', error);
-      Alert.alert('Error', 'Failed to fetch bus locations.');
-    }
-  };
-
-  // SEARCH END
   const onMapPress = event => {
     const {coordinate} = event.nativeEvent;
 
@@ -590,6 +479,7 @@ const Main = props => {
    */
 
   useEffect(() => {
+    console.log('qweqweqwe');
     if (busMarkers.length > 0) {
       busMarkers.forEach((bus, index) => {
         if (markerRefs.current[index]) {
@@ -603,11 +493,7 @@ const Main = props => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <HeaderComponent
-        navigation={navigation}
-        ROUTES={ROUTES}
-        onSearchPressed={showSearchBox}
-      />
+      <HeaderComponent navigation={navigation} ROUTES={ROUTES} />
       {/* 14.823320026254835, 121.05946449733479 */}
       <View style={styles.mapContainer}>
         <MapView
@@ -689,33 +575,6 @@ const Main = props => {
           ROUTES={ROUTES}
         />
       </View>
-
-      {searchVisible && (
-        <Animated.View style={[styles.searchBox, {height: searchBoxHeight}]}>
-          <TouchableOpacity onPress={hideSearchBox} style={styles.closeButton}>
-            <Icon name="close" size={30} color="black" />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Routes"
-            onChangeText={text => setSearchQuery(text)}
-          />
-
-          {routes.length > 0 && (
-            <FlatList
-              data={filteredRoutes}
-              keyExtractor={(item, index) => `${item.id}-${index}`} // Use index if id might not be unique
-              renderItem={({item}) => (
-                <TouchableOpacity
-                  style={styles.routeItemContainer}
-                  onPress={() => handleRouteItemClick(item.id)}>
-                  <Text style={styles.routeItem}>{item.route_name}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          )}
-        </Animated.View>
-      )}
     </SafeAreaView>
   );
 };
@@ -751,48 +610,5 @@ const styles = StyleSheet.create({
 
   map: {
     ...StyleSheet.absoluteFillObject,
-  },
-
-  searchBox: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    zIndex: 1000,
-  },
-  searchInput: {
-    height: 40,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginTop: 30,
-    marginBottom: 20,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-  },
-  routeItemContainer: {
-    padding: 15,
-    backgroundColor: '#f8f8f8',
-    borderRadius: 8,
-    marginVertical: 5,
-    elevation: 1, // for Android shadow
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 5, // for iOS shadow
-  },
-  routeItem: {
-    fontSize: 16,
-    color: '#333',
   },
 });
