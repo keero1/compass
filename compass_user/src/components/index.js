@@ -12,3 +12,5 @@ export { default as ThemeContext } from './context/ThemeContext';
 export { default as Customback } from './custom/CustomBack';
 
 export { decodePolyline, getRoute } from './utils/RoutesUtils';
+
+export { default as TermsModal} from './terms/TermsModal';

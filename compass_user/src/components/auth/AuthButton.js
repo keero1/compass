@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {Text, StyleSheet, Pressable, Animated} from 'react-native';
 
-const AuthButton = ({onPress, text}) => {
+const AuthButton = ({onPress, text, disabled}) => {
   const [scaleValue] = useState(new Animated.Value(1));
 
   const handlePressIn = () => {
@@ -29,13 +29,18 @@ const AuthButton = ({onPress, text}) => {
         },
       ]}>
       <Pressable
-        onPress={onPress}
+        onPress={disabled ? null : onPress} // Prevent onPress if disabled
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        disabled={disabled}
         style={({pressed}) => [
           styles.container,
           {
-            backgroundColor: pressed ? '#135266' : '#176B87', // Change background color on press
+            backgroundColor: pressed
+              ? '#135266'
+              : disabled
+              ? '#9cafb7' // Gray color when disabled
+              : '#176B87', // Normal color
           },
         ]}>
         <Text style={styles.text}> {text} </Text>
@@ -49,15 +54,10 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-
   container: {
-    backgroundColor: '#176B87',
-
     width: '100%',
-
     padding: 15,
     marginVertical: 10,
-
     alignItems: 'center',
     borderRadius: 20,
   },

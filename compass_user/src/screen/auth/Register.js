@@ -8,15 +8,19 @@ import {
   useWindowDimensions,
   Alert,
   ActivityIndicator,
+  Modal,
+  ScrollView,
+  BackHandler,
 } from 'react-native';
 
 import AuthInput from '../../components/auth/AuthInput';
-
 import AuthButton from '../../components/auth/AuthButton';
-
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
-import firestore, {serverTimestamp} from '@react-native-firebase/firestore';
+import BouncyCheckbox from 'react-native-bouncy-checkbox';
+
+import TermsModal from '../../components/terms/TermsModal';
 
 const Register = props => {
   const {navigation} = props;
@@ -40,6 +44,25 @@ const Register = props => {
     uppercase: false,
     numberOrSymbol: false,
   });
+
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+
+  useEffect(() => {
+    const handleBackPress = () => {
+      if (showTermsModal) {
+        setShowTermsModal(false);
+        return true;
+      }
+      return false;
+    };
+
+    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+    };
+  }, [showTermsModal]);
 
   useEffect(() => {
     const MIN_PASSWORD_LENGTH = 8;
@@ -66,8 +89,11 @@ const Register = props => {
   };
 
   const onRegisterPressed = async () => {
-    setLoading(true);
+    if (!agreeToTerms) {
+      return;
+    }
 
+    setLoading(true);
     try {
       if (!email || !password || !confirmPassword) {
         throw new Error('Email and Password must not be empty.');
@@ -150,24 +176,34 @@ const Register = props => {
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
-        <AuthInput
-          placeholder="Email"
-          value={email}
-          setValue={setEmail}
-          returnKeyType="next"
-          onSubmitEditing={() => passwordInputRef.current?.focus()}
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>
+            Email <Text style={styles.required}>*</Text>
+          </Text>
+          <AuthInput
+            placeholder="Email"
+            value={email}
+            setValue={setEmail}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordInputRef.current?.focus()}
+          />
+        </View>
 
-        <AuthInput
-          placeholder="Password"
-          value={password}
-          setValue={setPassword}
-          secureTextEntry
-          autoCapitalize={'none'}
-          returnKeyType="next"
-          onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
-          ref={passwordInputRef}
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>
+            Password <Text style={styles.required}>*</Text>
+          </Text>
+          <AuthInput
+            placeholder="Password"
+            value={password}
+            setValue={setPassword}
+            secureTextEntry
+            autoCapitalize={'none'}
+            returnKeyType="next"
+            onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+            ref={passwordInputRef}
+          />
+        </View>
 
         {password.length > 0 && (
           <View style={styles.passwordRequirementsContainer}>
@@ -209,20 +245,47 @@ const Register = props => {
           </View>
         )}
 
-        <AuthInput
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          setValue={setConfirmPassword}
-          secureTextEntry
-          autoCapitalize={'none'}
-          ref={confirmPasswordInputRef}
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>
+            Confirm Password <Text style={styles.required}>*</Text>
+          </Text>
+          <AuthInput
+            placeholder="Password"
+            value={confirmPassword}
+            setValue={setConfirmPassword}
+            secureTextEntry
+            autoCapitalize={'none'}
+            ref={confirmPasswordInputRef}
+          />
+        </View>
+
+        <View style={styles.termsContainer}>
+          <View style={styles.checkboxContainer}>
+            <BouncyCheckbox
+              isChecked={agreeToTerms}
+              fillColor="#176B87"
+              onPress={isChecked => {
+                setAgreeToTerms(isChecked);
+              }}
+              iconStyle={{borderWidth: 2, borderColor: '#176B87'}}
+              size={20}
+            />
+          </View>
+          <Text>I Agree to the </Text>
+          <TouchableOpacity onPress={() => setShowTermsModal(true)}>
+            <Text style={styles.termsText}>Terms and Conditions</Text>
+          </TouchableOpacity>
+        </View>
 
         {loading ? (
           <ActivityIndicator size="large" color="#0000FF" />
         ) : (
           <>
-            <AuthButton text="Register" onPress={onRegisterPressed} />
+            <AuthButton
+              text="Register"
+              onPress={onRegisterPressed}
+              disabled={!agreeToTerms}
+            />
           </>
         )}
 
@@ -235,6 +298,11 @@ const Register = props => {
           </View>
         </View>
       </View>
+
+      <TermsModal
+        visible={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -252,7 +320,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-
+  inputContainer: {
+    width: '100%', // Align inputs to the center
+  },
+  label: {
+    fontSize: 16,
+    marginLeft: 10,
+    color: '#333',
+  },
+  required: {
+    color: 'red', // Color of the asterisk
+  },
   verification: {
     backgroundColor: 'white',
     width: '70%',
@@ -288,6 +366,34 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
+  // password
+  passwordRequirementsContainer: {
+    width: '90%',
+    marginVertical: 5,
+    alignItems: 'flex-start', // Align items to the start (left)
+  },
+
+  passwordRequirement: {
+    textAlign: 'left', // Ensure text is aligned to the left
+  },
+
+  termsContainer: {
+    flexDirection: 'row', // Align items in a row
+    alignItems: 'center', // Center items vertically
+    marginTop: 10,
+  },
+
+  checkboxContainer: {
+    justifyContent: 'center', // Center the checkbox vertically
+    alignItems: 'center', // Align checkbox to the center
+    marginRight: -5,
+  },
+
+  termsText: {
+    color: '#176B87',
+    fontWeight: 'bold',
+  },
+
   // Footer
 
   footer: {
@@ -302,16 +408,6 @@ const styles = StyleSheet.create({
 
   signUp: {
     color: '#176B87',
-  },
-
-  passwordRequirementsContainer: {
-    width: '90%',
-    marginVertical: 5,
-    alignItems: 'flex-start', // Align items to the start (left)
-  },
-
-  passwordRequirement: {
-    textAlign: 'left', // Ensure text is aligned to the left
   },
 });
 
