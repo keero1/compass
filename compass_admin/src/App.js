@@ -30,6 +30,8 @@ import BusCreate from "./components/bus/BusCreate";
 import BusView from "./components/bus/BusView";
 
 import DownloadPage from "./components/download/DownloadPage";
+import TermsOfUse from "./components/download/TermsOfUse"
+import PrivacyPolicy from "./components/download/PrivacyPolicy";
 
 function App() {
   return (
@@ -37,6 +39,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/download-app" element={<DownloadPage />} />
+          <Route path="/terms-of-use" element={<TermsOfUse />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PrivateRoute />}>
             <Route index element={<Home />} />
