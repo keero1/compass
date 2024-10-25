@@ -11,6 +11,11 @@ function PrivacyPolicy() {
     window.scrollTo(0, 0);
   }, []);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.title = "ComPass - Privacy Policy";
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-base-100">
       <Header showLinks={false} />

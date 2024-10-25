@@ -10,6 +10,11 @@ function TermsOfUsePage() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.title = "ComPass - Terms of Use"; // Set the document title here
+  }, []);
   return (
     <div className="min-h-screen flex flex-col bg-base-100">
       <Header showLinks={false} />
