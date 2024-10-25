@@ -7,10 +7,6 @@ import Footer from "./Footer";
 function DownloadPage() {
   const navigate = useNavigate();
 
-  const handleBackClick = () => {
-    navigate("/login"); // If not logged in, navigate to the login page
-  };
-
   const handleTermsClick = () => {
     navigate("/terms-of-use");
   };
@@ -25,9 +21,6 @@ function DownloadPage() {
       <div className="flex-grow flex flex-col items-center justify-center p-6">
         {/* Main Content */}
         <div className="flex-grow flex flex-col items-center justify-center p-6">
-          <button className="btn btn-primary btn-sm" onClick={handleBackClick}>
-            Back to Main
-          </button>
           <h1 className="text-4xl font-bold mb-8 text-center">
             Download Our Mobile Apps
           </h1>
@@ -41,7 +34,7 @@ function DownloadPage() {
                   real-time and make payments easily for your trips.
                 </p>
                 <a
-                  // href="https://drive.google.com/uc?export=download&id=1gR1KEtd8KECMLsfPDumJlx_qOlnvR936"
+                  href="https://drive.google.com/uc?export=download&id=1gR1KEtd8KECMLsfPDumJlx_qOlnvR936"
                   download
                   className="btn btn-primary mt-4"
                 >
@@ -59,7 +52,7 @@ function DownloadPage() {
                   users and share your location in real-time with them.
                 </p>
                 <a
-                  // href="https://drive.google.com/uc?export=download&id=1KIuQWKvpg0ZV4EySkqJ-RP4HJoxdyvyn"
+                  href="https://drive.google.com/uc?export=download&id=1KIuQWKvpg0ZV4EySkqJ-RP4HJoxdyvyn"
                   download
                   className="btn btn-primary mt-4"
                 >

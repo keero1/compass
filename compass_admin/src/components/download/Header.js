@@ -8,13 +8,13 @@ function Header({ showLinks = true }) {
     navigate("/download-app");
   };
 
-  const handleServicesClick = () => {
-    console.log("Services clicked");
-  };
+  // const handleServicesClick = () => {
+  //   console.log("Services clicked");
+  // };
 
-  const handleGetAppClick = () => {
-    console.log("Get the App clicked");
-  };
+  // const handleGetAppClick = () => {
+  //   console.log("Get the App clicked");
+  // };
 
   return (
     <header className="w-full bg-base-300 py-6 px-20 flex flex-col md:flex-row items-center justify-between">
@@ -26,7 +26,7 @@ function Header({ showLinks = true }) {
       </h1>
       {showLinks && (
         <div className="mt-2 md:mt-0 space-x-4 md:space-x-10">
-          <button
+          {/* <button
             onClick={handleServicesClick}
             className="link no-underline font-bold hover:text-primary transition duration-300"
           >
@@ -37,7 +37,7 @@ function Header({ showLinks = true }) {
             className="link no-underline font-bold hover:text-primary transition duration-300"
           >
             Download
-          </button>
+          </button> */}
         </div>
       )}
     </header>

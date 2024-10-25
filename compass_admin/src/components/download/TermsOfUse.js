@@ -73,215 +73,183 @@ function TermsOfUsePage() {
             ></div>
             <p>
               <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
+                Real-Time Bus Tracking: {""}
               </span>
               ComPass provides a platform for passengers to track upcoming
               buses. The actual buses are provided by Santrans Bus Corporation.
             </p>
             <p>
               <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
+                Cashless Payments: {""}
               </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              The app offers secure and convenient cashless payment options for
+              passengers.
+            </p>
+            <p>
+              <span className="before:content-['3.3'] before:mr-1 font-semibold">
+                Notification System: {""}
+              </span>
+              Users can set a marker in the app to receive notifications when
+              the bus is nearby.
+            </p>
+
+            <p>
+              <span className="before:content-['3.4'] before:mr-1 font-semibold">
+                Security Features: {""}
+              </span>
+              The system includes security features such as driver
+              identification information, enhancing passenger safety.
             </p>
           </div>
 
           <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
+            <h2 className="text-xl font-semibold mb-1">4. Payments and Fees</h2>
             <div
               className="divider"
               style={{ margin: "0", marginBottom: "10px" }}
             ></div>
             <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
+              <span className="before:content-['4.1'] before:mr-1 font-semibold">
+                Payment: {""}
               </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
-            </p>
-            <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
-              </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              Payment for rides are exclusively handled by the Bus Driver. The
+              application only shows the amount to be paid by the passenger
+              whether it be cash or cashless.
             </p>
           </div>
 
           <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
+            <h2 className="text-xl font-semibold mb-1">
+              5. Driver Responsibilities
+            </h2>
             <div
               className="divider"
               style={{ margin: "0", marginBottom: "10px" }}
             ></div>
             <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
+              <span className="before:content-['5.1'] before:mr-1 font-semibold">
+                Liability: {""}
               </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
+              Drivers are employees of Santrans Corporation in which are ComPass
+              providing the service for. ComPass is not responsible for any
+              accidents, injuries, or disputes between driver, and passengers.
             </p>
             <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
+              <span className="before:content-['5.1'] before:mr-1 font-semibold">
+                Driver Identification: {""}
               </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              ComPass ensures that all drivers are verified Santrans employees.
+              However, users must also verify the driver's identity through the
+              app before starting the ride.
             </p>
           </div>
 
           <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
+            <h2 className="text-xl font-semibold mb-1">
+              6. User Responsibilities
+            </h2>
             <div
               className="divider"
               style={{ margin: "0", marginBottom: "10px" }}
             ></div>
             <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
+              <span className="before:content-['6.1'] before:mr-1 font-semibold">
+                Appropriate Conduct: {""}
               </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
-            </p>
-            <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
-              </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              Users are expected to behave in a respectful and lawful manner
+              while using the app and during the ride. Any form of misconduct,
+              harassment, or illegal behavior is strictly prohibited.
             </p>
           </div>
 
           <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
+            <h2 className="text-xl font-semibold mb-1">7. Privacy</h2>
             <div
               className="divider"
               style={{ margin: "0", marginBottom: "10px" }}
             ></div>
             <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
-              </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
-            </p>
-            <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
-              </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              ComPass respects your privacy and is committed to protecting your
+              personal information. Please refer to our Privacy Policy for more
+              details on how we collect, use, and protect your data.
             </p>
           </div>
 
           <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
+            <h2 className="text-xl font-semibold mb-1">
+              8. Limitation of Liability
+            </h2>
             <div
               className="divider"
               style={{ margin: "0", marginBottom: "10px" }}
             ></div>
             <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
+              <span className="before:content-['8.1'] before:mr-1 font-semibold">
+                {""}
               </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
+              ComPass is not liable for any damages, losses, or injuries
+              resulting from the use of the app or the services provided by
+              third-party drivers.
             </p>
             <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
+              <span className="before:content-['8.2'] before:mr-1 font-semibold">
+                {""}
               </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              The app may experience technical issues or downtime, and ComPass
+              is not responsible for any inconvenience this may cause.
             </p>
           </div>
 
           <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
+            <h2 className="text-xl font-semibold mb-1">
+              9. Modifications to the Terms
+            </h2>
             <div
               className="divider"
               style={{ margin: "0", marginBottom: "10px" }}
             ></div>
             <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
-              </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
-            </p>
-            <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
-              </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              ComPass reserves the right to modify these Terms and Conditions at
+              any time. Any changes will be posted in the app, and continued use
+              of the app after such changes constitutes acceptance of the new
+              Terms.
             </p>
           </div>
 
           <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
+            <h2 className="text-xl font-semibold mb-1">10. Termination</h2>
             <div
               className="divider"
               style={{ margin: "0", marginBottom: "10px" }}
             ></div>
             <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
+              <span className="before:content-['10.1'] before:mr-1 font-semibold">
+                {""}
               </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
+              ComPass reserves the right to suspend or terminate your account at
+              any time if you violate these Terms or engage in behavior that
+              negatively impacts the app or its users.
             </p>
             <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
+              <span className="before:content-['10.2'] before:mr-1 font-semibold">
+                {""}
               </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              Users may also terminate their accounts by contacting customer
+              support.
             </p>
           </div>
 
           <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
+            <h2 className="text-xl font-semibold mb-1">11. Governing Law</h2>
             <div
               className="divider"
               style={{ margin: "0", marginBottom: "10px" }}
             ></div>
             <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
-              </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
-            </p>
-            <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
-              </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
-            </p>
-          </div>
-
-          <div className="mt-2">
-            <h2 className="text-xl font-semibold mb-1">4. Services Provided</h2>
-            <div
-              className="divider"
-              style={{ margin: "0", marginBottom: "10px" }}
-            ></div>
-            <p>
-              <span className="before:content-['3.1'] before:mr-1 font-semibold">
-                Bus Tracking: {""}
-              </span>
-              ComPass provides a platform for passengers to track upcoming
-              buses. The actual buses are provided by Santrans Bus Corporation.
-            </p>
-            <p>
-              <span className="before:content-['3.2'] before:mr-1 font-semibold">
-                Service Disclaimer: {""}
-              </span>
-              ComPass is not responsible for the accuracy of the bus schedules
-              provided by Santrans.
+              These Terms are governed by and construed in accordance with the
+              laws of the Philippines. Any disputes arising out of or in
+              connection with these Terms will be subject to the exclusive
+              jurisdiction of the courts in Bulacan.
             </p>
           </div>
 
@@ -297,7 +265,7 @@ function TermsOfUsePage() {
               <span className="before:content-['12.1'] before:mr-1 font-semibold">
                 Email: {""}
               </span>
-              support@compass.com
+              keero.dev@gmail.com
             </p>
             <p>
               <span className="before:content-['12.2'] before:mr-1 font-semibold">
