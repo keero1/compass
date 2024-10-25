@@ -12,6 +12,7 @@ import {
   CashIn,
   TransactionDetails,
   TransactionHistory,
+  About,
 } from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/custom/CustomBack';
@@ -48,6 +49,20 @@ function HomeNavigator() {
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.ABOUT}
+        component={About}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'About',
           headerStyle: {
             backgroundColor: '#F4F4FB', // Set header background color
           },

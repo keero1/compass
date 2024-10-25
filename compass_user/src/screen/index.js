@@ -12,6 +12,8 @@ export {default as Main} from './home/main';
 export {default as Drawer} from './drawer/Drawer';
 export {default as Wallet} from './drawer/wallet/Wallet';
 
+export {default as About} from './drawer/support/About';
+
 // drawer child
 
 // wallet

@@ -22,7 +22,7 @@ import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {
   ArrowLeftStartOnRectangleIcon,
   BanknotesIcon,
-  ChatBubbleBottomCenterTextIcon,
+  DocumentIcon,
   QuestionMarkCircleIcon,
 } from 'react-native-heroicons/solid';
 
@@ -97,6 +97,12 @@ const Drawer = props => {
     navigation.navigate(ROUTES.WALLET);
   };
 
+  const onHelpPressed = () => {};
+
+  const onAboutPressed = () => {
+    navigation.navigate(ROUTES.ABOUT);
+  };
+
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
@@ -126,14 +132,18 @@ const Drawer = props => {
           <Text style={styles.menuItem}>Wallet</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItemContainer}>
-          <ChatBubbleBottomCenterTextIcon size={25} color="gray" />
-          <Text style={styles.menuItem}>Inbox</Text>
+        <TouchableOpacity
+          style={styles.menuItemContainer}
+          onPress={onHelpPressed}>
+          <DocumentIcon size={25} color="gray" />
+          <Text style={styles.menuItem}>Help and Feedback</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItemContainer}>
+        <TouchableOpacity
+          style={styles.menuItemContainer}
+          onPress={onAboutPressed}>
           <QuestionMarkCircleIcon size={25} color="gray" />
-          <Text style={styles.menuItem}>Help and Feedback</Text>
+          <Text style={styles.menuItem}>About</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -142,6 +152,12 @@ const Drawer = props => {
           <ArrowLeftStartOnRectangleIcon size={25} color="red" />
           <Text style={styles.menuItemLogout}>Logout</Text>
         </TouchableOpacity>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            © 2024 ComPass. All Rights Reserved.
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -225,6 +241,18 @@ const styles = StyleSheet.create({
     fontSize: 25,
     color: 'red',
     marginLeft: 10,
+  },
+
+  footer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    color: 'gray',
   },
 });
 

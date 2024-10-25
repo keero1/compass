@@ -9,6 +9,8 @@ export default {
   DRAWER: 'Drawer',
   WALLET: 'Wallet',
 
+  ABOUT: 'About',
+
   //DRAWER CHILD
 
   //Wallet

@@ -1,5 +1,14 @@
 import React, {useRef, useEffect, useState} from 'react';
-import {StyleSheet, View, Dimensions, Alert, Text} from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Dimensions,
+  Alert,
+  Text,
+  Modal,
+  TouchableOpacity,
+  Button,
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {Svg, Image as ImageSvg, Defs, ClipPath, Circle} from 'react-native-svg';
@@ -48,6 +57,9 @@ const Main = props => {
   const [isNotificationTriggered, setIsNotificationTriggered] = useState(false);
   const [notificationBusCoordinate, setNotificationBusCoordinate] =
     useState(null);
+
+  const [selectedRadius, setSelectedRadius] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   // default location
 
@@ -222,15 +234,22 @@ const Main = props => {
         return;
       }
 
+      let closestBus = null; // Track the closest bus
+      let closestDistance = Infinity; // Start with an infinitely large distance
+
       for (const bus of busMarkers) {
         const distance = calculateDistance(bus.coordinate, marker);
 
-        if (distance <= markerProximityRadius && !isNotificationTriggered) {
-          await onDisplayNotification(bus.coordinate);
-          setIsNotificationTriggered(true); // Mark the notification as triggered
-          console.log('notification triggered');
-          break;
+        if (distance <= markerProximityRadius && distance < closestDistance) {
+          closestDistance = distance; // Update closest distance
+          closestBus = bus.coordinate; // Update closest bus coordinate
         }
+      }
+
+      if (closestBus && !isNotificationTriggered) {
+        await onDisplayNotification(closestBus); // Pass the closest bus coordinate
+        setIsNotificationTriggered(true);
+        console.log('Notification triggered');
       }
     };
 
@@ -328,28 +347,8 @@ const Main = props => {
       return;
     }
 
-    Alert.alert(
-      'Proximity Alert',
-      'Select the radius for proximity alerts:',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => {
-            console.log('Marker placement cancelled by user.');
-          },
-        },
-        {
-          text: '1 km',
-          onPress: async () => await handleMarkerPlacement(coordinate, 1000),
-        },
-        {
-          text: '3 km',
-          onPress: async () => await handleMarkerPlacement(coordinate, 3000),
-        },
-      ],
-      {cancelable: true},
-    );
+    setSelectedRadius(coordinate); // Set the coordinate for marker placement
+    setModalVisible(true);
   };
 
   const handleMarkerPlacement = async (coordinate, radius) => {
@@ -575,6 +574,79 @@ const Main = props => {
           ROUTES={ROUTES}
         />
       </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          }}>
+          <View
+            style={{
+              width: 300,
+              padding: 20,
+              backgroundColor: 'white',
+              borderRadius: 10,
+            }}>
+            <Text style={{fontSize: 16}}>
+              Select the radius for proximity alerts:
+            </Text>
+
+            <TouchableOpacity
+              onPress={async () => {
+                await handleMarkerPlacement(selectedRadius, 1000);
+                setModalVisible(false);
+              }}
+              style={{
+                backgroundColor: '#176B87', // Example blue color
+                padding: 10,
+                borderRadius: 5,
+                marginVertical: 5, // Space between buttons
+              }}>
+              <Text style={{color: 'white', textAlign: 'center'}}>1 km</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                await handleMarkerPlacement(selectedRadius, 3000);
+                setModalVisible(false);
+              }}
+              style={{
+                backgroundColor: '#176B87', // Example green color
+                padding: 10,
+                borderRadius: 5,
+                marginVertical: 5,
+              }}>
+              <Text style={{color: 'white', textAlign: 'center'}}>3 km</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                await handleMarkerPlacement(selectedRadius, 5000);
+                setModalVisible(false);
+              }}
+              style={{
+                backgroundColor: '#176B87', // Example red color
+                padding: 10,
+                borderRadius: 5,
+                marginVertical: 5,
+              }}>
+              <Text style={{color: 'white', textAlign: 'center'}}>5 km</Text>
+            </TouchableOpacity>
+
+            <Button
+              title="Cancel"
+              onPress={() => setModalVisible(false)}
+              color="red"
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

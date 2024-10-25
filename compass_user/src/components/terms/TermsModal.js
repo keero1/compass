@@ -198,7 +198,7 @@ const TermsModal = ({visible, onClose}) => {
             </CustomText>
             <CustomText>
               15.1 For any questions about these Terms, please contact us at
-              support@compass.com.
+              keero.dev@gmail.com
             </CustomText>
             {/* Acknowledgment Text */}
             <CustomText style={styles.acknowledgmentText}>
