@@ -30,8 +30,9 @@ import BusCreate from "./components/bus/BusCreate";
 import BusView from "./components/bus/BusView";
 
 import DownloadPage from "./components/download/DownloadPage";
-import TermsOfUse from "./components/download/TermsOfUse"
+import TermsOfUse from "./components/download/TermsOfUse";
 import PrivacyPolicy from "./components/download/PrivacyPolicy";
+import ManageConductor from "./components/home/ManageConductor";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
             <Route path="/manage-driver" element={<ManageDriver />} />
             {/* route */}
             <Route path="/manage-route" element={<ManageRoute />} />
+            <Route path="/manage-conductor" element={<ManageConductor />} />
             {/* Profile */}
             <Route path="/profile" element={<Profile />} />
             {/* super admin */}

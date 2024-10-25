@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { doSignOut } from "../../firebase/auth";
-import User from "../../assets/images/user_icon.png"
+import User from "../../assets/images/user_icon.png";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "../../contexts/authContext";
@@ -10,6 +10,7 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import {
   ArrowLeftStartOnRectangleIcon,
   UserIcon,
+  UsersIcon,
   HomeIcon,
   WalletIcon,
   TruckIcon,
@@ -277,6 +278,12 @@ const Navbar = () => {
             <Link to="manage-route">
               <MapPinIcon className="size-6" />
               Manage routes
+            </Link>
+          </li>
+          <li>
+            <Link to="manage-conductor">
+              <UsersIcon className="size-6" />
+              Manage conductors
             </Link>
           </li>
           {/* Super Admin Controls */}
