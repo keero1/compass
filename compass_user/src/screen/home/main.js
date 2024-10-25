@@ -145,6 +145,7 @@ const Main = props => {
             },
             details: {
               name: busData.bus_driver_name,
+              conductor_name: busData.conductor_name || null,
               license_plate: busData.license_plate,
               route_id: data.route_id,
               timestamp: data.timestamp,
@@ -478,7 +479,6 @@ const Main = props => {
    */
 
   useEffect(() => {
-    console.log('qweqweqwe');
     if (busMarkers.length > 0) {
       busMarkers.forEach((bus, index) => {
         if (markerRefs.current[index]) {
@@ -547,6 +547,9 @@ const Main = props => {
                     />
                   </Svg>
                   <Text>Driver Name: {bus.details.name}</Text>
+                  {bus.details.conductor_name && (
+                    <Text>Conductor Name: {bus.details.conductor_name}</Text>
+                  )}
                   <Text>License Plate: {bus.details.license_plate}</Text>
                   <Text>
                     Last Update:{' '}
