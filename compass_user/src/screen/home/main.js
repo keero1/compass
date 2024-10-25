@@ -340,7 +340,7 @@ const Main = props => {
 
     const distance = calculateDistance(currentLocation, coordinate);
 
-    if (distance < 0) {
+    if (distance > 1000) {
       Alert.alert(
         'Out of Range',
         'Marker can only be placed within 1000 meters from your current location.',
