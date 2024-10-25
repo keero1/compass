@@ -1,5 +1,15 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, Alert} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  TextInput,
+  Button,
+  ScrollView,
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -12,6 +22,16 @@ const Trip = () => {
   const [earnings, setEarnings] = useState(0);
   const userId = auth().currentUser.uid;
 
+  // conductor
+  const [conductorNameFromFirestore, setConductorNameFromFirestore] =
+    useState('None');
+  // modal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [conductorName, setConductorName] = useState('');
+  const [conductorUserId, setConductorUserId] = useState('');
+
+  const [transactions, setTransactions] = useState([]);
+
   const formatNumber = number => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -19,10 +39,46 @@ const Trip = () => {
     }).format(number);
   };
 
+  const formatDate = date => {
+    if (!date) return 'Unknown Date'; // Handle cases where timestamp might be null
+
+    const options = {day: 'numeric', month: 'short', year: 'numeric'};
+    const timeOptions = {hour: 'numeric', minute: 'numeric', hour12: true};
+
+    const datePart = date.toLocaleDateString('en-US', options); // Example: '23 Sep 2024'
+    const timePart = date.toLocaleTimeString('en-US', timeOptions); // Example: '10:37 PM'
+
+    return `${datePart}, ${timePart}`;
+  };
+
   useEffect(() => {
     fetchFareData();
     fetchTodayEarnings();
+    fetchTodayTransactions();
   }, []);
+
+  useEffect(() => {
+    const fetchConductorName = async () => {
+      try {
+        const busDoc = await firestore().collection('buses').doc(userId).get();
+        if (busDoc.exists) {
+          const data = busDoc.data();
+          if (data.conductor_name) {
+            setConductorNameFromFirestore(data.conductor_name);
+          } else {
+            setConductorNameFromFirestore('None');
+          }
+        } else {
+          setConductorNameFromFirestore('None');
+        }
+      } catch (error) {
+        console.error('Error fetching conductor name: ', error);
+        setConductorNameFromFirestore('None');
+      }
+    };
+
+    fetchConductorName();
+  }, [userId]);
 
   const fetchFareData = async () => {
     try {
@@ -75,6 +131,38 @@ const Trip = () => {
     }
   };
 
+  const fetchTodayTransactions = async () => {
+    try {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const transactionsSnapshot = await firestore()
+        .collection('transactions')
+        .where('bus_id', '==', userId)
+        .where('timestamp', '>=', startOfDay)
+        .orderBy('timestamp', 'desc') // Order by timestamp
+        .get();
+
+      const todayTransactions = transactionsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          origin: data.origin,
+          destination: data.destination,
+          fare_amount: data.fare_amount,
+          timestamp: data.timestamp ? data.timestamp.toDate() : null,
+          bus_driver_name: data.bus_driver_name,
+          reference_number: data.reference_number,
+        };
+      });
+
+      setTransactions(todayTransactions);
+    } catch (error) {
+      console.error("Error fetching today's transactions: ", error);
+      setTransactions([]); // Reset transactions on error
+    }
+  };
+
   const onSwitchRoutePressed = async () => {
     Alert.alert(
       'Confirm Route Switch',
@@ -123,12 +211,82 @@ const Trip = () => {
     }
   };
 
+  const handleConductorSignIn = async () => {
+    try {
+      const conductorRef = firestore().collection('conductors');
+      const conductorDoc = await conductorRef
+        .where('user_id', '==', conductorUserId)
+        .get();
+
+      if (!conductorDoc.empty) {
+        const conductorData = conductorDoc.docs[0].data();
+        const name = conductorData.name;
+
+        // Bind conductor name to current user
+        await auth().currentUser.updateProfile({displayName: name});
+
+        // Update buses/userId with conductor_name
+        await firestore().collection('buses').doc(userId).set(
+          {
+            conductor_name: name,
+          },
+          {merge: true},
+        );
+
+        setConductorNameFromFirestore(name);
+
+        Alert.alert('Sign In Successful', `Welcome ${name}`);
+        setModalVisible(false);
+      } else {
+        Alert.alert('Error', 'Conductor not found.');
+      }
+    } catch (error) {
+      console.error('Error signing in conductor: ', error);
+      Alert.alert('Error', 'An error occurred. Please try again.');
+    }
+  };
+
+  const handleConductorSignOut = () => {
+    Alert.alert(
+      'Confirm Sign Out',
+      `Are you sure you want to sign out ${conductorNameFromFirestore}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              await firestore().collection('buses').doc(userId).update({
+                conductor_name: firestore.FieldValue.delete(),
+              });
+              setConductorNameFromFirestore('None'); // Reset state
+              Alert.alert(
+                'Sign Out Successful',
+                `${conductorNameFromFirestore} has been signed out.`,
+              );
+            } catch (error) {
+              console.error('Error signing out conductor: ', error);
+              Alert.alert(
+                'Error',
+                'An error occurred while signing out. Please try again.',
+              );
+            }
+          },
+        },
+      ],
+      {cancelable: false},
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.infoBox}>
         <View style={styles.infoContainer}>
           <Text style={styles.infoLabel}>Current Conductor</Text>
-          <Text style={styles.infoText}>None</Text>
+          <Text style={styles.infoText}>{conductorNameFromFirestore}</Text>
         </View>
         <View style={styles.infoContainer}>
           <Text style={styles.infoLabel}>Current Route</Text>
@@ -141,15 +299,87 @@ const Trip = () => {
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.leftSideButton}>
-          <Text style={styles.leftSideText}>Start Trip</Text>
-        </TouchableOpacity>
+        {conductorNameFromFirestore !== 'None' ? (
+          <TouchableOpacity
+            style={styles.leftSideButton}
+            onPress={handleConductorSignOut}>
+            <Text style={styles.leftSideText}>Conductor Sign Out</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.leftSideButton}
+            onPress={() => setModalVisible(true)}>
+            <Text style={styles.leftSideText}>Conductor Sign In</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={styles.rightSideButton}
           onPress={onSwitchRoutePressed}>
           <Text style={styles.rightSideText}>Switch Route</Text>
         </TouchableOpacity>
       </View>
+
+      <Text style={styles.historyTitle}>Today's Transactions</Text>
+      <ScrollView style={styles.transactionHistoryBox}>
+        {transactions.length > 0 ? (
+          transactions.map(transaction => (
+            <View key={transaction.id} style={styles.transactionItem}>
+              <View style={styles.transactionRow}>
+                <Text style={styles.transactionText}>
+                  {transaction.origin} - {transaction.destination}
+                </Text>
+                <View style={styles.fareContainer}>
+                  <Text style={styles.transactionAmount}>
+                    {formatNumber(transaction.fare_amount)}{' '}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.transactionTimestamp}>
+                {formatDate(transaction.timestamp)}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.noTransactionsText}>
+            No transactions found for today.
+          </Text>
+        )}
+      </ScrollView>
+
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Conductor Sign In</Text>
+            <TextInput
+              placeholder="Conductor Name"
+              value={conductorName}
+              onChangeText={setConductorName}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="User ID"
+              value={conductorUserId}
+              onChangeText={setConductorUserId}
+              style={styles.input}
+            />
+            <View style={styles.buttonRow}>
+              <Button
+                title="Sign In"
+                onPress={handleConductorSignIn}
+                color="#176B87"
+              />
+              <Button
+                title="Cancel"
+                onPress={() => setModalVisible(false)}
+                color="red"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -224,6 +454,92 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+
+  // transaction
+  transactionHistoryBox: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  historyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  noTransactionsText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#999',
+    marginVertical: 40,
+  },
+  transactionItem: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  transactionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  transactionText: {
+    fontSize: 16,
+    color: '#555',
+    flex: 1,
+  },
+  fareContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  transactionTimestamp: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 5,
+  },
+
+  // modal
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    marginBottom: 15,
+  },
+  input: {
+    width: '100%',
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    marginBottom: 10,
+    paddingLeft: 10,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%', // Ensure buttons stretch to full width
   },
 });
 
