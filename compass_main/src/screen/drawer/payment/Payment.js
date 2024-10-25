@@ -140,7 +140,11 @@ const Payment = props => {
     const originKM = fareData.kmPlace[selectedOriginIndex].distance;
     const destinationKM = fareData.kmPlace[destinationIndex].distance;
 
-    setTravelDistance(destinationKM - originKM); // Set the travel distance in state
+    if (destinationKM - originKM < 0) {
+      setTravelDistance(originKM - destinationKM);
+    } else {
+      setTravelDistance(destinationKM - originKM);
+    }
   };
 
   // remember the choice
@@ -180,6 +184,7 @@ const Payment = props => {
     setSelectedOrigin(fareData.kmPlace[value].place);
     setSelectedOriginIndex(value);
     setSelectedDestination(null);
+    setSelectedDestinationIndex(null);
     setCancelButton(true);
 
     setTravelDistance(null);

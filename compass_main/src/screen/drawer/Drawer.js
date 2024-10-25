@@ -14,8 +14,12 @@ import {useIsFocused} from '@react-navigation/native';
 import {
   ArrowRightCircleIcon,
   BanknotesIcon,
-  CreditCardIcon,
+  MapPinIcon,
+  ArrowLeftStartOnRectangleIcon,
+  QuestionMarkCircleIcon,
 } from 'react-native-heroicons/solid';
+
+import auth from '@react-native-firebase/auth';
 
 import {IMAGES, ROUTES} from '../../constants';
 
@@ -25,8 +29,6 @@ const Drawer = props => {
   const {navigation} = props;
 
   const focus = useIsFocused();
-
-  const onShutdownPressed = () => {};
 
   // get the name
 
@@ -55,6 +57,10 @@ const Drawer = props => {
     }
   }, [focus]);
 
+  const onTripPressed = () => {
+    navigation.navigate(ROUTES.TRIP);
+  };
+
   const onProfilePress = () => {
     navigation.navigate(ROUTES.PROFILE);
   };
@@ -65,6 +71,35 @@ const Drawer = props => {
 
   const onTransactionPressed = () => {
     navigation.navigate(ROUTES.TRANSACTIONS);
+  };
+
+  const onAboutPressed = () => {
+    navigation.navigate(ROUTES.ABOUT);
+  };
+
+  const onLogoutPressed = () => {
+    Alert.alert('Alert', 'Confirm Logout?', [
+      {
+        text: 'Logout',
+        onPress: async () => {
+          try {
+            await AsyncStorage.clear();
+            console.log('Async Storage Cleared');
+
+            auth()
+              .signOut()
+              .then(() => console.log('User signed out'));
+          } catch (error) {
+            console.error('Error during logout:', error);
+          }
+        },
+      },
+      {
+        text: 'No',
+        onPress: () => console.log('Cancelled'),
+        style: 'cancel',
+      },
+    ]);
   };
 
   return (
@@ -89,7 +124,12 @@ const Drawer = props => {
         </View>
 
         <View style={styles.separator}></View>
-
+        <TouchableOpacity
+          onPress={onTripPressed}
+          style={styles.menuItemContainer}>
+          <MapPinIcon size={30} color="gray" />
+          <Text style={styles.menuItem}>Trip</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={onPaymentPressed}
           style={styles.menuItemContainer}>
@@ -101,6 +141,18 @@ const Drawer = props => {
           style={styles.menuItemContainer}>
           <ArrowRightCircleIcon size={30} color="gray" />
           <Text style={styles.menuItem}>Transactions</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onAboutPressed}
+          style={styles.menuItemContainer}>
+          <QuestionMarkCircleIcon size={30} color="gray" />
+          <Text style={styles.menuItem}>About</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onLogoutPressed}
+          style={styles.menuItemContainer}>
+          <ArrowLeftStartOnRectangleIcon size={30} color="red" />
+          <Text style={styles.menuItemX}>Logout</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -181,6 +233,12 @@ const styles = StyleSheet.create({
   menuItem: {
     fontSize: 25,
     marginLeft: 10, // Add margin to the left for spacing
+  },
+
+  menuItemX: {
+    fontSize: 25,
+    marginLeft: 10, // Add margin to the left for spacing
+    color: 'red',
   },
 });
 

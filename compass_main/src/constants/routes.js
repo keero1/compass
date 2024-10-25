@@ -7,14 +7,17 @@ export default {
 
   DRAWER: 'Drawer',
 
+  TRIP: 'Trip',
+
+  ABOUT: 'About',
+
   PROFILE: 'Profile',
 
   PAYMENT: 'Payment',
 
   PAYMENTCONFIRMATION: 'PaymentConfirmation',
-  
+
   TRANSACTIONS: 'Transactions',
 
   TRANSACTIONDETAILS: 'TransactionDetails',
-
 };

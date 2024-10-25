@@ -193,12 +193,15 @@ const styles = StyleSheet.create({
   detailItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
     paddingVertical: 7,
     paddingHorizontal: 10,
+    flexWrap: 'wrap', // Added to allow wrapping of text
   },
+
   detailTitle: {
     fontSize: 16,
+    flex: 1,
   },
   detailText: {
     fontSize: 16,

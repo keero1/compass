@@ -4,30 +4,22 @@ import {
   View,
   StyleSheet,
   Image,
-  useWindowDimensions,
   Text,
   TouchableOpacity,
   Modal,
   TextInput,
   Alert,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 
 import {useIsFocused} from '@react-navigation/native';
 
-import {COLORS} from '../../../constants';
 import IMAGES from '../../../constants/images';
 
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const Profile = props => {
-  const {navigation} = props;
-  const {height} = useWindowDimensions();
-
+const Profile = () => {
   const [profilePicture, setProfilePicture] = useState(null);
 
   const [userFullName, setUserFullName] = useState(null);
@@ -118,31 +110,6 @@ const Profile = props => {
     }
   };
 
-  const onLogoutPressed = () => {
-    Alert.alert('Alert', 'Confirm Logout?', [
-      {
-        text: 'Logout',
-        onPress: async () => {
-          try {
-            await AsyncStorage.clear();
-            console.log('Async Storage Cleared');
-
-            auth()
-              .signOut()
-              .then(() => console.log('User signed out'));
-          } catch (error) {
-            console.error('Error during logout:', error);
-          }
-        },
-      },
-      {
-        text: 'No',
-        onPress: () => console.log('Cancelled'),
-        style: 'cancel',
-      },
-    ]);
-  };
-
   // change password
   const handleChangePassword = async () => {
     const user = auth().currentUser;
@@ -230,17 +197,6 @@ const Profile = props => {
                 style={styles.detailItemX}
                 onPress={() => setPasswordChangeModalVisible(true)}>
                 <Text style={styles.detailTitle}>Password</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.sectionBox}>
-            <Text style={styles.sectionTitle}>Advanced</Text>
-            <View style={styles.detailBox}>
-              <TouchableOpacity
-                style={styles.detailItemX}
-                onPress={onLogoutPressed}>
-                <Text style={styles.deleteAccounText}>Logout</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -389,10 +345,6 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 16,
-  },
-  deleteAccounText: {
-    fontSize: 16,
-    color: '#FF0000',
   },
   separator: {
     height: 1,

@@ -22,6 +22,8 @@ import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {
   ArrowLeftStartOnRectangleIcon,
   BanknotesIcon,
+  ChatBubbleBottomCenterTextIcon,
+  QuestionMarkCircleIcon,
 } from 'react-native-heroicons/solid';
 
 const Drawer = props => {
@@ -123,9 +125,17 @@ const Drawer = props => {
           <BanknotesIcon size={25} color="gray" />
           <Text style={styles.menuItem}>Wallet</Text>
         </TouchableOpacity>
-        {/* <TouchableOpacity>
-          <Text style={styles.menuItem}>Feedback</Text>
-        </TouchableOpacity> */}
+
+        <TouchableOpacity style={styles.menuItemContainer}>
+          <ChatBubbleBottomCenterTextIcon size={25} color="gray" />
+          <Text style={styles.menuItem}>Inbox</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItemContainer}>
+          <QuestionMarkCircleIcon size={25} color="gray" />
+          <Text style={styles.menuItem}>Help and Feedback</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           onPress={onLogoutPressed}
           style={styles.menuItemContainer}>

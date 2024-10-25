@@ -62,17 +62,29 @@ export default function App() {
   // Helper function to fetch route name and fare data
   async function fetchRouteAndFareData(routeId, busType) {
     try {
+      const existingFareData = await AsyncStorage.getItem('fare-data');
+
+      if (!existingFareData) {
+        const fareDoc = await firestore()
+          .collection('fares')
+          .doc(routeId)
+          .get();
+
+        if (fareDoc.exists) {
+          const fareData = fareDoc.data();
+          await AsyncStorage.setItem('fare-data', JSON.stringify(fareData));
+          console.log('Fare data fetched and stored locally');
+        } else {
+          console.log('Fare document does not exist');
+        }
+      } else {
+        console.log('Fare data already exists, skipping fetch and save.');
+      }
+
       const routeDoc = await firestore()
         .collection('routes')
         .doc(routeId)
         .get();
-      const fareDoc = await firestore().collection('fares').doc(routeId).get();
-
-      if (fareDoc.exists) {
-        const fareData = fareDoc.data();
-        await AsyncStorage.setItem('fare-data', JSON.stringify(fareData));
-        console.log('Fare data fetched and stored locally');
-      }
 
       if (routeDoc.exists) {
         const routeName = routeDoc.data().route_name;

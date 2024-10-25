@@ -11,6 +11,12 @@ export {default as Main} from './home/Main';
 // drawer
 export {default as Drawer} from './drawer/Drawer';
 
+//about
+export {default as About} from './drawer/about/About';
+
+// trip
+export {default as Trip} from './drawer/trip/Trip';
+
 // child of drawer
 export {default as Profile} from './drawer/profile/Profile';
 
