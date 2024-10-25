@@ -41,7 +41,7 @@ function DownloadPage() {
                   real-time and make payments easily for your trips.
                 </p>
                 <a
-                  href="https://drive.google.com/uc?export=download&id=1gR1KEtd8KECMLsfPDumJlx_qOlnvR936"
+                  // href="https://drive.google.com/uc?export=download&id=1gR1KEtd8KECMLsfPDumJlx_qOlnvR936"
                   download
                   className="btn btn-primary mt-4"
                 >
@@ -59,7 +59,7 @@ function DownloadPage() {
                   users and share your location in real-time with them.
                 </p>
                 <a
-                  href="https://drive.google.com/uc?export=download&id=1KIuQWKvpg0ZV4EySkqJ-RP4HJoxdyvyn"
+                  // href="https://drive.google.com/uc?export=download&id=1KIuQWKvpg0ZV4EySkqJ-RP4HJoxdyvyn"
                   download
                   className="btn btn-primary mt-4"
                 >
