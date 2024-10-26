@@ -34,12 +34,26 @@ import TermsOfUse from "./components/download/TermsOfUse";
 import PrivacyPolicy from "./components/download/PrivacyPolicy";
 import ManageConductor from "./components/home/ManageConductor";
 
+import Download from "./components/download/Download";
+
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
           <Route path="/download-app" element={<DownloadPage />} />
+          <Route
+            path="/d/user"
+            element={
+              <Download fileUrl="https://github.com/keero1/compass-bin/releases/download/0.5.0/compass-user-release.apk" />
+            }
+          />
+          <Route
+            path="/d/bus-driver"
+            element={
+              <Download fileUrl="https://github.com/keero1/compass-bin/releases/download/0.5.0/compas-bus-release.apk" />
+            }
+          />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/login" element={<Login />} />

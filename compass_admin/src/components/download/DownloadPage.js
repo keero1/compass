@@ -1,6 +1,6 @@
 // DownloadPage.js
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 
@@ -33,13 +33,17 @@ function DownloadPage() {
                   Download the Compass User app for Android. Track buses in
                   real-time and make payments easily for your trips.
                 </p>
-                <a
-                  href="https://drive.google.com/uc?export=download&id=1gR1KEtd8KECMLsfPDumJlx_qOlnvR936"
+                <Link
+                  to="/d/user"
                   download
                   className="btn btn-primary mt-4"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevents event from bubbling
+                    // Any additional click logic
+                  }}
                 >
                   Download Compass User APK
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -51,13 +55,17 @@ function DownloadPage() {
                   Download the Compass Bus app for Android. Accept payments from
                   users and share your location in real-time with them.
                 </p>
-                <a
-                  href="https://drive.google.com/uc?export=download&id=1KIuQWKvpg0ZV4EySkqJ-RP4HJoxdyvyn"
+                <Link
+                  to="/d/bus-driver"
                   download
                   className="btn btn-primary mt-4"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevents event from bubbling
+                    // Any additional click logic
+                  }}
                 >
                   Download Compass Bus APK
-                </a>
+                </Link>
               </div>
             </div>
           </div>
