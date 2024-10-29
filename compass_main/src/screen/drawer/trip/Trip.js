@@ -16,7 +16,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
-const Trip = () => {
+import {ROUTES} from '../../../constants';
+
+const Trip = props => {
+  const {navigation} = props;
+
   const [currentRoute, setCurrentRoute] = useState('Loading...');
   const [kmPlace, setKmPlace] = useState([]);
   const [earnings, setEarnings] = useState(0);
@@ -150,9 +154,10 @@ const Trip = () => {
           origin: data.origin,
           destination: data.destination,
           fare_amount: data.fare_amount,
-          timestamp: data.timestamp ? data.timestamp.toDate() : null,
-          bus_driver_name: data.bus_driver_name,
+          timestamp: data.timestamp.toDate(), // Convert Firestore timestamp to JavaScript Date
           reference_number: data.reference_number,
+          passenger_type: data.passenger_type,
+          payment_type: data.payment_type,
         };
       });
 
@@ -281,6 +286,18 @@ const Trip = () => {
     );
   };
 
+  const handleTransactionPress = transaction => {
+    navigation.navigate(ROUTES.TRANSACTIONDETAILS, {
+      fare_amount: transaction.fare_amount,
+      timestamp: transaction.timestamp.toISOString(), // Convert to ISO string
+      reference_number: transaction.reference_number,
+      payment_type: transaction.payment_type,
+      passenger_type: transaction.passenger_type,
+      origin: transaction.origin,
+      destination: transaction.destination,
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.infoBox}>
@@ -323,7 +340,10 @@ const Trip = () => {
       <ScrollView style={styles.transactionHistoryBox}>
         {transactions.length > 0 ? (
           transactions.map(transaction => (
-            <View key={transaction.id} style={styles.transactionItem}>
+            <TouchableOpacity
+              onPress={() => handleTransactionPress(transaction)}
+              key={transaction.id}
+              style={styles.transactionItem}>
               <View style={styles.transactionRow}>
                 <Text style={styles.transactionText}>
                   {transaction.origin} - {transaction.destination}
@@ -337,7 +357,7 @@ const Trip = () => {
               <Text style={styles.transactionTimestamp}>
                 {formatDate(transaction.timestamp)}
               </Text>
-            </View>
+            </TouchableOpacity>
           ))
         ) : (
           <Text style={styles.noTransactionsText}>

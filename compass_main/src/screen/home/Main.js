@@ -246,37 +246,39 @@ const Main = props => {
         </TouchableOpacity>
 
         {/* Seat Count Modifier */}
-        <View style={styles.seatCounterContainer}>
-          <Text style={styles.seatCountLabel}>Seat: {seatCount}</Text>
-          <View style={styles.percentageButtonsContainer}>
-            {/* Buttons for 25%, 50%, 75%, and 100% */}
-            <TouchableOpacity
-              style={styles.percentageButton}
-              onPress={() => setSeatCountToPercentage(0)}>
-              <Text style={styles.percentageText}>0%</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.percentageButton}
-              onPress={() => setSeatCountToPercentage(25)}>
-              <Text style={styles.percentageText}>25%</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.percentageButton}
-              onPress={() => setSeatCountToPercentage(50)}>
-              <Text style={styles.percentageText}>50%</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.percentageButton}
-              onPress={() => setSeatCountToPercentage(75)}>
-              <Text style={styles.percentageText}>75%</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.percentageButton}
-              onPress={() => setSeatCountToPercentage(100)}>
-              <Text style={styles.percentageText}>100%</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {
+          // <View style={styles.seatCounterContainer}>
+          //   <Text style={styles.seatCountLabel}>Seat: {seatCount}</Text>
+          //   <View style={styles.percentageButtonsContainer}>
+          //     {/* Buttons for 25%, 50%, 75%, and 100% */}
+          //     <TouchableOpacity
+          //       style={styles.percentageButton}
+          //       onPress={() => setSeatCountToPercentage(0)}>
+          //       <Text style={styles.percentageText}>0%</Text>
+          //     </TouchableOpacity>
+          //     <TouchableOpacity
+          //       style={styles.percentageButton}
+          //       onPress={() => setSeatCountToPercentage(25)}>
+          //       <Text style={styles.percentageText}>25%</Text>
+          //     </TouchableOpacity>
+          //     <TouchableOpacity
+          //       style={styles.percentageButton}
+          //       onPress={() => setSeatCountToPercentage(50)}>
+          //       <Text style={styles.percentageText}>50%</Text>
+          //     </TouchableOpacity>
+          //     <TouchableOpacity
+          //       style={styles.percentageButton}
+          //       onPress={() => setSeatCountToPercentage(75)}>
+          //       <Text style={styles.percentageText}>75%</Text>
+          //     </TouchableOpacity>
+          //     <TouchableOpacity
+          //       style={styles.percentageButton}
+          //       onPress={() => setSeatCountToPercentage(100)}>
+          //       <Text style={styles.percentageText}>100%</Text>
+          //     </TouchableOpacity>
+          //   </View>
+          // </View>
+        }
       </View>
     </SafeAreaView>
   );
