@@ -303,13 +303,13 @@ const Trip = () => {
           <TouchableOpacity
             style={styles.leftSideButton}
             onPress={handleConductorSignOut}>
-            <Text style={styles.leftSideText}>Conductor Sign Out</Text>
+            <Text style={styles.leftSideText}>Sign Out</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
             style={styles.leftSideButton}
             onPress={() => setModalVisible(true)}>
-            <Text style={styles.leftSideText}>Conductor Sign In</Text>
+            <Text style={styles.leftSideText}>Sign In</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
