@@ -11,6 +11,8 @@ export default {
 
   ABOUT: 'About',
 
+  SUPPORT: 'Support',
+
   //DRAWER CHILD
 
   //Wallet

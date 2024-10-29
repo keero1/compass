@@ -97,7 +97,9 @@ const Drawer = props => {
     navigation.navigate(ROUTES.WALLET);
   };
 
-  const onHelpPressed = () => {};
+  const onHelpPressed = () => {
+    navigation.navigate(ROUTES.SUPPORT);
+  };
 
   const onAboutPressed = () => {
     navigation.navigate(ROUTES.ABOUT);
@@ -136,7 +138,7 @@ const Drawer = props => {
           style={styles.menuItemContainer}
           onPress={onHelpPressed}>
           <DocumentIcon size={25} color="gray" />
-          <Text style={styles.menuItem}>Help and Feedback</Text>
+          <Text style={styles.menuItem}>Feedback</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

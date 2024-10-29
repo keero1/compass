@@ -520,8 +520,13 @@ const Main = props => {
 
           {/* Bus markers */}
           {busMarkers.map((bus, index) => {
-            const busIcon =
-              bus.details.route_id === routes[0].id ? 'bus1' : 'bus2';
+            const routeIcons = {
+              XoUoz68kkO4HYY968qOa: 'bus1',
+              qaeFwYGWez7U8kQWF10b: 'bus2',
+            };
+
+            // Use a default icon if route_id is not in routeIcons
+            const busIcon = routeIcons[bus.details.route_id] || 'bus1';
 
             return (
               <Marker
@@ -578,7 +583,6 @@ const Main = props => {
         />
       </View>
       <Modal
-        animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}>
@@ -596,7 +600,7 @@ const Main = props => {
               backgroundColor: 'white',
               borderRadius: 10,
             }}>
-            <Text style={{fontSize: 16}}>
+            <Text style={{fontSize: 16, textAlign: 'center'}}>
               Select the radius for proximity alerts:
             </Text>
 

@@ -13,6 +13,7 @@ import {
   TransactionDetails,
   TransactionHistory,
   About,
+  Support,
 } from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/custom/CustomBack';
@@ -63,6 +64,20 @@ function HomeNavigator() {
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
           headerTitle: 'About',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.SUPPORT}
+        component={Support}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'Feedback',
           headerStyle: {
             backgroundColor: '#F4F4FB', // Set header background color
           },

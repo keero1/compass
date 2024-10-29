@@ -14,6 +14,8 @@ export {default as Wallet} from './drawer/wallet/Wallet';
 
 export {default as About} from './drawer/support/About';
 
+export {default as Support} from './drawer/support/Support';
+
 // drawer child
 
 // wallet
