@@ -110,7 +110,7 @@ const Drawer = props => {
       <View style={styles.root}>
         <View style={styles.profileContainer}>
           <View style={styles.profileContent}>
-            <Image source={IMAGES.frieren} style={styles.profileImage} />
+            <Image source={IMAGES.user_profile} style={styles.profileImage} />
             <View style={styles.textContainer}>
               <Text style={styles.text}>{userDisplayName}</Text>
               {/* Profile */}
@@ -192,6 +192,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     marginRight: 10,
+    borderWidth: 2, // Border width
+    borderColor: 'gray', // Border color
   },
 
   textContainer: {

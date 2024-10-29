@@ -87,7 +87,7 @@ const Profile = props => {
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
         <Image
-          source={IMAGES.frieren}
+          source={IMAGES.user_profile}
           style={[styles.logo, {height: height * 0.18}]}
           resizeMode="contain"
         />
@@ -159,11 +159,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   logo: {
-    width: '70%',
-    maxWidth: 300,
-    maxHeight: 200,
+    width: 150, // Set width and height to the same value
+    height: 150,
     marginVertical: 50,
+    borderRadius: 75, // Half of the width/height for a perfect circle
+    borderWidth: 2, // Thickness of the border
+    borderColor: 'gray', // Color of the border, e.g., black
   },
+
   detailsContainer: {
     width: '100%',
   },

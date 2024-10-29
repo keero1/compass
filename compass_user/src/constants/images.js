@@ -5,4 +5,5 @@ export default {
   bus_icon1: require('../../assets/images/bus1.png'),
   bus_icon2: require('../../assets/images/bus2.png'),
   frieren: require('../../assets/images/frieren.png'),
+  user_profile: require('../../assets/images/user_profile.png'),
 };
