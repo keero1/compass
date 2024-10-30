@@ -158,6 +158,8 @@ const Trip = props => {
           reference_number: data.reference_number,
           passenger_type: data.passenger_type,
           payment_type: data.payment_type,
+          ...(data.transactionName && {transactionName: data.transactionName}),
+          ...(data.coordinates && {coordinates: data.coordinates}),
         };
       });
 
@@ -295,6 +297,8 @@ const Trip = props => {
       passenger_type: transaction.passenger_type,
       origin: transaction.origin,
       destination: transaction.destination,
+      transactionName: transaction.transactionName,
+      coordinates: transaction.coordinates,
     });
   };
 

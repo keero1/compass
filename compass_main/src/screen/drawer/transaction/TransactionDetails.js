@@ -11,11 +11,13 @@ const TransactionDetails = ({route}) => {
   const {
     fare_amount,
     timestamp,
-    reference_number,
+    transactionName, // Transaction name can be null
+    reference_number, // Reference number will be displayed if transactionName doesn't exist
     payment_type,
     passenger_type,
     origin,
     destination,
+    coordinates = [],
   } = route.params;
 
   // Convert the timestamp back to a Date object
@@ -58,7 +60,10 @@ const TransactionDetails = ({route}) => {
           <View style={styles.detailBox}>
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Travel</Text>
-              <Text style={styles.detailTextSameLine}>{`${origin} - ${destination}`}</Text>
+              <Text
+                style={
+                  styles.detailTextSameLine
+                }>{`${origin} - ${destination}`}</Text>
             </View>
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Payment Type</Text>
@@ -76,18 +81,31 @@ const TransactionDetails = ({route}) => {
         </View>
 
         <View style={styles.sectionBox}>
-          <View style={styles.sectionBox}>
-            <View style={styles.detailBox}>
+          <View style={styles.detailBox}>
+            {transactionName ? (
+              <View style={styles.detailItemX}>
+                <Text style={styles.detailTitle}>Transaction Name</Text>
+                <Text style={styles.detailTextSameLine}>{transactionName}</Text>
+              </View>
+            ) : (
               <View style={styles.detailItemX}>
                 <Text style={styles.detailTitle}>Reference Number</Text>
                 <Text style={styles.detailTextSameLine}>
                   {reference_number}
                 </Text>
               </View>
-            </View>
+            )}
           </View>
         </View>
       </View>
+
+      {/* Only show the button if transactionName or coordinates exist */}
+      {/* {(transactionName || coordinates) && (
+        <TouchableOpacity style={styles.showMarkerButton} onPress={() => {}}>
+          <Text style={styles.showMarkerButtonText}>Show Marker</Text>
+        </TouchableOpacity>
+      )} */}
+
       <TouchableOpacity style={styles.reprintButton} onPress={() => {}}>
         <Text style={styles.reprintButtonText}>Reprint Receipt</Text>
       </TouchableOpacity>
@@ -100,11 +118,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F4FB',
   },
-
   detailsContainer: {
     width: '100%',
   },
-
   sectionBox: {
     marginBottom: 20,
   },
@@ -141,7 +157,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginLeft: 10,
   },
-
   reprintButton: {
     position: 'absolute',
     bottom: 20,
@@ -152,6 +167,20 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   reprintButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  showMarkerButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    backgroundColor: '#176B87',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  showMarkerButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',

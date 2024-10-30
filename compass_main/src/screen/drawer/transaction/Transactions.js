@@ -8,11 +8,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-
 import {useFocusEffect} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-
 import {ROUTES} from '../../../constants';
 
 const Transactions = props => {
@@ -20,7 +18,6 @@ const Transactions = props => {
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const user = auth().currentUser;
 
   const fetchTransactions = async () => {
@@ -43,6 +40,8 @@ const Transactions = props => {
           reference_number: data.reference_number,
           passenger_type: data.passenger_type,
           payment_type: data.payment_type,
+          ...(data.transactionName && {transactionName: data.transactionName}),
+          ...(data.coordinates && {coordinates: data.coordinates}), // Include coordinates if they exist
         };
       });
 
@@ -94,6 +93,8 @@ const Transactions = props => {
       passenger_type: transaction.passenger_type,
       origin: transaction.origin,
       destination: transaction.destination,
+      transactionName: transaction.transactionName, // Pass transactionName
+      coordinates: transaction.coordinates, // Pass coordinates
     });
   };
 
@@ -126,19 +127,26 @@ const Transactions = props => {
                           style={styles.detailBox}
                           onPress={() => handleTransactionPress(transaction)}>
                           <View style={styles.detailItem}>
-                            <Text
-                              style={
-                                styles.detailTitle
-                              }>{`${transaction.origin} - ${transaction.destination}`}</Text>
+                            <Text style={styles.detailTitle}>
+                              {`${transaction.origin} - ${transaction.destination}`}
+                            </Text>
                             <Text style={styles.detailText}>
                               {formatNumber(transaction.fare_amount)} {' >'}
                             </Text>
                           </View>
                           <View style={styles.detailItem}>
-                            <Text style={styles.detailTitle}>
-                              {transaction.passenger_type} :{' '}
-                              {transaction.payment_type}
+                            <Text style={styles.passengerTypeText}>
+                              {`${transaction.passenger_type} - ${transaction.payment_type}`}
                             </Text>
+                            {transaction.transactionName && (
+                              <Text 
+                                style={styles.transactionNameText}
+                                numberOfLines={1} // Limit to 1 line
+                                ellipsizeMode='tail' // Use 'tail' for ellipsis at the end
+                              >
+                                {transaction.transactionName}
+                              </Text>
+                            )}
                           </View>
                         </TouchableOpacity>
                       ))}
@@ -162,17 +170,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F4FB',
   },
-
   detailsContainer: {
     width: '100%',
   },
-
   sectionBox: {
     marginBottom: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Align title and count
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 10,
     marginBottom: 10,
@@ -193,21 +199,30 @@ const styles = StyleSheet.create({
   detailItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start', // Changed from 'center' to 'flex-start'
+    alignItems: 'center', // Center the items vertically
     paddingVertical: 7,
     paddingHorizontal: 10,
-    flexWrap: 'wrap', // Added to allow wrapping of text
+    flexWrap: 'wrap',
   },
-
   detailTitle: {
     fontSize: 16,
-    flex: 1,
+    flex: 1, // Allow the origin-destination text to take up space
   },
   detailText: {
     fontSize: 16,
     textAlign: 'right',
     marginLeft: 10,
     color: '#000000',
+  },
+  passengerTypeText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  transactionNameText: {
+    fontSize: 14,
+    color: '#444', // Color for transactionName
+    marginLeft: 10,
+    flex: 1, // This allows the text to fill the remaining space
   },
   loadingContainer: {
     flex: 1,
