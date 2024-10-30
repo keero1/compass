@@ -35,7 +35,8 @@ const AdvancePaymentHistory = props => {
       const transactionData = transactionSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
-          bus_id: doc.bus_id,
+          id: doc.id,
+          bus_id: data.bus_id,
           origin: data.origin,
           destination: data.destination,
           fare_amount: data.fare_amount,
@@ -110,6 +111,9 @@ const AdvancePaymentHistory = props => {
               // Copy the transaction data to the `transactions` collection
               const {status, ...transactionData} = selectedTransaction;
 
+              console.log(transactionData);
+              console.log(selectedTransaction);
+
               await firestore()
                 .collection('transactions')
                 .add({
@@ -161,7 +165,7 @@ const AdvancePaymentHistory = props => {
               <Text style={styles.sectionTitle}>{date}</Text>
               {transactions.map(transaction => (
                 <TouchableOpacity
-                  key={transaction.id}
+                  key={transaction.id} // Ensure this is a unique value
                   style={styles.detailBox}
                   onPress={() => handleTransactionPress(transaction)}>
                   <View style={styles.detailItem}>
