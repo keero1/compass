@@ -35,7 +35,7 @@ const AdvancePaymentHistory = props => {
       const transactionData = transactionSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
-          id: doc.id,
+          bus_id: doc.bus_id,
           origin: data.origin,
           destination: data.destination,
           fare_amount: data.fare_amount,
@@ -46,9 +46,13 @@ const AdvancePaymentHistory = props => {
           payment_type: data.payment_type,
           bus_number: data.bus_number,
           status: data.status,
+          bus_type: data.bus_type,
           coordinates: data.coordinates,
           passenger_type: data.passenger_type,
+          passenger_id: data.passenger_id,
           transactionName: data.transactionName,
+          distance: data.distance,
+          route_name: data.route_name,
         };
       });
 
