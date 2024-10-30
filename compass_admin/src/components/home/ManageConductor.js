@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase/firebase";
-import { collection, getDocs, addDoc } from "firebase/firestore";
-import { Link } from "react-router-dom";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 
 const conductorsCollection = collection(db, "conductors");
 
@@ -25,6 +31,13 @@ const ManageConductor = () => {
     name: "",
     phone_number: "",
   });
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const [selectedConductor, setSelectedConductor] = useState(null);
+
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
+    useState(false);
 
   const fetchConductorData = async () => {
     try {
@@ -97,6 +110,22 @@ const ManageConductor = () => {
     setPhoneNumber("");
   };
 
+  const openEditModal = (conductor) => {
+    setSelectedConductor(conductor);
+    setNewConductor({
+      name: conductor.name,
+      phone_number: conductor.phone_number,
+    });
+    setPhoneNumber(conductor.phone_number);
+    setIsEditModalOpen(true);
+  };
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedConductor(null);
+    setNewConductor({ name: "", phone_number: "" });
+    setPhoneNumber("");
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewConductor((prev) => ({
@@ -133,6 +162,56 @@ const ManageConductor = () => {
       console.error("Error adding conductor:", error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleEditConductor = async (e) => {
+    e.preventDefault();
+    if (!selectedConductor) return;
+    setIsSaving(true);
+
+    try {
+      const conductorRef = doc(
+        db,
+        "conductors",
+        selectedConductor.conductor_id
+      );
+      await updateDoc(conductorRef, {
+        phone_number: phoneNumber,
+      });
+      fetchConductorData();
+      closeEditModal();
+    } catch (error) {
+      console.error("Error updating conductor:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteConductor = async () => {
+    if (!selectedConductor) return;
+
+    try {
+      // Transfer to deleted_conductors
+      const deletedConductorsCollection = collection(db, "deleted_conductors");
+      await addDoc(deletedConductorsCollection, {
+        ...selectedConductor, // Transfer all fields or select specific ones
+        deletedAt: new Date().toISOString(), // Optional: timestamp of deletion
+      });
+
+      // Delete from conductors collection
+      const conductorRef = doc(
+        db,
+        "conductors",
+        selectedConductor.conductor_id
+      );
+      await deleteDoc(conductorRef);
+      setIsDeleteConfirmationOpen(false);
+
+      fetchConductorData(); // Refresh table data
+      closeEditModal(); // Close the edit modal
+    } catch (error) {
+      console.error("Error deleting conductor:", error);
     }
   };
 
@@ -197,12 +276,12 @@ const ManageConductor = () => {
                       {"(+63) " + conductor.phone_number}
                     </td>
                     <td>
-                      <Link
-                        to={`/manage-conductor/view/${conductor.id}`}
+                      <button
+                        onClick={() => openEditModal(conductor)}
                         className="btn btn-ghost btn-xs"
                       >
                         Edit
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -288,6 +367,96 @@ const ManageConductor = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Edit Conductor</h3>
+            <form onSubmit={handleEditConductor}>
+              <div className="form-control mb-4">
+                <label className="label">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Juan Dela Cruz"
+                  className="input input-bordered"
+                  value={newConductor.name}
+                  onChange={handleInputChange}
+                  disabled
+                />
+              </div>
+              <div className="form-control mb-4">
+                <label className="label">Phone Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    (+63)
+                  </div>
+                  <input
+                    type="text"
+                    value={phoneNumber}
+                    onChange={handlePhoneNumberChange}
+                    placeholder="Enter phone number"
+                    className="input input-bordered pl-16 w-full"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-action flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteConfirmationOpen(true)}
+                  className="btn btn-error" // Change to btn-error for red color
+                >
+                  Delete
+                </button>
+                <div className="flex space-x-2">
+                  <button
+                    type="submit"
+                    className={`btn ${
+                      isSaving ? "btn-disabled" : "btn-primary"
+                    }`}
+                  >
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeEditModal}
+                    className="btn"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isDeleteConfirmationOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Confirm Deletion</h3>
+            <p>
+              Are you sure you want to delete {selectedConductor?.name}? This
+              action cannot be undone.
+            </p>
+            <div className="modal-action">
+              <button
+                onClick={handleDeleteConductor}
+                className="btn btn-danger"
+              >
+                Confirm Delete
+              </button>
+              <button
+                onClick={() => setIsDeleteConfirmationOpen(false)}
+                className="btn"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

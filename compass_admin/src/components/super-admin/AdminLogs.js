@@ -132,7 +132,7 @@ const AdminLogs = () => {
             <tr>
               <th className="text-left text-xl">Action</th>
               <th className="text-left text-xl">Admin Email</th>
-              <th className="text-left text-xl">Bus Driver Name</th>
+              <th className="text-left text-xl">Name</th>
               <th className="text-left text-xl">Details</th>
               <th className="text-left text-xl">Date</th>
             </tr>

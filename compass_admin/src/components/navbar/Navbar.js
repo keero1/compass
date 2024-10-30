@@ -230,8 +230,8 @@ const Navbar = () => {
         </div>
         {/* <main className={`flex-1 ${isSidebarOpen ? "m-5" : "ml-5"}`}> */}
         <main
-          className={`flex-1 mt-16 ${
-            isSidebarOpen && !isSmallScreen ? "ml-52" : "ml-0"
+          className={`flex-1 mt-12 ${
+            isSidebarOpen && !isSmallScreen ? "ml-60" : "ml-0"
           }`}
         >
           <Outlet />
@@ -249,7 +249,7 @@ const Navbar = () => {
         ) : (
           <></>
         )}
-        <ul className="menu menu-lg min-h-full bg-base-200 w-56 rounded-r-lg fixed top-0 left-0 right-0 z-30">
+        <ul className="menu menu-lg min-h-full bg-base-200 w-64 rounded-r-lg fixed top-0 left-0 right-0 z-30">
           <li>
             <Link to="/">
               <h1 className="text-2xl">ComPass</h1>
@@ -284,6 +284,12 @@ const Navbar = () => {
             <Link to="manage-conductor">
               <UsersIcon className="size-6" />
               Manage conductors
+            </Link>
+          </li>
+          <li>
+            <Link to="tickets">
+              <UsersIcon className="size-6" />
+              Tickets
             </Link>
           </li>
           {/* Super Admin Controls */}

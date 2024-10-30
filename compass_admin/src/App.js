@@ -35,6 +35,7 @@ import PrivacyPolicy from "./components/download/PrivacyPolicy";
 import ManageConductor from "./components/home/ManageConductor";
 
 import Download from "./components/download/Download";
+import Tickets from "./components/home/Tickets";
 
 function App() {
   return (
@@ -64,6 +65,7 @@ function App() {
             {/* route */}
             <Route path="/manage-route" element={<ManageRoute />} />
             <Route path="/manage-conductor" element={<ManageConductor />} />
+            <Route path="/tickets" element={<Tickets />} />
             {/* Profile */}
             <Route path="/profile" element={<Profile />} />
             {/* super admin */}
