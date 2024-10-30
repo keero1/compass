@@ -46,13 +46,13 @@ function App() {
           <Route
             path="/d/user"
             element={
-              <Download fileUrl="https://github.com/keero1/compass-bin/releases/download/0.5.0/compass-user-release.apk" />
+              <Download fileUrl="https://drive.google.com/file/d/1v-03FRWOPjRywHppDVDidRHvOnqFUZ5v/view?usp=drive_link" />
             }
           />
           <Route
             path="/d/bus-driver"
             element={
-              <Download fileUrl="https://github.com/keero1/compass-bin/releases/download/0.5.0/compas-bus-release.apk" />
+              <Download fileUrl="https://drive.google.com/file/d/1KsJArvPs2Twd_tWbJHVbu99w8BukMx2o/view?usp=drive_link" />
             }
           />
           <Route path="/terms-of-use" element={<TermsOfUse />} />

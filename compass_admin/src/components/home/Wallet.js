@@ -171,7 +171,6 @@ const Wallet = () => {
     const searchMatch =
       !searchQuery ||
       transaction.bus_driver_name.toLowerCase().includes(searchQuery) ||
-      transaction.bus_number.toLowerCase().includes(searchQuery) ||
       transaction.reference_number.toString().includes(searchQuery); // Check for reference number
 
     let dateMatch = true;

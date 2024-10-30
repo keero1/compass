@@ -241,7 +241,6 @@ const Main = () => {
                       url: bus2, // URL to the icon
                       scaledSize: new window.google.maps.Size(40, 40), // Resize the icon
                     };
-                    
 
               return (
                 <Marker
@@ -280,6 +279,12 @@ const Main = () => {
                       <strong>Bus Driver:</strong>{" "}
                       {infoWindowOpen.details.bus_driver_name}
                     </p>
+                    {infoWindowOpen.details.conductor_name && (
+                      <p>
+                        <strong>Conductor:</strong>{" "}
+                        {infoWindowOpen.details.conductor_name}
+                      </p>
+                    )}
                     <p>
                       <strong>Phone Number:</strong>
                       {"(+63) "}

@@ -25,10 +25,10 @@ const Tickets = () => {
       const querySnapshot = await getDocs(ticketsCollection);
       const fetchedTickets = querySnapshot.docs.map((doc) => {
         const data = doc.data();
-        console.log(data);
 
         return {
           ticket_id: doc.id,
+          createdAt: data.createdAt.toDate(), // Save raw timestamp
           date: formatDate(data.createdAt), // Use the formatted date
           description: data.description,
           subject: data.subject,
@@ -36,6 +36,10 @@ const Tickets = () => {
           status: data.status,
         };
       });
+
+      // Sort tickets based on createdAt timestamp in descending order
+      fetchedTickets.sort((a, b) => b.createdAt - a.createdAt);
+
       setTickets(fetchedTickets);
     } catch (error) {
       console.error("Error fetching ticket data:", error);
@@ -129,6 +133,13 @@ const Tickets = () => {
     }
   };
 
+  const truncateDescription = (description, length = 85) => {
+    if (!description) return "";
+    return description.length > length
+      ? description.slice(0, length) + "..."
+      : description;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -201,8 +212,9 @@ const Tickets = () => {
                 <tr key={ticket.ticket_id}>
                   <td className="text-lg">{ticket.subject}</td>
                   <td className="text-lg max-w-xs overflow-hidden overflow-ellipsis whitespace-normal">
-                    {ticket.description}
+                    {truncateDescription(ticket.description)}
                   </td>
+
                   <td className="text-lg">{ticket.email}</td>
                   <td className="text-lg uppercase">{ticket.status}</td>
                   <td className="text-lg">{ticket.date}</td>
