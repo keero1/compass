@@ -1,91 +1,52 @@
-import React, {useState} from 'react';
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import React from 'react';
+import {StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
+import {
+  TicketIcon,
+  ChatBubbleLeftEllipsisIcon,
+} from 'react-native-heroicons/solid';
+import {ROUTES} from '../../../constants';
 
-const Support = () => {
-  const [subject, setSubject] = useState(''); // New state for the subject
-  const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // Function to handle ticket submission
-  const submitTicket = async () => {
-    const user = auth().currentUser;
-    if (!user) {
-      Alert.alert('Error', 'User not authenticated');
-      return;
-    }
-
-    if (subject.trim() === '') {
-      Alert.alert('Error', 'Please provide a subject for your issue.');
-      return;
-    }
-
-    if (description.trim() === '') {
-      Alert.alert('Error', 'Please provide a description for your issue.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Save ticket to Firestore
-      await firestore().collection('tickets').add({
-        email: user.email,
-        subject: subject.trim(), // Include subject
-        description: description.trim(),
-        status: 'Open', // Initial status
-        createdAt: firestore.FieldValue.serverTimestamp(),
-      });
-
-      // Reset form
-      setSubject(''); // Reset subject
-      setDescription(''); // Reset description
-      Alert.alert('Success', 'Your support ticket has been submitted.');
-    } catch (error) {
-      console.error('Error creating ticket:', error);
-      Alert.alert(
-        'Error',
-        'Failed to create support ticket. Please try again.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+const Support = props => {
+  const {navigation} = props;
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.heading}>Submit a Feedback or Issue</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Subject"
-        value={subject}
-        onChangeText={text => setSubject(text)} // Update subject state
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Description"
-        multiline
-        numberOfLines={4}
-        value={description}
-        onChangeText={text => setDescription(text)}
-      />
-
+      {/* Feedback / Report Issue Row */}
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]} // Apply styles for loading state
-        onPress={submitTicket}
-        disabled={loading}>
-        <Text style={styles.buttonText}>Submit Ticket</Text>
+        style={styles.row}
+        onPress={() => {
+          navigation.navigate(ROUTES.FEEDBACK);
+        }}>
+        <View style={styles.iconTextContainer}>
+          <ChatBubbleLeftEllipsisIcon width={20} height={20} color="gray" />
+          <Text style={styles.text}>Feedback / Report Issue</Text>
+        </View>
+        <Text style={styles.arrow}>{'>'}</Text>
       </TouchableOpacity>
+
+      {/* Tickets Row */}
+      <TouchableOpacity
+        style={styles.row}
+        onPress={() => {
+          navigation.navigate(ROUTES.TICKETS);
+        }}>
+        <View style={styles.iconTextContainer}>
+          <TicketIcon width={20} height={20} color="gray" />
+          <Text style={styles.text}>Tickets</Text>
+        </View>
+        <Text style={styles.arrow}>{'>'}</Text>
+      </TouchableOpacity>
+
+      {/* Explanation Container */}
+      <View style={styles.explanationContainer}>
+        <Text style={styles.explanationText}>
+          After you send a ticket, an admin will reply to you on the email you
+          used for this account.
+          {'\n'}
+          admin email: keero.dev@gmail.com
+        </Text>
+      </View>
     </SafeAreaView>
   );
 };
@@ -95,35 +56,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F4FB',
     paddingHorizontal: 20,
-    justifyContent: 'center',
   },
-  heading: {
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  iconTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  text: {
     fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    marginLeft: 8,
   },
-  input: {
-    backgroundColor: '#FFF',
-    padding: 10,
-    borderColor: '#CCC',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 20,
-    textAlignVertical: 'top', // for multiline input alignment
+  arrow: {
+    fontSize: 20,
   },
-  button: {
-    backgroundColor: '#176B87', // Custom button color
+  explanationContainer: {
+    backgroundColor: '#E7F3FE', // Light blue background for contrast
     padding: 15,
     borderRadius: 5,
-    alignItems: 'center', // Center text
+    marginTop: 20, // Space above the container
+    borderColor: '#B2DBF3', // Border color for the container
+    borderWidth: 1,
   },
-  buttonText: {
-    color: '#FFFFFF', // Text color
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  buttonDisabled: {
-    backgroundColor: '#A0D8E1', // Lightened color for disabled state
+  explanationText: {
+    fontSize: 14,
+    color: '#2C3E50', // Dark text for readability
   },
 });
 

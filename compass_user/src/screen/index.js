@@ -8,6 +8,8 @@ export {default as Forgot} from './auth/Forgot';
 
 export {default as Main} from './home/main';
 
+export {default as AdvancePayment} from './home/AdvancePayment';
+
 // drawer
 export {default as Drawer} from './drawer/Drawer';
 export {default as Wallet} from './drawer/wallet/Wallet';
@@ -16,9 +18,14 @@ export {default as About} from './drawer/support/About';
 
 export {default as Support} from './drawer/support/Support';
 
+export {default as Feedback} from './drawer/support/Feedback';
+export {default as Tickets} from './drawer/support/Tickets';
+
 // drawer child
 
 // wallet
+
+export {default as AdvancePaymentHistory} from './drawer/transaction/AdvancePaymentHistory';
 
 export {default as CashIn} from './drawer/wallet/CashIn';
 

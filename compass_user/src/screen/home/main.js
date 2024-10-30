@@ -536,7 +536,15 @@ const Main = props => {
                 onPress={() => onBusMarkerPressed(bus.details.route_id)}
                 image={{uri: busIcon}}
                 pinColor="blue">
-                <Callout style={{alignItems: 'center'}}>
+                <Callout
+                  style={{alignItems: 'center'}}
+                  onPress={() => {
+                    navigation.navigate(ROUTES.ADVANCEPAYMENT, {
+                      busId: bus.id,
+                      routeId: bus.details.route_id,
+                      currentCoordinates: currentLocation,
+                    });
+                  }}>
                   <Svg width={120} height={120}>
                     <Defs>
                       <ClipPath id="clip">
@@ -561,6 +569,16 @@ const Main = props => {
                     {bus.details.timestamp.toDate().toLocaleString()}
                   </Text>
                   <Text>Seat Slots: {bus.details.seat_count} / 56</Text>
+                  <View
+                    style={{
+                      backgroundColor: '#176B87',
+                      padding: 10,
+                      borderRadius: 5,
+                      marginVertical: 10,
+                      alignItems: 'center',
+                    }}>
+                    <Text style={{color: 'white'}}>Pay in Advance</Text>
+                  </View>
                 </Callout>
               </Marker>
             );

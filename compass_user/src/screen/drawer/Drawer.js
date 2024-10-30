@@ -24,6 +24,7 @@ import {
   BanknotesIcon,
   DocumentIcon,
   QuestionMarkCircleIcon,
+  DocumentCheckIcon,
 } from 'react-native-heroicons/solid';
 
 const Drawer = props => {
@@ -97,6 +98,10 @@ const Drawer = props => {
     navigation.navigate(ROUTES.WALLET);
   };
 
+  const onAdvancePaymentPressed = () => {
+    navigation.navigate(ROUTES.ADVANCEPAYMENTHISTORY);
+  };
+
   const onHelpPressed = () => {
     navigation.navigate(ROUTES.SUPPORT);
   };
@@ -135,10 +140,17 @@ const Drawer = props => {
         </TouchableOpacity>
 
         <TouchableOpacity
+          onPress={onAdvancePaymentPressed}
+          style={styles.menuItemContainer}>
+          <DocumentCheckIcon size={25} color="gray" />
+          <Text style={styles.menuItem}>Advance Payments</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.menuItemContainer}
           onPress={onHelpPressed}>
           <DocumentIcon size={25} color="gray" />
-          <Text style={styles.menuItem}>Feedback</Text>
+          <Text style={styles.menuItem}>Support</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

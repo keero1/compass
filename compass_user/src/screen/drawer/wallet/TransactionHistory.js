@@ -152,8 +152,9 @@ const styles = StyleSheet.create({
   },
   detailBox: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 5,
     marginBottom: 1,
+    borderWidth: 0.5,
+    borderColor: 'black',
   },
   detailItem: {
     flexDirection: 'row',

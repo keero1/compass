@@ -26,6 +26,7 @@
     "react-native-bouncy-checkbox": "^4.1.2",
     "react-native-clean-project": "^4.0.3",
     "react-native-config": "^1.5.3",
+    "react-native-element-dropdown": "^2.12.2",
     "react-native-gesture-handler": "^2.15.0",
     "react-native-heroicons": "^4.0.0",
     "react-native-maps": "^1.17.3",
