@@ -10,6 +10,8 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // ROUTES
 
 import ROUTES from '../../constants/routes';
@@ -91,6 +93,14 @@ const Main = props => {
       const busDocRef = firestore().collection('busLocation').doc(user);
 
       const docSnapshot = await busDocRef.get();
+
+      const fareDataString = await AsyncStorage.getItem('fare-data');
+      let fareData = null;
+
+      if (fareDataString) {
+        fareData = JSON.parse(fareDataString);
+      }
+
       if (!docSnapshot.exists) {
         // get the route id
         const busInfo = (
@@ -100,11 +110,13 @@ const Main = props => {
           coordinates: new firestore.GeoPoint(latitude, longitude),
           timestamp: firestore.FieldValue.serverTimestamp(),
           route_id: busInfo.route_id,
+          fare_data: fareData,
         });
       } else {
         await busDocRef.update({
           coordinates: new firestore.GeoPoint(latitude, longitude),
           timestamp: firestore.FieldValue.serverTimestamp(),
+          fare_data: fareData,
         });
       }
       console.log('Bus location updated:', latitude, longitude);
