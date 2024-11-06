@@ -74,7 +74,7 @@ const Main = props => {
           setCurrentLocation({latitude, longitude});
 
           // Send updated location to Firestore
-          updateBusLocation(latitude, longitude);
+          // updateBusLocation(latitude, longitude);
         },
         error => {
           console.error(error);

@@ -12,12 +12,19 @@ import {
   ScrollView,
 } from 'react-native';
 
+import {launchImageLibrary} from 'react-native-image-picker';
+
+import {PlusCircleIcon} from 'react-native-heroicons/solid';
+
 import {useIsFocused} from '@react-navigation/native';
 
 import IMAGES from '../../../constants/images';
 
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Profile = () => {
   const [profilePicture, setProfilePicture] = useState(null);
@@ -36,6 +43,8 @@ const Profile = () => {
     useState(false);
 
   const [loading, setLoading] = useState(false);
+
+  const [loadingModalVisible, setLoadingModalVisible] = useState(false);
 
   const focus = useIsFocused();
 
@@ -74,6 +83,7 @@ const Profile = () => {
 
     if (user && newDriverName.trim() !== '') {
       setLoading(true);
+      setLoadingModalVisible(true);
       try {
         // Check for existing pending requests
         const pendingRequestsSnapshot = await firestore()
@@ -104,9 +114,58 @@ const Profile = () => {
         Alert.alert('Error', 'Failed to submit name change request.');
       } finally {
         setLoading(false);
+        setLoadingModalVisible(false);
       }
     } else {
       Alert.alert('Error', 'Please enter a valid driver name.');
+    }
+  };
+
+  const handleChoosePhoto = async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      maxWidth: 300,
+      maxHeight: 300,
+      quality: 0.5,
+    });
+
+    if (!result.didCancel && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const fileName = `profilePicture/${auth().currentUser.uid}_${Date.now()}`;
+
+      setLoading(true);
+      setLoadingModalVisible(true);
+      try {
+        const reference = storage().ref(fileName);
+        await reference.putFile(uri);
+        const imageUrl = await reference.getDownloadURL();
+
+        // Update Firestore
+        await firestore()
+          .collection('buses')
+          .doc(auth().currentUser.uid)
+          .update({
+            profile_picture: imageUrl,
+          });
+
+        setProfilePicture(imageUrl);
+
+        const existingBusData = await AsyncStorage.getItem('bus-data');
+        if (existingBusData) {
+          const busData = JSON.parse(existingBusData);
+          busData.profile_picture = imageUrl; // Modify the profile picture field
+          await AsyncStorage.setItem('bus-data', JSON.stringify(busData)); // Save updated bus data
+        }
+
+        Alert.alert('Success', 'Profile picture updated successfully!');
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        Alert.alert('Error', 'Failed to update profile picture.');
+      } finally {
+        setLoading(false);
+        setLoadingModalVisible(false);
+      }
     }
   };
 
@@ -148,12 +207,17 @@ const Profile = () => {
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.logoContainer}>
-        <View>
-          <Image
-            source={profilePicture ? {uri: profilePicture} : IMAGES.frieren}
-            style={styles.logo}
-          />
-        </View>
+        <TouchableOpacity onPress={handleChoosePhoto} disabled={loading}>
+          <View>
+            <Image
+              source={profilePicture ? {uri: profilePicture} : IMAGES.frieren}
+              style={styles.logo}
+            />
+            <View style={styles.iconOverlay}>
+              <PlusCircleIcon size={40} color="#176B87" />
+            </View>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -292,6 +356,20 @@ const Profile = () => {
             </View>
           </View>
         </Modal>
+
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={loadingModalVisible}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Uploading...</Text>
+              <Text style={styles.modalText}>
+                Please wait while we update your profile picture.
+              </Text>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -310,6 +388,13 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
+  },
+  iconOverlay: {
+    position: 'absolute',
+    bottom: 5, // Position at the bottom
+    right: 5, // Position to the right
+    borderRadius: 20, // Half of icon size to make it a circle
+    padding: 5,
   },
   scrollContainer: {
     flexGrow: 1,

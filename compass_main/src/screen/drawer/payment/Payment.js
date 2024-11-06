@@ -16,6 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import QRCode from 'react-native-qrcode-svg'; // Import QRCode generator
 import {Dropdown} from 'react-native-element-dropdown'; // Import the Dropdown component
 
+import moment from 'moment';
+
 const Payment = props => {
   const {navigation} = props;
   const focus = useIsFocused();
@@ -215,10 +217,58 @@ const Payment = props => {
 
   // reference
 
-  const generateReferenceNumber = () => {
-    const timestamp = Date.now();
-    const randomNum = Math.floor(Math.random() * 1000);
-    return `${timestamp}${randomNum}`;
+  const generateReferenceNumber = async () => {
+    const busData = await AsyncStorage.getItem('bus-data');
+    if (!busData) {
+      throw new Error('Bus data not found');
+    }
+
+    const parsedBusData = JSON.parse(busData);
+    const busNumber = parsedBusData.bus_number;
+    const today = moment().format('DMMMYYYY').toLowerCase();
+
+    const transactionCount = await getTransactionCountForToday();
+
+    const formattedTransactionCount = transactionCount
+      .toString()
+      .padStart(4, '0');
+
+    const randomNumber = Math.floor(Math.random() * 9000) + 1000;
+
+    const referenceNumber = `bus${busNumber}-${today}-${formattedTransactionCount}-${randomNumber}`;
+
+    console.log('Generated reference number:', referenceNumber);
+    return referenceNumber;
+  };
+
+  const getTransactionCountForToday = async () => {
+    const today = moment().format('YYYY-MM-DD');
+
+    const lastStoredDate = await AsyncStorage.getItem('lastTransactionDate');
+    console.log('Today:', today);
+    console.log('Last Stored Date:', lastStoredDate);
+
+    if (lastStoredDate !== today) {
+      console.log('reset transaction today')
+      await AsyncStorage.setItem(`transactions-${today}`, JSON.stringify([]));
+      await AsyncStorage.setItem('lastTransactionDate', today);
+      return 1;
+    }
+
+    const transactions = await AsyncStorage.getItem(`transactions-${today}`);
+
+    let transactionsArray = transactions ? JSON.parse(transactions) : [];
+
+    const transactionCount = transactionsArray.length + 1;
+
+    transactionsArray.push({});
+
+    await AsyncStorage.setItem(
+      `transactions-${today}`,
+      JSON.stringify(transactionsArray),
+    );
+
+    return transactionCount; // Return the incremented transaction count
   };
 
   const createTransaction = async (data, isCashless = false) => {
@@ -226,9 +276,10 @@ const Payment = props => {
 
     const referenceNumber = data
       ? data.reference_number
-      : generateReferenceNumber();
+      : await generateReferenceNumber();
 
     console.log(data);
+    console.log('Generated or Provided Reference Number:', referenceNumber);
 
     const receipt = {
       bus_id: busData.bus_id,
@@ -280,7 +331,7 @@ const Payment = props => {
     setLoadingVisible(true);
 
     try {
-      const referenceNumber = generateReferenceNumber();
+      const referenceNumber = await generateReferenceNumber();
 
       const newTokenDoc = await firestore().collection('tokens').add({
         passenger_id: null,
