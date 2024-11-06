@@ -15,6 +15,7 @@
     "chart.js": "^4.4.6",
     "dayjs": "^1.11.13",
     "firebase": "^10.13.0",
+    "gmail-send": "^1.8.14",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
     "react-csv": "^2.2.2",

@@ -9,99 +9,82 @@ import {
   doc,
 } from "firebase/firestore";
 
-import { Link } from "react-router-dom";
+import { TrashIcon } from "@heroicons/react/24/solid";
 
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
-
-const busesCollection = collection(db, "buses");
-const routesCollection = collection(db, "routes");
+const companyCollection = collection(db, "company");
 
 const ManageAdmin = () => {
-  const [buses, setBuses] = useState([]);
-  const [routes, setRoutes] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
 
   const [filters, setFilters] = useState({
     searchQuery: "",
-    licensePlateFilter: "",
-    routeFilter: "",
   });
 
-  // delete
+  // add
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBus, setSelectedBus] = useState(null);
+  const [newAdmin, setNewAdmin] = useState({
+    fullName: "",
+    email: "",
+    phone_number: "",
+  });
+
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  // delete
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [confirmName, setConfirmName] = useState("");
 
-  //route
-  const fetchRouteData = async () => {
+  const fetchAdminData = async () => {
     try {
-      const querySnapshot = await getDocs(routesCollection);
-      const fetchedRoutes = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.route_name,
-        };
-      });
-      setRoutes(fetchedRoutes);
-    } catch (error) {
-      console.error("Error fetching route data:", error);
-    }
-  };
+      const querySnapshot = await getDocs(companyCollection);
+      const fetchedAdmins = querySnapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            company_name: data.company_name,
+            email: data.email,
+            phone_number: data.phone_number,
+            role: data.role,
+          };
+        })
+        .filter((admin) => admin.role === "admin"); // Filter out "superadmin" role
 
-  const fetchBusData = async () => {
-    try {
-      const querySnapshot = await getDocs(busesCollection);
-      const fetchedBuses = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name,
-          bus_driver_name: data.bus_driver_name,
-          license_plate: data.license_plate,
-          phone_number: data.phone_number,
-          route_id: data.route_id,
-          created_at: data.created_at,
-          bus_number: data.bus_number,
-        };
-      });
-
-      // Sort the buses by bus driver name
-      fetchedBuses.sort((a, b) =>
-        a.bus_driver_name.localeCompare(b.bus_driver_name)
+      fetchedAdmins.sort((a, b) =>
+        a.company_name.localeCompare(b.company_name)
       );
 
-      setBuses(fetchedBuses);
+      setAdmins(fetchedAdmins);
     } catch (error) {
-      console.error("Error fetching bus data:", error);
+      console.error("Error fetching admin data:", error);
     } finally {
       setLoading(false);
     }
   };
+  // use effect
 
-  // get route name
+  useEffect(() => {
+    fetchAdminData();
+    // eslint-disable-next-line
+  }, []);
 
-  const getRouteName = (route_id) => {
-    const route = routes.find((r) => r.id === route_id);
-    return route ? route.name : "Unknown";
-  };
+  // handle
 
   const handleNextPage = () => {
     setCurrentPage((prevPage) =>
-      Math.min(prevPage + 1, Math.ceil(buses.length / rowsPerPage))
+      Math.min(prevPage + 1, Math.ceil(admins.length / rowsPerPage))
     );
   };
 
   const handlePrevPage = () => {
     setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
   };
-
-  useEffect(() => {
-    fetchRouteData();
-    fetchBusData();
-  }, []);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -111,52 +94,102 @@ const ManageAdmin = () => {
     }));
   };
 
-  const filteredBuses = buses.filter((bus) => {
-    const searchMatch = bus.bus_driver_name
+  const filteredAdmins = admins.filter((admin) => {
+    const searchMatch = admin.company_name
       .toLowerCase()
       .includes(filters.searchQuery.toLowerCase());
 
-    const licensePlateMatch =
-      !filters.licensePlateFilter ||
-      bus.license_plate === filters.licensePlateFilter;
-
-    const routeMatch =
-      !filters.routeFilter || bus.route_id === filters.routeFilter;
-
-    return searchMatch && licensePlateMatch && routeMatch;
+    return searchMatch;
   });
 
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedBuses = filteredBuses.slice(
+  const paginatedAdmins = filteredAdmins.slice(
     startIndex,
     startIndex + rowsPerPage
   );
 
-  // delete
-  const handleDelete = async (busId) => {
-    if (!selectedBus) return;
+  // add
+
+  const handleAddAdmin = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
 
     try {
-      // Prepare data to store in deletedData
+      const response = await fetch(
+        "https://compass-backend-coral.vercel.app/api/create-admin",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fullName: newAdmin.fullName,
+            email: newAdmin.email,
+            phoneNumber: phoneNumber,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        alert("Admin Account successfully created.");
+
+        setIsModalOpen(false);
+      } else {
+        const data = await response.json();
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error adding admin:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewAdmin((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handlePhoneNumberChange = (e) => {
+    const numericValue = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+    if (numericValue.length <= 10) {
+      setPhoneNumber(numericValue);
+    }
+  };
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setNewAdmin({ fullName: "", email: "" });
+    setPhoneNumber("");
+  };
+
+  // delete
+  const handleDelete = async (adminId) => {
+    if (!selectedAdmin) return;
+
+    try {
       const deletedData = {
-        ...selectedBus,
-        deleted_at: new Date().toISOString(), // Timestamp for deletion
+        ...selectedAdmin,
+        deleted_at: new Date().toISOString(),
       };
 
-      // Store deleted bus in the deletedData collection
-      await setDoc(doc(db, "deletedData", busId), deletedData);
+      await setDoc(doc(db, "deletedData", adminId), deletedData);
 
-      // Now delete the bus from the buses collection
-      await deleteDoc(doc(db, "buses", busId));
+      await deleteDoc(doc(db, "company", adminId));
 
-      // Close the modal and reset the input
-      setIsModalOpen(false);
+      setIsDeleteModalOpen(false);
       setConfirmName("");
-      setSelectedBus(null);
-      // Optionally, refresh the bus list here
-      fetchBusData(); // Refresh data after deletion
+      setSelectedAdmin(null);
+      fetchAdminData();
     } catch (error) {
-      console.error("Error deleting bus:", error);
+      console.error("Error deleting admin:", error);
     }
   };
 
@@ -164,17 +197,11 @@ const ManageAdmin = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Bus Drivers</h1>
+        <h1 className="text-3xl font-bold">Admins</h1>
         <div className="flex space-x-4">
-          <Link to="/manage-bus/" className="btn btn-secondary text-lg">
-            Manage Bus
-          </Link>
-          <Link
-            to="/manage-driver/create-bus"
-            className="btn btn-primary text-lg"
-          >
-            Add Bus Driver
-          </Link>
+          <div onClick={handleOpenModal} className="btn btn-primary text-lg">
+            Add Admin
+          </div>
         </div>
       </div>
 
@@ -184,55 +211,23 @@ const ManageAdmin = () => {
           <input
             type="text"
             name="searchQuery"
-            placeholder="Filter by Bus Driver Name"
+            placeholder="Filter by Admin Name"
             className="input input-bordered w-6/12 max-w-xs"
             value={filters.searchQuery}
             onChange={handleFilterChange}
           />
-          {/* License Plate Dropdown */}
-          <select
-            name="licensePlateFilter"
-            value={filters.licensePlateFilter}
-            onChange={handleFilterChange}
-            className="select select-bordered w-6/12 max-w-xs"
-          >
-            <option value="">All License Plate</option>
-            {buses
-              .slice() // Create a shallow copy to avoid mutating the original array
-              .sort((a, b) => a.bus_number - b.bus_number) // Sort by bus number
-              .map((bus) => (
-                <option key={bus.id} value={bus.license_plate}>
-                  {bus.license_plate} : Bus Number {bus.bus_number}
-                </option>
-              ))}
-          </select>
-          {/* Route dropdown */}
-          <select
-            name="routeFilter"
-            value={filters.routeFilter}
-            onChange={handleFilterChange}
-            className="select select-bordered w-6/12 max-w-xs"
-          >
-            <option value="">All Routes</option>
-            {routes.map((route) => (
-              <option key={route.id} value={route.id}>
-                {route.name}
-              </option>
-            ))}
-          </select>
         </div>
         <table className="table w-full">
           <thead>
             <tr>
-              <th className="text-left text-xl">Bus Driver Name</th>
-              <th className="text-left text-xl">License Plate</th>
+              <th className="text-left text-xl">Full Name</th>
+              <th className="text-left text-xl">Email</th>
               <th className="text-left text-xl">Phone Number</th>
-              <th className="text-left text-xl">Route Name</th>
             </tr>
           </thead>
           <tbody>
             {loading
-              ? Array.from({ length: 5 }).map((_, index) => (
+              ? Array.from({ length: 4 }).map((_, index) => (
                   <tr key={index}>
                     <td className="text-lg">
                       <div className="skeleton h-4 w-24"></div>
@@ -243,33 +238,19 @@ const ManageAdmin = () => {
                     <td className="text-lg">
                       <div className="skeleton h-4 w-24"></div>
                     </td>
-                    <td>
-                      <div className="skeleton h-4 w-16"></div>
-                    </td>
                   </tr>
                 ))
-              : paginatedBuses.map((bus) => (
-                  <tr key={bus.id}>
-                    <td className="text-lg">{bus.bus_driver_name}</td>
-                    <td className="text-lg">{bus.license_plate}</td>
-                    <td className="text-lg">{"(+63) " + bus.phone_number}</td>
-                    <td className="text-lg">{getRouteName(bus.route_id)}</td>
-                    <td>
-                      <Link
-                        to={`/manage-driver/bus-view/${bus.id}`}
-                        className="btn btn-ghost btn-xs"
-                      >
-                        <PencilIcon className="h-4 w-4 mr-1" />{" "}
-                        {/* Set height and width for the icon */}
-                        Edit
-                      </Link>
-                    </td>
+              : paginatedAdmins.map((admin) => (
+                  <tr key={admin.id}>
+                    <td className="text-lg">{admin.company_name}</td>
+                    <td className="text-lg">{admin.email}</td>
+                    <td className="text-lg">{"(+63) " + admin.phone_number}</td>
                     <td>
                       <div
                         className="btn btn-ghost btn-xs text-red-500"
                         onClick={() => {
-                          setSelectedBus(bus);
-                          setIsModalOpen(true);
+                          setSelectedAdmin(admin);
+                          setIsDeleteModalOpen(true);
                         }}
                       >
                         <TrashIcon className="h-4 w-4 mr-1" />{" "}
@@ -284,13 +265,13 @@ const ManageAdmin = () => {
       </div>
 
       {/* Pagination */}
-      {!loading && filteredBuses.length > 0 && (
+      {!loading && filteredAdmins.length > 0 && (
         <div className="flex justify-end items-center mt-4 space-x-8">
           <div className="text-lg">Rows per page: {rowsPerPage}</div>
           <div className="text-lg">
             {startIndex + 1}-
-            {Math.min(startIndex + rowsPerPage, filteredBuses.length)} of{" "}
-            {filteredBuses.length}
+            {Math.min(startIndex + rowsPerPage, filteredAdmins.length)} of{" "}
+            {filteredAdmins.length}
           </div>
           <div className="text-lg flex space-x-2">
             <button
@@ -304,7 +285,7 @@ const ManageAdmin = () => {
             <button
               onClick={handleNextPage}
               className={`btn btn-sm ${
-                currentPage === Math.ceil(filteredBuses.length / rowsPerPage)
+                currentPage === Math.ceil(filteredAdmins.length / rowsPerPage)
                   ? "btn-disabled"
                   : ""
               }`}
@@ -318,14 +299,79 @@ const ManageAdmin = () => {
       {isModalOpen && (
         <div className="modal modal-open">
           <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Add Admin</h3>
+            <form onSubmit={handleAddAdmin}>
+              <div className="form-control mb-4">
+                <label className="label">Full Name</label>
+                <input
+                  type="text"
+                  name="fullName"
+                  placeholder="Juan Dela Cruz"
+                  className="input input-bordered"
+                  value={newAdmin.fullName}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-control mb-4">
+                <label className="label">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="juandelacruz@gmail.com"
+                  className="input input-bordered"
+                  value={newAdmin.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-control mb-4">
+                <label className="label">Phone Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content">
+                    (+63)
+                  </div>
+                  <input
+                    type="text"
+                    value={phoneNumber}
+                    onChange={handlePhoneNumberChange}
+                    placeholder="Enter phone number"
+                    className="input input-bordered pl-16 w-full"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-action">
+                <button
+                  type="submit"
+                  className={`btn ${isSaving ? "btn-disabled" : "btn-primary"}`}
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="btn"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isDeleteModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
             <h2 className="font-bold text-lg">Confirm Deletion</h2>
             <p>
-              Please type the Bus Driver's name to confirm deletion. The account
-              information will be stored in database for archive purposes
+              Please type the Admin's name to confirm deletion. The account
+              information will be stored in the database for archive purposes.
             </p>
             <input
               type="text"
-              placeholder={selectedBus.bus_driver_name}
+              placeholder={selectedAdmin.company_name}
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
               className="input input-bordered w-full my-2"
@@ -333,8 +379,8 @@ const ManageAdmin = () => {
             <div className="modal-action">
               <button
                 className="btn btn-primary"
-                onClick={() => handleDelete(selectedBus.id)}
-                disabled={confirmName !== selectedBus?.bus_driver_name} // Disable if names do not match
+                onClick={() => handleDelete(selectedAdmin.id)}
+                disabled={confirmName !== selectedAdmin?.company_name} // Disable if names do not match
               >
                 Confirm
               </button>
@@ -342,7 +388,7 @@ const ManageAdmin = () => {
                 className="btn"
                 onClick={() => {
                   setConfirmName("");
-                  setIsModalOpen(false);
+                  setIsDeleteModalOpen(false);
                 }} // Close modal on cancel
               >
                 Cancel

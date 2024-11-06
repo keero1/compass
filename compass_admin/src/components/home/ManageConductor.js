@@ -220,11 +220,7 @@ const ManageConductor = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Conductors</h1>
-        <div
-          onClick={openModal}
-          to="/manage-conductor/create-conductor"
-          className="btn btn-primary text-lg"
-        >
+        <div onClick={openModal} className="btn btn-primary text-lg">
           Add Conductor
         </div>
       </div>

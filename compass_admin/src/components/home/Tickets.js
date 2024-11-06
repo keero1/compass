@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { db } from "../../firebase/firebase";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 
@@ -12,15 +12,15 @@ const Tickets = () => {
 
   const [filters, setFilters] = useState({
     searchQuery: "",
+    status: "all",
+    subject: "all",
   });
-
-  const [selectedStatus, setSelectedStatus] = useState("all");
 
   // modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
 
-  const fetchTicketData = async () => {
+  const fetchTicketData = useCallback(async () => {
     try {
       const querySnapshot = await getDocs(ticketsCollection);
       const fetchedTickets = querySnapshot.docs.map((doc) => {
@@ -46,7 +46,11 @@ const Tickets = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTicketData();
+  }, [fetchTicketData]);
 
   const formatDate = (date) => {
     const options = {
@@ -59,10 +63,6 @@ const Tickets = () => {
     };
     return date.toDate().toLocaleString("en-US", options);
   };
-
-  useEffect(() => {
-    fetchTicketData();
-  }, []);
 
   const handleNextPage = () => {
     setCurrentPage((prevPage) =>
@@ -80,26 +80,17 @@ const Tickets = () => {
       ...prevFilters,
       [name]: value,
     }));
-
-    // For status filter
-    if (name === "status") {
-      setSelectedStatus(value);
-    }
   };
 
   const filteredTickets = tickets.filter((ticket) => {
-    const subjectMatch = ticket.subject
-      ? ticket.subject.toLowerCase().includes(filters.searchQuery.toLowerCase())
-      : false;
-    const emailMatch = ticket.email
-      ? ticket.email.toLowerCase().includes(filters.searchQuery.toLowerCase())
-      : false;
-
     const statusMatch =
-      selectedStatus === "all" ||
-      ticket.status.toLowerCase() === selectedStatus;
+      filters.status === "all" ||
+      ticket.status.toLowerCase() === filters.status;
+    const subjectMatch =
+      filters.subject === "all" ||
+      ticket.subject.toLowerCase() === filters.subject.toLowerCase();
 
-    return (subjectMatch || emailMatch) && statusMatch;
+    return subjectMatch && statusMatch;
   });
 
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -116,6 +107,12 @@ const Tickets = () => {
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedTicket(null);
+  };
+
+  // handle
+
+  const handleReply = async () => {
+    if (!selectedTicket) return;
   };
 
   const handleCloseTicket = async () => {
@@ -149,22 +146,27 @@ const Tickets = () => {
 
       {/* Table */}
       <div className="bg-base-300 overflow-x-auto shadow-lg rounded-lg p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
-          <input
-            type="text"
-            name="searchQuery"
-            placeholder="Filter by Subject or Email"
-            className="input input-bordered w-full"
-            value={filters.searchQuery}
-            onChange={handleFilterChange}
-          />
+        <div className="flex items-center gap-4 flex-grow">
           <select
-            name="status"
-            className="select select-bordered w-1/2"
-            value={selectedStatus}
+            name="subject"
+            className="select select-bordered w-48"
+            value={filters.subject}
             onChange={handleFilterChange}
           >
-            <option value="all">All</option>
+            <option value="all">All Subjects</option>
+            <option value="Payment Issues">Payment Issues</option>
+            <option value="App Performance">App Performance</option>
+            <option value="Bus Tracking">Bus Tracking</option>
+            <option value="Account Management">Account Management</option>
+            <option value="Feature Request">Feature Request</option>
+          </select>
+          <select
+            name="status"
+            className="select select-bordered w-48"
+            value={filters.status}
+            onChange={handleFilterChange}
+          >
+            <option value="all">All Status</option>
             <option value="open">Open</option>
             <option value="closed">Closed</option>
           </select>
@@ -223,7 +225,7 @@ const Tickets = () => {
                       onClick={() => openEditModal(ticket)}
                       className="btn btn-ghost btn-xs"
                     >
-                      Edit
+                      View
                     </button>
                   </td>
                 </tr>
@@ -284,6 +286,11 @@ const Tickets = () => {
               </p>
             </div>
             <div className="modal-action">
+              {selectedTicket.status === "Open" && (
+                <button onClick={handleReply} className="btn btn-primary">
+                  Reply
+                </button>
+              )}
               {/* Conditionally render the Close Ticket button */}
               {selectedTicket.status !== "closed" && (
                 <button onClick={handleCloseTicket} className="btn btn-primary">

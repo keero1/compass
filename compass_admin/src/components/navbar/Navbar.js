@@ -291,7 +291,7 @@ const Navbar = () => {
           <li>
             <Link to="tickets">
               <TicketIcon className="size-6" />
-              Tickets
+              Support Tickets
             </Link>
           </li>
           {/* Super Admin Controls */}
