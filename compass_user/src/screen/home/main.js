@@ -38,6 +38,10 @@ import {getRoute} from '../../components/utils/RoutesUtils';
 import HeaderComponent from './HeaderComponent';
 import FooterComponent from './FooterComponent';
 
+// utils
+
+import {calculateDistance, calculateETA} from './MapUtils';
+
 const Main = props => {
   const {navigation} = props;
   const mapRef = useRef(MapView);
@@ -47,6 +51,7 @@ const Main = props => {
   const [currentLocation, setCurrentLocation] = useState(null);
 
   const [routes, setRoutes] = useState([]);
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
 
   // marker
   const [marker, setMarker] = useState(null);
@@ -197,38 +202,6 @@ const Main = props => {
     };
   }, []);
 
-  // notification
-
-  async function onDisplayNotification(busCoordinate) {
-    setNotificationBusCoordinate(busCoordinate);
-    // Request permissions (required for iOS)
-    await notifee.requestPermission();
-
-    // Create a channel (required for Android)
-    const channelId = await notifee.createChannel({
-      id: 'important',
-      name: 'Important Notifications',
-      importance: AndroidImportance.HIGH,
-    });
-
-    // Display a notification
-    await notifee.displayNotification({
-      title: 'Bus Nearby!',
-      body: 'A Bus is within your selected proximity of your marker location.',
-      android: {
-        channelId,
-        importance: AndroidImportance.HIGH,
-        smallIcon: 'ic_notification',
-        pressAction: {
-          id: 'default',
-        },
-        fullScreenAction: {
-          id: 'default',
-        },
-      },
-    });
-  }
-
   useEffect(() => {
     const checkBusProximity = async () => {
       if (!marker || busMarkers.length === 0) {
@@ -322,6 +295,38 @@ const Main = props => {
     };
   }, [notificationBusCoordinate, marker]);
 
+  // notification
+
+  async function onDisplayNotification(busCoordinate) {
+    setNotificationBusCoordinate(busCoordinate);
+    // Request permissions (required for iOS)
+    await notifee.requestPermission();
+
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'important',
+      name: 'Important Notifications',
+      importance: AndroidImportance.HIGH,
+    });
+
+    // Display a notification
+    await notifee.displayNotification({
+      title: 'Bus Nearby!',
+      body: 'A Bus is within your selected proximity of your marker location.',
+      android: {
+        channelId,
+        importance: AndroidImportance.HIGH,
+        smallIcon: 'ic_notification',
+        pressAction: {
+          id: 'default',
+        },
+        fullScreenAction: {
+          id: 'default',
+        },
+      },
+    });
+  }
+
   const onMapPress = event => {
     const {coordinate} = event.nativeEvent;
 
@@ -407,7 +412,7 @@ const Main = props => {
       {cancelable: true},
     );
   };
-  const [routeCoordinates, setRouteCoordinates] = useState([]);
+
   const fetchRouteData = async routeId => {
     try {
       const routeDoc = await firestore()
@@ -437,38 +442,23 @@ const Main = props => {
       const route = await getRoute(coordinates);
 
       setRouteCoordinates(route);
+
+      if (currentLocation && busMarkers.length > 0) {
+        const bus = busMarkers.find(bus => bus.details.route_id === routeId);
+
+        if (bus) {
+          const distance = calculateDistance(currentLocation, bus.coordinate); // Distance in meters
+          const speed = (40 * 1000) / 3600; // Assume average speed of 40 km/h in meters per second
+          const etaInSeconds = distance / speed; // ETA in seconds
+          const etaInMinutes = Math.round(etaInSeconds / 60); // ETA in minutes
+
+          // You can now use `etaInMinutes` to display the ETA in the callout
+          console.log(`ETA: ${etaInMinutes} minutes`);
+        }
+      }
     } catch (error) {
       console.error('Error processing route:', error);
     }
-  };
-
-  // limit distance
-  const calculateDistance = (coord1, coord2) => {
-    // Radius of the Earth in meters
-    const earthRadius = 6371e3;
-
-    // Convert latitude and longitude from degrees to radians
-    const latitude1Radians = (coord1.latitude * Math.PI) / 180;
-    const latitude2Radians = (coord2.latitude * Math.PI) / 180;
-    const latitudeDifferenceRadians =
-      ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
-    const longitudeDifferenceRadians =
-      ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
-
-    // Haversine formula
-    const a =
-      Math.sin(latitudeDifferenceRadians / 2) *
-        Math.sin(latitudeDifferenceRadians / 2) +
-      Math.cos(latitude1Radians) *
-        Math.cos(latitude2Radians) *
-        Math.sin(longitudeDifferenceRadians / 2) *
-        Math.sin(longitudeDifferenceRadians / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    // Calculate the distance
-    const distance = earthRadius * c;
-
-    return distance;
   };
 
   const markerRefs = useRef([]);
@@ -569,6 +559,14 @@ const Main = props => {
                     {bus.details.timestamp.toDate().toLocaleString()}
                   </Text>
                   <Text>Seat Slots: {bus.details.seat_count} / 56</Text>
+                  {/* Add the ETA display */}
+                  {currentLocation && (
+                    <Text>
+                      ETA: {calculateETA(currentLocation, bus.coordinate)}{' '}
+                      minutes
+                    </Text>
+                  )}
+
                   <View
                     style={{
                       backgroundColor: '#176B87',

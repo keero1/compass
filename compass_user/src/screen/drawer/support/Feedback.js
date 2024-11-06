@@ -10,10 +10,20 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
+import {Dropdown} from 'react-native-element-dropdown';
+
 const Feedback = () => {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const subjectData = [
+    {label: 'Payment Issues', value: 'Payment Issues'},
+    {label: 'App Performance', value: 'App Performance'},
+    {label: 'Bus Tracking', value: 'Bus Tracking'},
+    {label: 'Account Management', value: 'Account Management'},
+    {label: 'Feature Request', value: 'Feature Request'},
+  ];
 
   // Function to handle ticket submission
   const submitTicket = async () => {
@@ -44,7 +54,10 @@ const Feedback = () => {
         .get();
 
       if (!existingTickets.empty) {
-        Alert.alert('Open Ticket Found', 'You currently have an open ticket. Please wait for it to be resolved before submitting a new one.');
+        Alert.alert(
+          'Open Ticket Found',
+          'You currently have an open ticket. Please wait for it to be resolved before submitting a new one.',
+        );
         setLoading(false);
         return; // Exit the function if an open ticket exists
       }
@@ -64,7 +77,10 @@ const Feedback = () => {
       Alert.alert('Success', 'Your support ticket has been submitted.');
     } catch (error) {
       console.error('Error creating ticket:', error);
-      Alert.alert('Error', 'Failed to create support ticket. Please try again.');
+      Alert.alert(
+        'Error',
+        'Failed to create support ticket. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -74,11 +90,14 @@ const Feedback = () => {
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>Submit a Feedback or Issue</Text>
 
-      <TextInput
+      <Dropdown
         style={styles.input}
-        placeholder="Subject"
+        placeholder="Select Subject"
+        data={subjectData}
+        labelField="label"
+        valueField="value"
         value={subject}
-        onChangeText={text => setSubject(text)}
+        onChange={item => setSubject(item.value)}
       />
 
       <TextInput
