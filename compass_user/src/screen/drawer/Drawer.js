@@ -13,6 +13,7 @@ import {useIsFocused} from '@react-navigation/native';
 
 //firebase
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 import {IMAGES, ROUTES} from '../../constants';
 
@@ -81,11 +82,26 @@ const Drawer = props => {
       const user = auth().currentUser;
 
       if (user) {
-        setUserDisplayName(user.displayName);
+        try {
+          // Fetch user data from Firestore 'users' collection using the current user ID (uid)
+          const userDoc = await firestore()
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            setUserDisplayName(userData.fullName); // Assuming 'fullName' is a field in the user document
+          } else {
+            console.log('User document does not exist');
+          }
+        } catch (error) {
+          console.error('Error fetching user data: ', error);
+        }
       }
     };
 
-    if (focus == true) {
+    if (focus === true) {
       getUserDisplayName();
     }
   }, [focus]);

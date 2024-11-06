@@ -8,8 +8,6 @@ import {
   useWindowDimensions,
   Alert,
   ActivityIndicator,
-  Modal,
-  ScrollView,
   BackHandler,
 } from 'react-native';
 
@@ -21,6 +19,7 @@ import firestore from '@react-native-firebase/firestore';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 
 import TermsModal from '../../components/terms/TermsModal';
+import PrivacyModal from '../../components/terms/PrivacyModal';
 
 const Register = props => {
   const {navigation} = props;
@@ -48,11 +47,16 @@ const Register = props => {
 
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   useEffect(() => {
     const handleBackPress = () => {
       if (showTermsModal) {
         setShowTermsModal(false);
+        return true;
+      }
+      if (showPrivacyModal) {
+        setShowPrivacyModal(false);
         return true;
       }
       return false;
@@ -195,7 +199,7 @@ const Register = props => {
             Email <Text style={styles.required}>*</Text>
           </Text>
           <AuthInput
-            placeholder="Email"
+            placeholder="juandelacruz@gmail.com"
             value={email}
             setValue={setEmail}
             returnKeyType="next"
@@ -290,7 +294,7 @@ const Register = props => {
             <Text style={styles.termsText}>Terms</Text>
           </TouchableOpacity>
           <Text> and </Text>
-          <TouchableOpacity onPress={() => setShowTermsModal(true)}>
+          <TouchableOpacity onPress={() => setShowPrivacyModal(true)}>
             <Text style={styles.termsText}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
@@ -320,6 +324,10 @@ const Register = props => {
       <TermsModal
         visible={showTermsModal}
         onClose={() => setShowTermsModal(false)}
+      />
+      <PrivacyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
       />
     </SafeAreaView>
   );

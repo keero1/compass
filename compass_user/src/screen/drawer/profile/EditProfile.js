@@ -57,7 +57,11 @@ const EditProfile = () => {
   // mapping profile data type
 
   const updateActions = {
-    'Full Name': async () => await user.updateProfile({displayName: data}),
+    'Full Name': async () =>
+      await firestore()
+        .collection('users')
+        .doc(user.uid)
+        .update({fullName: data}),
     'User Name': async () =>
       await firestore()
         .collection('users')

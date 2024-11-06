@@ -36,7 +36,6 @@ const Profile = props => {
 
       if (user) {
         // Set displayName and email from Firebase Authentication
-        setUserFullName(user.displayName);
         setUserEmail(user.email);
 
         try {
@@ -47,6 +46,7 @@ const Profile = props => {
             .get();
 
           if (userDoc.exists) {
+            setUserFullName(userDoc.data().fullName);
             setUserName(userDoc.data().username);
           } else {
             console.log('User document does not exist');
@@ -129,16 +129,6 @@ const Profile = props => {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* <View style={styles.sectionBox}>
-            <Text style={styles.sectionTitle}>Advanced</Text>
-
-            <View style={styles.detailBox}>
-              <TouchableOpacity style={styles.detailItemX}>
-                <Text style={styles.deleteAccounText}>Delete Account</Text>
-              </TouchableOpacity>
-            </View>
-          </View> */}
         </View>
       </View>
     </SafeAreaView>
