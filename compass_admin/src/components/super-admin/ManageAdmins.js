@@ -16,7 +16,7 @@ import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
 const busesCollection = collection(db, "buses");
 const routesCollection = collection(db, "routes");
 
-const ManageDriver = () => {
+const ManageAdmin = () => {
   const [buses, setBuses] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,17 +146,14 @@ const ManageDriver = () => {
       // Store deleted bus in the deletedData collection
       await setDoc(doc(db, "deletedData", busId), deletedData);
 
-      // delete the document
+      // Now delete the bus from the buses collection
       await deleteDoc(doc(db, "buses", busId));
-
-      // delete busLocation entry
-      await deleteDoc(doc(db, "busLocation", busId));
 
       // Close the modal and reset the input
       setIsModalOpen(false);
       setConfirmName("");
       setSelectedBus(null);
-
+      // Optionally, refresh the bus list here
       fetchBusData(); // Refresh data after deletion
     } catch (error) {
       console.error("Error deleting bus:", error);
@@ -358,4 +355,4 @@ const ManageDriver = () => {
   );
 };
 
-export default ManageDriver;
+export default ManageAdmin;

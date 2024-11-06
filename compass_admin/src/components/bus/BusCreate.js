@@ -2,12 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "../../firebase/firebase"; // Adjust path to Firebase configuration
 import { collection, getDocs, addDoc } from "firebase/firestore";
-
 import { useAuth } from "../../contexts/authContext";
 
 const BusCreate = () => {
   const navigate = useNavigate();
-
   const { currentUser } = useAuth();
 
   const [busName, setBusName] = useState("");
@@ -15,10 +13,10 @@ const BusCreate = () => {
   const [username, setUsername] = useState("");
   const [route, setRoute] = useState("");
   const [busType, setBusType] = useState("");
-  const [licensePlate, setLicensePlate] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
   const [routes, setRoutes] = useState([]);
-  const [totalBuses, setTotalBuses] = useState(0);
-
+  const [availableLicenseNumbers, setAvailableLicenseNumbers] = useState([]); // Changed to hold objects
+  const [busNumber, setBusNumber] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -35,33 +33,63 @@ const BusCreate = () => {
       }
     };
 
-    const fetchTotalBuses = async () => {
+    const fetchLicenseNumbers = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "buses"));
-        setTotalBuses(querySnapshot.size + 1);
+        const busInformationSnapshot = await getDocs(
+          collection(db, "busInformation")
+        );
+        const busesSnapshot = await getDocs(collection(db, "buses"));
+
+        // Get all license numbers and bus types from busInformation
+        const licenseNumbers = busInformationSnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            license_number: data.license_number, // Get license number
+            bus_number: data.bus_number, // Get associated bus number
+            bus_type: data.bus_type, // Include bus type
+          };
+        });
+
+        // Get all existing bus license numbers
+        const existingBusLicenseNumbers = busesSnapshot.docs.map(
+          (doc) => doc.data().license_plate
+        );
+
+        // Filter out license numbers that already exist in the buses collection
+        const filteredLicenseNumbers = licenseNumbers.filter(
+          (item) => !existingBusLicenseNumbers.includes(item.license_number)
+        );
+
+        filteredLicenseNumbers.sort((a, b) => {
+          return a.bus_number - b.bus_number; // Sort in ascending order
+        });
+
+        setAvailableLicenseNumbers(filteredLicenseNumbers); // Store filtered license numbers with their bus numbers
       } catch (error) {
-        console.error("Error fetching total buses:", error);
+        console.error("Error fetching license numbers:", error);
       }
     };
 
     fetchRoutes();
-    fetchTotalBuses();
+    fetchLicenseNumbers();
   }, []);
 
   useEffect(() => {
+    // Generate username whenever busName or busNumber changes
     const generateUsername = () => {
-      const formattedName = busName.replace(/\s+/g, "").toLowerCase();
-      const numberFormat = totalBuses.toString().padStart(3, "0");
-      const username = `${formattedName}.${numberFormat}`;
-      setUsername(username);
+      if (busName && busNumber) {
+        const formattedName = busName.replace(/\s+/g, "").toLowerCase();
+        const numberFormat = busNumber.toString().padStart(3, "0");
+        const newUsername = `${formattedName}.${numberFormat}`;
+        setUsername(newUsername);
+      } else {
+        setUsername(""); // Clear username if conditions are not met
+      }
     };
 
-    if (busName) {
-      generateUsername();
-    } else {
-      setUsername("");
-    }
-  }, [busName, totalBuses]);
+    // Call the function to generate username
+    generateUsername();
+  }, [busName, busNumber]);
 
   const handleBackClick = () => {
     navigate(-1);
@@ -101,8 +129,8 @@ const BusCreate = () => {
             phoneNumber,
             busType,
             route,
-            licensePlate,
-            totalBuses,
+            licenseNumber,
+            busNumber,
             adminID,
           }),
         }
@@ -111,7 +139,11 @@ const BusCreate = () => {
       if (response.ok) {
         const data = await response.json();
         alert("Bus account created successfully");
-        await logAdminAction("create_bus", `created bus account: ${busName}`, data.busId);
+        await logAdminAction(
+          "create_bus",
+          `created bus account: ${busName}`,
+          data.busId
+        );
 
         navigate(-1); // Go back to the previous page
       } else {
@@ -127,13 +159,29 @@ const BusCreate = () => {
   };
 
   const handleBusNameChange = (e) => {
-    // Split the input value by spaces, capitalize each word, and join them back
     const value = e.target.value
       .split(" ")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ");
 
     setBusName(value);
+  };
+
+  const handleLicenseNumberChange = (e) => {
+    const selectedNumber = e.target.value;
+    setLicenseNumber(selectedNumber);
+
+    // Find the bus information associated with the selected license number
+    const selectedBusInfo = availableLicenseNumbers.find(
+      (bus) => bus.license_number === selectedNumber
+    );
+
+    console.log("Selected Bus Info:", selectedBusInfo); // Debugging output
+    const busNumber = selectedBusInfo ? selectedBusInfo.bus_number : "";
+    const busType = selectedBusInfo ? selectedBusInfo.bus_type : ""; // Get the bus type
+    console.log("Selected Bus Number:", busNumber); // Debugging output
+    setBusNumber(busNumber); // Update bus number based on selection
+    setBusType(busType); // Update bus type based on selection
   };
 
   return (
@@ -147,7 +195,7 @@ const BusCreate = () => {
 
       <div className="w-full max-w-4xl bg-base-100 p-8 rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold mb-6 text-primary">
-          Create Bus Account
+          Create Driver Account
         </h2>
         <form onSubmit={handleCreateBus}>
           <div className="grid grid-cols-2 gap-6">
@@ -195,15 +243,10 @@ const BusCreate = () => {
               <label className="block text-sm font-medium mb-1 text-base-content">
                 Username
               </label>
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                disabled
-              />
+              <div className="input input-bordered w-full py-3 cursor-not-allowed">
+                {/* Display the selected bus type */}
+                {username || "Username"}
+              </div>
             </div>
 
             <div>
@@ -232,33 +275,34 @@ const BusCreate = () => {
               <label className="block text-sm font-medium mb-1 text-base-content">
                 Bus Type
               </label>
-              <select
-                className="select select-bordered w-full"
-                placeholder="Select route"
-                value={busType}
-                onChange={(e) => setBusType(e.target.value)}
-                required
-              >
-                <option value="" disabled>
-                  Select Buy Type
-                </option>
-                <option value="Aircon">Aircon</option>
-                <option value="Ordinary">Ordinary</option>
-              </select>
+              <div className="input input-bordered w-full py-3 cursor-not-allowed">
+                {/* Display the selected bus type */}
+                {busType || "Aircon"}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1 text-base-content">
-                License Plate
+                License Number
               </label>
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="Enter license plate"
-                value={licensePlate}
-                onChange={(e) => setLicensePlate(e.target.value)}
+              <select
+                className="select select-bordered w-full"
+                value={licenseNumber}
+                onChange={handleLicenseNumberChange} // Updated to handle license number change
                 required
-              />
+              >
+                <option value="" disabled>
+                  Select License Number
+                </option>
+                {availableLicenseNumbers.map((number) => (
+                  <option
+                    key={number.license_number}
+                    value={number.license_number}
+                  >
+                    {number.license_number}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <button

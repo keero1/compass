@@ -37,25 +37,19 @@ const BusView = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
 
+  //license
+  const [availableLicenseNumbers, setAvailableLicenseNumbers] = useState([]);
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [busType, setBusType] = useState("");
+  const [busNumber, setBusNumber] = useState("");
+
   // image loading
   const [isImageLoading, setIsImageLoading] = useState(true);
 
   // reset password input
   const [inputName, setInputName] = useState("");
 
-  // Fetch all routes
-  const fetchRoutes = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "routes"));
-      const routesData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setRoutes(routesData);
-    } catch (error) {
-      console.error("Error fetching routes:", error);
-    }
-  };
+  //log
 
   const logAdminAction = async (action, details) => {
     try {
@@ -73,6 +67,20 @@ const BusView = () => {
     }
   };
 
+  // Fetch all routes
+  const fetchRoutes = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "routes"));
+      const routesData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setRoutes(routesData);
+    } catch (error) {
+      console.error("Error fetching routes:", error);
+    }
+  };
+
   // Fetch the specific bus data
   const fetchBusData = useCallback(async () => {
     try {
@@ -81,6 +89,11 @@ const BusView = () => {
         setBusData(busDoc.data());
         setOriginalBusData(busDoc.data());
         setPreviewImage(busDoc.data().profile_picture || Frieren);
+        fetchLicenseNumbers(busDoc.data());
+
+        //default values
+        setBusType(busDoc.data().bus_type);
+        setBusNumber(busDoc.data().bus_number);
       } else {
         console.error("No such bus!");
       }
@@ -90,6 +103,47 @@ const BusView = () => {
       setIsLoading(false);
     }
   }, [busId]);
+
+  const fetchLicenseNumbers = async (dataXD) => {
+    try {
+      const busInformationSnapshot = await getDocs(
+        collection(db, "busInformation")
+      );
+      const busesSnapshot = await getDocs(collection(db, "buses"));
+
+      const licenseNumbers = busInformationSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          license_number: data.license_number,
+          bus_number: data.bus_number,
+          bus_type: data.bus_type,
+        };
+      });
+
+      // Get all existing bus license numbers
+      const existingBusLicenseNumbers = busesSnapshot.docs.map(
+        (doc) => doc.data().license_plate
+      );
+
+      // Filter out license numbers that already exist in the buses collection
+      const filteredLicenseNumbers = licenseNumbers.filter((item) => {
+        return (
+          !existingBusLicenseNumbers.includes(item.license_number) ||
+          dataXD.license_plate === item.license_number
+        );
+      });
+
+      filteredLicenseNumbers.sort((a, b) => {
+        return a.bus_number - b.bus_number; // Sort in ascending order
+      });
+
+      console.log(filteredLicenseNumbers);
+
+      setAvailableLicenseNumbers(filteredLicenseNumbers); // Store filtered license numbers with their bus numbers
+    } catch (error) {
+      console.error("Error fetching license numbers:", error);
+    }
+  };
 
   // load on mount
 
@@ -147,6 +201,28 @@ const BusView = () => {
       setIsSaving(false);
       navigate(-1);
     }
+  };
+
+  // license
+  const handleLicenseNumberChange = (e) => {
+    const selectedNumber = e.target.value;
+    setLicenseNumber(selectedNumber);
+
+    const selectedBusInfo = availableLicenseNumbers.find(
+      (bus) => bus.license_number === selectedNumber
+    );
+
+    console.log("Selected Bus Info:", selectedBusInfo);
+    const busType = selectedBusInfo ? selectedBusInfo.bus_type : "";
+    const busNumber = selectedBusInfo ? selectedBusInfo.bus_number : "";
+    setBusNumber(busNumber);
+    setBusType(busType);
+    setBusData((prevData) => ({
+      ...prevData,
+      license_plate: selectedNumber,
+      bus_number: busNumber,
+      bus_type: busType,
+    }));
   };
 
   const handleFileChange = (event) => {
@@ -209,7 +285,12 @@ const BusView = () => {
   };
 
   const hasDataChanged = () => {
-    return JSON.stringify(busData) !== JSON.stringify(originalBusData);
+    return (
+      JSON.stringify(busData) !== JSON.stringify(originalBusData) ||
+      busData.license_plate !== originalBusData.license_plate ||
+      busNumber !== originalBusData.bus_number ||
+      busType !== originalBusData.bus_type
+    );
   };
 
   return (
@@ -321,19 +402,10 @@ const BusView = () => {
                   <label className="block text-sm font-medium mb-1 text-base-content">
                     Bus Driver Name
                   </label>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    placeholder="Enter bus driver name"
-                    disabled
-                    value={busData.bus_driver_name}
-                    onChange={(e) =>
-                      setBusData({
-                        ...busData,
-                        bus_driver_name: e.target.value,
-                      })
-                    }
-                  />
+                  <div className="input input-bordered w-full py-3 cursor-not-allowed">
+                    {/* Display the selected bus type */}
+                    {busData.bus_driver_name || "bus driver name"}
+                  </div>
                 </div>
 
                 <div>
@@ -344,17 +416,10 @@ const BusView = () => {
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content">
                       (+63)
                     </div>
-                    <input
-                      type="tel"
-                      className="input input-bordered pl-16 w-full"
-                      placeholder="Enter phone number"
-                      disabled
-                      value={busData.phone_number}
-                      onChange={(e) =>
-                        setBusData({ ...busData, phone_number: e.target.value })
-                      }
-                      pattern="\d*"
-                    />
+                    <div className="input input-bordered w-full pl-16 py-3 cursor-not-allowed">
+                      {/* Display the selected bus type */}
+                      {busData.phone_number || "9123456789"}
+                    </div>
                   </div>
                 </div>
 
@@ -362,21 +427,15 @@ const BusView = () => {
                   <label className="block text-sm font-medium mb-1 text-base-content">
                     Username
                   </label>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    placeholder="Enter username"
-                    disabled
-                    value={busData.username}
-                    onChange={(e) =>
-                      setBusData({ ...busData, username: e.target.value })
-                    }
-                  />
+                  <div className="input input-bordered w-full py-3 cursor-not-allowed">
+                    {/* Display the selected bus type */}
+                    {busData.username || "username"}
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1 text-base-content">
-                    Route
+                    Route <span className="text-red-500">*</span>
                   </label>
                   <select
                     className="select select-bordered w-full"
@@ -400,36 +459,34 @@ const BusView = () => {
                   <label className="block text-sm font-medium mb-1 text-base-content">
                     Bus Type
                   </label>
-                  <select
-                    className="select select-bordered w-full"
-                    placeholder="Select route"
-                    value={busData.bus_type}
-                    onChange={(e) =>
-                      setBusData({ ...busData, bus_type: e.target.value })
-                    }
-                  >
-                    <option value="" disabled>
-                      Select Buy Type
-                    </option>
-                    <option value="Aircon">Aircon</option>
-                    <option value="Ordinary">Ordinary</option>
-                  </select>
+                  <div className="input input-bordered w-full py-3 cursor-not-allowed">
+                    {/* Display the selected bus type */}
+                    {busType || "Aircon"}
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1 text-base-content">
-                    License Plate
+                    License Plate <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    placeholder="Enter license plate"
-                    value={busData.license_plate}
-                    onChange={(e) =>
-                      setBusData({ ...busData, license_plate: e.target.value })
-                    }
+                  <select
+                    className="select select-bordered w-full"
+                    value={licenseNumber || busData.license_plate}
+                    onChange={handleLicenseNumberChange}
                     required
-                  />
+                  >
+                    <option value="" disabled>
+                      Select License Number
+                    </option>
+                    {availableLicenseNumbers.map((number) => (
+                      <option
+                        key={number.license_number}
+                        value={number.license_number}
+                      >
+                        {number.license_number}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <button

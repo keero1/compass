@@ -16,6 +16,8 @@ import {
   TruckIcon,
   MapPinIcon,
   NewspaperIcon,
+  UserGroupIcon,
+  TicketIcon,
 } from "@heroicons/react/24/solid";
 
 import NotificationDropdown from "./NotificationDropdown";
@@ -288,7 +290,7 @@ const Navbar = () => {
           </li>
           <li>
             <Link to="tickets">
-              <UsersIcon className="size-6" />
+              <TicketIcon className="size-6" />
               Tickets
             </Link>
           </li>
@@ -304,6 +306,12 @@ const Navbar = () => {
                   Manage admins
                 </Link>
               </li> */}
+              <li>
+                <Link to="manage-admins">
+                  <UserGroupIcon className="size-6" />
+                  Manage Admins
+                </Link>
+              </li>
               <li>
                 <Link to="admin-logs">
                   <NewspaperIcon className="size-6" />

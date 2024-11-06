@@ -4,15 +4,26 @@ import { db, auth } from "../../firebase/firebase";
 import { collection, getDocs, onSnapshot, doc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
-// date
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DateCalendar, LocalizationProvider } from "@mui/x-date-pickers";
-import Divider from "@mui/material/Divider";
-
 import dayjs from "dayjs";
 
-// export
-import { CSVLink } from "react-csv";
+import ExportTransactions from "../../components/wallet/ExportTransactions";
+
+import { formatNumber } from "../../components/wallet/WalletUtils";
+import SkeletonTable from "../wallet/SkeletonTable";
+import PaginatedTable from "../wallet/PaginatedTable";
+
+// chart
+import {
+  Chart as ChartJS,
+  BarElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(BarElement, LinearScale, CategoryScale, Tooltip, Legend);
 
 const Wallet = () => {
   const [totalEarnings, setTotalEarnings] = useState(0);
@@ -22,53 +33,43 @@ const Wallet = () => {
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  // chart
+  const [monthlyEarnings, setMonthlyEarnings] = useState(Array(12).fill(0));
+  const [selectedYear, setSelectedYear] = useState(dayjs().year());
 
-  // rows
+  // paginated
+  const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const rowsOptions = [5, 10, 15, 20];
 
   // dropdown
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // filter
   const [filters, setFilters] = useState({
     searchQuery: "",
     paymentType: "",
     dateRange: "",
   });
 
+  // loading
   const [loading, setLoading] = useState(true);
 
-  // modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Fetch earnings based on filters
+  const calculateTotalsFromFilteredTransactions = () => {
+    const totalFare = filteredTransactions.reduce(
+      (acc, transaction) => acc + parseFloat(transaction.fare_amount || 0),
+      0
+    );
 
-  // CSV
-  const [csvData, setCsvData] = useState([]);
-
-  const csvLinkRef = useRef(null);
-
-  //date
-  const [selectedDates, setSelectedDates] = useState([]);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [displayedMonth, setDisplayedMonth] = useState(null);
-
-  const fetchEarnings = () => {
-    const transactionsCollection = collection(db, "transactions");
-
-    const unsubscribe = onSnapshot(transactionsCollection, (snapshot) => {
-      let earnings = 0;
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        earnings += Number(data.fare_amount || 0);
-      });
-
-      setTotalEarnings(earnings.toFixed(2));
-      setTotalTransactions(snapshot.size);
-    });
-
-    return unsubscribe;
+    setTotalEarnings(totalFare.toFixed(2)); // Update total earnings
+    setTotalTransactions(filteredTransactions.length); // Update total transactions
   };
+
+  useEffect(() => {
+    calculateTotalsFromFilteredTransactions(); // Recalculate totals whenever filters or transactions change
+    // eslint-disable-next-line 
+  }, [filters, transactionHistory]);
 
   const fetchTransactionHistory = () => {
     const transactionsCollection = collection(db, "transactions");
@@ -112,7 +113,6 @@ const Wallet = () => {
   };
 
   useEffect(() => {
-    const unsubscribeEarnings = fetchEarnings();
     const unsubscribeTransactions = fetchTransactionHistory();
     fetchBuses();
 
@@ -129,41 +129,71 @@ const Wallet = () => {
     });
 
     return () => {
-      unsubscribeEarnings();
       unsubscribeTransactions();
       unsubscribeAuth();
     };
   }, []);
 
-  // other methods
+  // calculate
 
-  const formatNumber = (number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "PHP",
-    }).format(number);
-  };
+  const calculateMonthlyEarnings = (transactions) => {
+    const earningsByMonth = Array(12).fill(0); // Array to hold earnings for each month
 
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "N/A";
-    const date = timestamp.toDate();
-    return date.toLocaleDateString("en-PH", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+    transactions.forEach((transaction) => {
+      const date = dayjs(transaction.timestamp.toDate());
+      const month = date.month(); // Month index (0-11)
+      const amount = parseFloat(transaction.fare_amount) || 0;
+
+      earningsByMonth[month] += amount; // Sum up the earnings for each month
     });
+
+    // Set the monthly earnings only if there are transactions
+    if (transactions.length > 0) {
+      setMonthlyEarnings(earningsByMonth);
+    } else {
+      setMonthlyEarnings(Array(12).fill(0)); // Reset to zeros if no transactions
+    }
   };
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: value,
-    }));
+  const filteredTransactionsByYear = transactionHistory.filter(
+    (transaction) => {
+      const transactionYear = dayjs(transaction.timestamp.toDate()).year();
+      return transactionYear === selectedYear; // Filter by selected year
+    }
+  );
 
-    setCurrentPage(1);
+  useEffect(() => {
+    calculateMonthlyEarnings(filteredTransactionsByYear);
+    // eslint-disable-next-line
+  }, [transactionHistory, selectedYear]);
+
+  const barChartData = {
+    labels: [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    datasets: [
+      {
+        label: "Monthly Earnings",
+        data: monthlyEarnings,
+        fill: false,
+        backgroundColor: "rgba(75,192,192,0.4)",
+        borderColor: "rgba(75,192,192,1)",
+        borderWidth: 1,
+      },
+    ],
   };
-
+  // filter
   const filteredTransactions = transactionHistory.filter((transaction) => {
     const searchQuery = filters.searchQuery.toLowerCase();
     const paymentMatch =
@@ -187,6 +217,13 @@ const Wallet = () => {
             transactionDate.isAfter(today.startOf("week")) &&
             transactionDate.isBefore(today.endOf("week"));
           break;
+        case "lastWeek":
+          dateMatch =
+            transactionDate.isAfter(
+              today.subtract(1, "week").startOf("week")
+            ) &&
+            transactionDate.isBefore(today.subtract(1, "week").endOf("week"));
+          break;
         case "thisMonth":
           dateMatch =
             transactionDate.isAfter(today.startOf("month")) &&
@@ -195,6 +232,7 @@ const Wallet = () => {
         case "past90Days":
           dateMatch = transactionDate.isAfter(today.subtract(90, "day"));
           break;
+        // "custom" is not handled since it's disabled and shouldn't be selectable yet
         default:
           dateMatch = true;
       }
@@ -215,6 +253,42 @@ const Wallet = () => {
     startIndex,
     startIndex + rowsPerPage
   );
+
+  // handle
+  const handlePointClick = (event, elements) => {
+    if (elements.length > 0) {
+      const firstPoint = elements[0];
+      const clickedMonthIndex = firstPoint.index; // Get the month index (0 for January, 1 for February, etc.)
+
+      // Create a filter for the selected month and year
+      const filteredByMonth = transactionHistory.filter((transaction) => {
+        const transactionDate = dayjs(transaction.timestamp.toDate());
+        return (
+          transactionDate.year() === selectedYear &&
+          transactionDate.month() === clickedMonthIndex
+        );
+      });
+
+      // Apply the filtered transactions
+      setTransactionHistory(filteredByMonth);
+
+      // Update the dateRange filter to "custom"
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        dateRange: "custom",
+      }));
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+
+    setCurrentPage(1);
+  };
 
   const handleNextPage = () => {
     setCurrentPage((prevPage) =>
@@ -251,138 +325,6 @@ const Wallet = () => {
     }
   };
 
-  const handleExportClick = () => {
-    setDisplayedMonth(dayjs());
-    setIsModalOpen(true); // Open modal on export click
-  };
-
-  const handleCancel = () => {
-    setSelectedDates([]);
-    setStartDate(null);
-    setEndDate(null);
-    setIsModalOpen(false); // Close modal on cancel
-  };
-
-  const handleExport = () => {
-    let actualStartDate;
-    let actualEndDate;
-
-    if (startDate) {
-      actualStartDate = dayjs(startDate);
-    } else {
-      actualStartDate = dayjs();
-    }
-
-    if (endDate) {
-      actualEndDate = dayjs(endDate);
-    } else {
-      actualEndDate = actualStartDate;
-    }
-
-    // Ensure actualStartDate is before actualEndDate
-    if (actualStartDate.isAfter(actualEndDate)) {
-      [actualStartDate, actualEndDate] = [actualEndDate, actualStartDate];
-    }
-
-    const filteredTransactions = transactionHistory.filter((transaction) => {
-      const transactionDate = dayjs(transaction.timestamp.toDate());
-      return (
-        transactionDate.isSame(actualStartDate, "day") ||
-        (transactionDate.isAfter(actualStartDate, "day") &&
-          transactionDate.isBefore(actualEndDate, "day")) ||
-        transactionDate.isSame(actualEndDate, "day")
-      );
-    });
-
-    if (filteredTransactions.length === 0) {
-      alert("No transactions found in the selected date range.");
-      return;
-    }
-
-    const csvHeaders = [
-      { label: "Bus Driver Name", key: "bus_driver_name" },
-      { label: "Bus Number", key: "bus_number" },
-      { label: "Origin", key: "origin" },
-      { label: "Destination", key: "destination" },
-      { label: "Reference Number", key: "reference_number" },
-      { label: "Payment Type", key: "payment_type" },
-      { label: "Passenger Type", key: "passenger_type" },
-      { label: "Fare Amount", key: "fare_amount" },
-      { label: "Date", key: "date" },
-    ];
-
-    const csvData = filteredTransactions.map((transaction) => ({
-      bus_driver_name: transaction.bus_driver_name,
-      bus_number: transaction.bus_number,
-      origin: transaction.origin,
-      destination: transaction.destination,
-      reference_number: transaction.reference_number,
-      payment_type: transaction.payment_type,
-      passenger_type: transaction.passenger_type,
-      fare_amount: transaction.fare_amount,
-      date: formatDate(transaction.timestamp),
-    }));
-
-    setCsvData({ data: csvData, headers: csvHeaders });
-
-    setTimeout(() => {
-      if (csvLinkRef.current) {
-        csvLinkRef.current.link.click();
-      }
-
-      setSelectedDates([]);
-      setStartDate(null);
-      setEndDate(null);
-      setIsModalOpen(false);
-    }, 100);
-  };
-
-  const handleDateClick = (date) => {
-    if (!startDate) {
-      setStartDate(date);
-      setSelectedDates([date]);
-    } else if (!endDate) {
-      const newEndDate = date;
-
-      if (newEndDate.isBefore(startDate)) {
-        setEndDate(newEndDate);
-
-        const range = getDatesInRange(newEndDate, startDate);
-        setSelectedDates(range);
-      } else {
-        setEndDate(newEndDate);
-
-        const range = getDatesInRange(startDate, newEndDate);
-        setSelectedDates(range);
-      }
-    } else {
-      setStartDate(date);
-      setEndDate(null);
-      setSelectedDates([date]);
-    }
-  };
-
-  // Function to get all dates between two dates
-  const getDatesInRange = (start, end) => {
-    const dates = [];
-    let currentDate = dayjs(start).startOf("day");
-
-    while (
-      currentDate.isBefore(dayjs(end).startOf("day")) ||
-      currentDate.isSame(dayjs(end).startOf("day"))
-    ) {
-      dates.push(currentDate.toDate());
-      currentDate = currentDate.add(1, "day");
-    }
-
-    return dates;
-  };
-
-  const handleMonthChange = (newMonth) => {
-    // Update the displayed month when navigating
-    setDisplayedMonth(newMonth);
-  };
-
   return (
     <div className="p-6">
       {/* Top Row Stats */}
@@ -411,6 +353,69 @@ const Wallet = () => {
         <div className="bg-base-300 shadow-lg rounded-lg p-4">
           <div className="text-lg font-semibold">Total Buses</div>
           <div className="text-2xl truncate">{totalBuses}</div>
+        </div>
+      </div>
+
+      {/* Line Chart for Monthly Earnings */}
+      <div className="bg-base-300 shadow-lg rounded-lg p-4 mt-4">
+        <div className="flex justify-between items-center">
+          <div className="text-lg font-semibold">Monthly Earnings</div>
+          <div className="flex items-center">
+            <label
+              htmlFor="year-selector"
+              className="text-lg font-semibold mr-2"
+            >
+              Select Year:
+            </label>
+            <select
+              id="year-selector"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="select select-bordered"
+            >
+              {/* Year options from current year down to 2022 dynamically */}
+              {Array.from(
+                { length: dayjs().year() - 2022 },
+                (_, i) => dayjs().year() - i
+              ).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="relative h-72 w-full overflow-hidden">
+          {" "}
+          {/* Use DaisyUI utility classes */}
+          <Bar
+            data={barChartData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  min: 0,
+                  ticks: {
+                    stepSize: 200, // Customize the step size to 200
+                  },
+                },
+                x: {
+                  ticks: {
+                    autoSkip: true, // Automatically skip some ticks if there are too many
+                    maxTicksLimit: 12, // Limit the number of ticks on the x-axis
+                  },
+                },
+              },
+              plugins: {
+                legend: {
+                  display: false, // This will hide the legend
+                },
+              },
+              onClick: handlePointClick,
+            }}
+            height={300}
+          />
         </div>
       </div>
 
@@ -444,26 +449,45 @@ const Wallet = () => {
             <select
               name="dateRange"
               value={filters.dateRange}
-              onChange={handleFilterChange}
+              onChange={(e) => {
+                handleFilterChange(e);
+                if (e.target.value === "") {
+                  // Reset to show all transactions when "All Transactions" is selected
+                  fetchTransactionHistory();
+                }
+              }}
               className="select select-bordered w-48"
             >
               <option value="">All Transactions</option>
-              <option value="today">Today</option>
-              <option value="thisWeek">This Week</option>
-              <option value="thisMonth">This Month</option>
-              <option value="past90Days">Past 90 Days</option>
+              <option value="today" disabled={filters.dateRange === "custom"}>
+                Today
+              </option>
+              <option
+                value="thisWeek"
+                disabled={filters.dateRange === "custom"}
+              >
+                This Week
+              </option>
+              <option
+                value="lastWeek"
+                disabled={filters.dateRange === "custom"}
+              >
+                Last Week
+              </option>
+              <option value="custom" disabled>
+                Custom
+              </option>
             </select>
           </div>
 
-          <button className="btn btn-primary" onClick={handleExportClick}>
-            Export Transactions
-          </button>
+          <ExportTransactions transactionHistory={transactionHistory} />
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse bor">
             <thead>
               <tr>
+                <th className="border border-white px-4 py-2">Date</th>
                 <th className="border border-white px-4 py-2">
                   Bus Driver Name
                 </th>
@@ -474,61 +498,19 @@ const Wallet = () => {
                 </th>
                 <th className="border border-white px-4 py-2">Payment Type</th>
                 <th className="border border-white px-4 py-2">Fare Amount</th>
-                <th className="border border-white px-4 py-2">Date</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: rowsPerPage }).map((_, index) => (
-                  <tr key={index}>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                  </tr>
+                  <SkeletonTable key={index} /> // Skeleton
                 ))
               ) : paginatedTransactions.length > 0 ? (
                 paginatedTransactions.map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td className="border border-white px-4 py-2">
-                      {transaction.bus_driver_name}
-                    </td>
-                    <td className="border border-white text-center px-4 py-2">
-                      {transaction.bus_number}
-                    </td>
-                    <td className="border border-white text-center px-4 py-2">
-                      {transaction.origin} - {transaction.destination}
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      {transaction.reference_number}
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      {transaction.payment_type}
-                    </td>
-                    <td className="border border-white text-end px-4 py-2">
-                      {formatNumber(transaction.fare_amount)}
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      {formatDate(transaction.timestamp)}
-                    </td>
-                  </tr>
+                  <PaginatedTable
+                    key={transaction.id}
+                    transaction={transaction}
+                  /> // Data
                 ))
               ) : (
                 <tr>
@@ -543,14 +525,13 @@ const Wallet = () => {
                 filters.dateRange) ? (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="6"
                     className="border border-white text-end px-4 py-2 font-bold"
                   ></td>
                   <td className="border border-white text-end px-4 py-2">
                     <span className="font-bold">Total:</span>{" "}
                     {formatNumber(totalFare)}
                   </td>
-                  <td className="border border-white px-4 py-2"></td>
                 </tr>
               ) : null}
             </tbody>
@@ -623,140 +604,6 @@ const Wallet = () => {
             </button>
           </div>
         </div>
-      )}
-      {isModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md w-3/4">
-            <h2 className="font-bold text-lg">Export Transaction Data</h2>
-            <Divider
-              sx={{ marginY: 2 }}
-              className="bg-neutral-content opacity-50"
-            />
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DateCalendar
-                value={startDate || null}
-                onChange={handleDateClick}
-                onMonthChange={handleMonthChange}
-                slots={{
-                  day: ({ day, selectedDay, hoveredDay, ...other }) => {
-                    const isSelected = selectedDates.some((selectedDate) =>
-                      dayjs(selectedDate).isSame(day, "day")
-                    );
-
-                    const isToday = day.isSame(dayjs(), "day");
-                    const isDisabled = day.isAfter(dayjs().endOf("day"));
-
-                    const isInCurrentMonth = day.isSame(
-                      displayedMonth,
-                      "month"
-                    );
-
-                    const {
-                      onDaySelect,
-                      today,
-                      showDaysOutsideCurrentMonth,
-                      isAnimating,
-                      disableHighlightToday,
-                      outsideCurrentMonth,
-                      isFirstVisibleCell,
-                      isLastVisibleCell,
-                      ...dayProps
-                    } = other;
-
-                    return (
-                      <div
-                        onClick={() => !isDisabled && handleDateClick(day)}
-                        className={`
-                          ${
-                            isSelected
-                              ? "bg-primary text-base-300"
-                              : isToday && !startDate
-                              ? "bg-primary text-base-300"
-                              : ""
-                          }`}
-                        style={{
-                          borderRadius: "50%",
-                          height: "42px",
-                          width: "42px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: isDisabled ? "not-allowed" : "pointer",
-                          opacity: isDisabled || !isInCurrentMonth ? 0.5 : 1,
-                        }}
-                        {...dayProps}
-                      >
-                        {day.date()}
-                      </div>
-                    );
-                  },
-                }}
-                slotProps={{
-                  day: () => ({
-                    selectedDay: selectedDates,
-                  }),
-                }}
-                sx={{
-                  width: "100%", // Full width
-                  maxWidth: "600px", // Set the maximum width for the calendar
-                  maxHeight: "350px",
-                  minHeight: "336px",
-                  height: "350px",
-                  "& .css-1n1xn3x-MuiPickersSlideTransition-root-MuiDayCalendar-slideTransition":
-                    {
-                      overflow: "visible",
-                    },
-                  "& .MuiTypography-root": {
-                    fontSize: ".75rem",
-                    marginRight: "8px",
-                    marginLeft: "8px",
-                    color: "gray",
-                  },
-                  "& .MuiIconButton-root": {
-                    color: "gray", // Change arrow icon color to gray
-                  },
-                  "& .MuiDayCalendar-weekContainer": {
-                    gap: "10px",
-                  },
-                }}
-              />
-            </LocalizationProvider>
-            <Divider
-              sx={{ marginY: 2 }}
-              className="bg-neutral-content opacity-50"
-            />
-            <div className="modal-action">
-              <button className="btn" onClick={handleCancel}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleExport}>
-                Export
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CSV Export Link */}
-      {csvData.data && (
-        <CSVLink
-          headers={csvData.headers}
-          data={csvData.data}
-          filename={
-            startDate && endDate
-              ? startDate > endDate
-                ? `compass_transactions_${endDate?.format(
-                    "YYYY-MM-DD"
-                  )}-${startDate?.format("YYYY-MM-DD")}.csv`
-                : `compass_transactions_${startDate?.format(
-                    "YYYY-MM-DD"
-                  )}-${endDate?.format("YYYY-MM-DD")}.csv`
-              : `compass_transactions_${dayjs().format("YYYY-MM-DD")}.csv`
-          }
-          className="hidden"
-          ref={csvLinkRef} // Reference to the CSVLink for programmatic click
-          target="_blank"
-        />
       )}
     </div>
   );
