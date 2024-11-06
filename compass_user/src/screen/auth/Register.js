@@ -25,6 +25,7 @@ import TermsModal from '../../components/terms/TermsModal';
 const Register = props => {
   const {navigation} = props;
   const [email, setEmail] = useState('');
+  const [fullName, setFullNamme] = useState('');
 
   //loading
   const [loading, setLoading] = useState(false);
@@ -95,8 +96,8 @@ const Register = props => {
 
     setLoading(true);
     try {
-      if (!email || !password || !confirmPassword) {
-        throw new Error('Email and Password must not be empty.');
+      if (!fullName || !email || !password || !confirmPassword) {
+        throw new Error('Full Name, Email and Password must not be empty.');
       }
 
       if (!isPasswordValid) {
@@ -125,6 +126,7 @@ const Register = props => {
       // create user document
 
       await firestore().collection('users').doc(user.uid).set({
+        fullName: fullName,
         username: username,
         timestamp: firestore.FieldValue.serverTimestamp(),
       });
@@ -176,6 +178,18 @@ const Register = props => {
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>
+            Full Name <Text style={styles.required}>*</Text>
+          </Text>
+          <AuthInput
+            placeholder="Juan Dela Cruz"
+            value={fullName}
+            setValue={setFullNamme}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordInputRef.current?.focus()}
+          />
+        </View>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>
             Email <Text style={styles.required}>*</Text>
@@ -271,9 +285,13 @@ const Register = props => {
               size={20}
             />
           </View>
-          <Text>I Agree to the </Text>
+          <Text>Do you agree to </Text>
           <TouchableOpacity onPress={() => setShowTermsModal(true)}>
-            <Text style={styles.termsText}>Terms and Conditions</Text>
+            <Text style={styles.termsText}>Terms</Text>
+          </TouchableOpacity>
+          <Text> and </Text>
+          <TouchableOpacity onPress={() => setShowTermsModal(true)}>
+            <Text style={styles.termsText}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
 
@@ -378,9 +396,15 @@ const styles = StyleSheet.create({
   },
 
   termsContainer: {
-    flexDirection: 'row', // Align items in a row
-    alignItems: 'center', // Center items vertically
+    flexDirection: 'row', // Align the items in a row
+    alignItems: 'center', // Center the items vertically
     marginTop: 10,
+  },
+
+  termsText: {
+    color: '#176B87',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline', // Optional: underline the links for better clarity
   },
 
   checkboxContainer: {
