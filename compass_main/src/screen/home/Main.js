@@ -46,7 +46,7 @@ const Main = props => {
     // Fetch initial location
     Geolocation.getCurrentPosition(
       position => {
-        const {latitude, longitude} = position.coords;
+        const {latitude, longitude, speed} = position.coords;
         setCurrentLocation({latitude, longitude});
         setInitialRegion({
           latitude,
@@ -55,8 +55,11 @@ const Main = props => {
           longitudeDelta: 0.01,
         });
 
+        const speedInKmh = speed * 3.6; // m/s to km/h
+        console.log('Initial Speed: ', speedInKmh, 'km/h');
+
         // Send initial location to Firestore
-        updateBusLocation(latitude, longitude);
+        updateBusLocation(latitude, longitude, speedInKmh);
       },
       error => {
         console.error(error);
@@ -66,29 +69,32 @@ const Main = props => {
 
     fetchSeatCount();
 
-    // Set interval to update location every 10 seconds
-    const intervalId = setInterval(() => {
-      Geolocation.getCurrentPosition(
-        position => {
-          const {latitude, longitude} = position.coords;
-          setCurrentLocation({latitude, longitude});
+    // Set interval to update location every 100 meter
+    const watchId = Geolocation.watchPosition(
+      position => {
+        const {latitude, longitude, speed} = position.coords;
+        setCurrentLocation({latitude, longitude});
 
-          // Send updated location to Firestore
-          updateBusLocation(latitude, longitude);
-        },
-        error => {
-          console.error(error);
-        },
-        {enableHighAccuracy: true},
-      );
-    }, 15000); // 15000 milliseconds = 15 seconds
+        // Send updated location to Firestore
+        const speedInKmh = speed * 3.6; // m/s to km/h
+        console.log('Current Speed: ', speedInKmh, 'km/h');
+        updateBusLocation(latitude, longitude, speedInKmh);
+      },
+      error => {
+        console.error(error);
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 100, // Trigger updates only if the device moves more than 10 meters
+      },
+    );
 
     // Cleanup interval on unmount
-    return () => clearInterval(intervalId);
+    return () => Geolocation.clearWatch(watchId);
   }, []); // Empty dependency array to run only on mount
 
   // Function to update bus location in Firestore
-  const updateBusLocation = async (latitude, longitude) => {
+  const updateBusLocation = async (latitude, longitude, speed) => {
     try {
       const busDocRef = firestore().collection('busLocation').doc(user);
 
@@ -108,6 +114,7 @@ const Main = props => {
         ).data();
         await busDocRef.set({
           coordinates: new firestore.GeoPoint(latitude, longitude),
+          speed,
           timestamp: firestore.FieldValue.serverTimestamp(),
           route_id: busInfo.route_id,
           fare_data: fareData,
@@ -115,6 +122,7 @@ const Main = props => {
       } else {
         await busDocRef.update({
           coordinates: new firestore.GeoPoint(latitude, longitude),
+          speed,
           timestamp: firestore.FieldValue.serverTimestamp(),
           fare_data: fareData,
         });
