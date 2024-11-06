@@ -1,9 +1,43 @@
-const calculateETA = (currentLocation, busLocation) => {
-  const distance = calculateDistance(currentLocation, busLocation); // Distance in meters
-  const speed = (40 * 1000) / 3600; // Assume average speed of 40 km/h in meters per second
-  const etaInSeconds = distance / speed; // ETA in seconds
-  const etaInMinutes = Math.round(etaInSeconds / 60); // ETA in minutes
-  return etaInMinutes;
+import Config from 'react-native-config';
+
+const calculateETAWithDirectionsAPI = async (
+  currentLocation,
+  busLocation,
+  speed,
+) => {
+  try {
+    // Check if bus speed is 0 and handle accordingly
+    if (speed === 0) {
+      return 'Bus is not moving';
+    }
+
+    const apiKey = Config.GMP_KEY; // Your Google Maps API key
+    const origin = `${currentLocation.latitude},${currentLocation.longitude}`;
+    const destination = `${busLocation.latitude},${busLocation.longitude}`;
+
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${apiKey}`,
+    );
+
+    const data = await response.json();
+
+    if (data.status === 'OK' && data.routes.length > 0) {
+      const distance = data.routes[0].legs[0].distance.value;
+
+      const speedInMetersPerSecond = (speed * 1000) / 3600;
+
+      const etaInSeconds = distance / speedInMetersPerSecond;
+
+      const etaInMinutes = Math.round(etaInSeconds / 60);
+
+      return etaInMinutes;
+    } else {
+      throw new Error('Unable to calculate ETA using Directions API');
+    }
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 };
 
 // limit distance
@@ -35,4 +69,4 @@ const calculateDistance = (coord1, coord2) => {
   return distance;
 };
 
-export {calculateDistance, calculateETA};
+export {calculateDistance, calculateETAWithDirectionsAPI};

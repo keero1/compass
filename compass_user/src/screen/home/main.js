@@ -2,7 +2,6 @@ import React, {useRef, useEffect, useState} from 'react';
 import {
   StyleSheet,
   View,
-  Dimensions,
   Alert,
   Text,
   Modal,
@@ -10,8 +9,6 @@ import {
   Button,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-
-import {Svg, Image as ImageSvg, Defs, ClipPath, Circle} from 'react-native-svg';
 
 // ROUTES
 
@@ -22,12 +19,7 @@ import IMAGES from '../../constants/images';
 import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
 
 // MAP
-import MapView, {
-  PROVIDER_GOOGLE,
-  Marker,
-  Callout,
-  Polyline,
-} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {PROVIDER_GOOGLE, Marker, Polyline} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 // firebase
@@ -40,7 +32,8 @@ import FooterComponent from './FooterComponent';
 
 // utils
 
-import {calculateDistance, calculateETA} from './MapUtils';
+import {calculateDistance, calculateETAWithDirectionsAPI} from './MapUtils';
+import CustomCallout from './CustomCallout';
 
 const Main = props => {
   const {navigation} = props;
@@ -52,6 +45,9 @@ const Main = props => {
 
   const [routes, setRoutes] = useState([]);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
+
+  // eta
+  const [eta, setEta] = useState(null);
 
   // marker
   const [marker, setMarker] = useState(null);
@@ -156,6 +152,7 @@ const Main = props => {
               timestamp: data.timestamp,
               seat_count: busData.seat_count,
               profile_picture: profilePicture,
+              speed: data.speed,
             },
           };
 
@@ -332,6 +329,7 @@ const Main = props => {
 
     if (routeCoordinates.length > 0) {
       setRouteCoordinates([]);
+      setEta(null);
       return;
     }
 
@@ -430,9 +428,10 @@ const Main = props => {
     }
   };
 
-  const onBusMarkerPressed = async routeId => {
+  const onBusMarkerPressed = async (busX, index) => {
     try {
-      const routeData = await fetchRouteData(routeId);
+      console.log('Selected routeId:', busX.details.route_id);
+      const routeData = await fetchRouteData(busX.details.route_id);
 
       const coordinates = routeData.keypoints.map(point => [
         point.latitude,
@@ -441,21 +440,28 @@ const Main = props => {
 
       const route = await getRoute(coordinates);
 
-      setRouteCoordinates(route);
-
       if (currentLocation && busMarkers.length > 0) {
-        const bus = busMarkers.find(bus => bus.details.route_id === routeId);
+        const bus = busMarkers.find(bus => bus.id === busX.id);
 
-        if (bus) {
-          const distance = calculateDistance(currentLocation, bus.coordinate); // Distance in meters
-          const speed = (40 * 1000) / 3600; // Assume average speed of 40 km/h in meters per second
-          const etaInSeconds = distance / speed; // ETA in seconds
-          const etaInMinutes = Math.round(etaInSeconds / 60); // ETA in minutes
+        console.log('Selected bus:', bus.id);
 
-          // You can now use `etaInMinutes` to display the ETA in the callout
-          console.log(`ETA: ${etaInMinutes} minutes`);
+        if (bus.details.speed === 0) {
+          setEta(null);
+        } else {
+          const etaInMinutes = await calculateETAWithDirectionsAPI(
+            currentLocation,
+            bus.coordinate,
+            bus.details.speed,
+          );
+          setEta(etaInMinutes);
         }
       }
+
+      setTimeout(() => {
+        markerRefs.current[index].showCallout();
+      });
+
+      setRouteCoordinates(route);
     } catch (error) {
       console.error('Error processing route:', error);
     }
@@ -523,61 +529,15 @@ const Main = props => {
                 ref={el => (markerRefs.current[index] = el)}
                 key={`${bus.id}-${index}`} // Add index for extra uniqueness
                 coordinate={bus.coordinate}
-                onPress={() => onBusMarkerPressed(bus.details.route_id)}
-                image={{uri: busIcon}}
-                pinColor="blue">
-                <Callout
-                  style={{alignItems: 'center'}}
-                  onPress={() => {
-                    navigation.navigate(ROUTES.ADVANCEPAYMENT, {
-                      busId: bus.id,
-                      routeId: bus.details.route_id,
-                      currentCoordinates: currentLocation,
-                    });
-                  }}>
-                  <Svg width={120} height={120}>
-                    <Defs>
-                      <ClipPath id="clip">
-                        <Circle cx="50%" cy="50%" r="40%" />
-                      </ClipPath>
-                    </Defs>
-                    <ImageSvg
-                      width={120}
-                      height={120}
-                      preserveAspectRatio="xMidYMid slice"
-                      href={bus.details.profile_picture}
-                      clipPath="url(#clip)"
-                    />
-                  </Svg>
-                  <Text>Driver Name: {bus.details.name}</Text>
-                  {bus.details.conductor_name && (
-                    <Text>Conductor Name: {bus.details.conductor_name}</Text>
-                  )}
-                  <Text>License Plate: {bus.details.license_plate}</Text>
-                  <Text>
-                    Last Update:{' '}
-                    {bus.details.timestamp.toDate().toLocaleString()}
-                  </Text>
-                  <Text>Seat Slots: {bus.details.seat_count} / 56</Text>
-                  {/* Add the ETA display */}
-                  {currentLocation && (
-                    <Text>
-                      ETA: {calculateETA(currentLocation, bus.coordinate)}{' '}
-                      minutes
-                    </Text>
-                  )}
-
-                  <View
-                    style={{
-                      backgroundColor: '#176B87',
-                      padding: 10,
-                      borderRadius: 5,
-                      marginVertical: 10,
-                      alignItems: 'center',
-                    }}>
-                    <Text style={{color: 'white'}}>Pay in Advance</Text>
-                  </View>
-                </Callout>
+                onPress={() => onBusMarkerPressed(bus, index)}
+                image={{uri: busIcon}}>
+                <CustomCallout
+                  navigation={navigation}
+                  routes={ROUTES.ADVANCEPAYMENT}
+                  currentLocation={currentLocation}
+                  eta={eta}
+                  bus={bus}
+                />
               </Marker>
             );
           })}
@@ -676,25 +636,10 @@ const Main = props => {
 
 export default Main;
 
-const screenHeight = Dimensions.get('window').height;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F4F4FB',
-  },
-  //Callout
-  imageWrapperAndroid: {
-    height: 200,
-    flex: 1,
-    marginTop: -85,
-    width: 330,
-    alignContent: 'center',
-    alignItems: 'center',
-  },
-  imageAndroid: {
-    height: 100,
-    width: 180,
   },
 
   mapContainer: {
