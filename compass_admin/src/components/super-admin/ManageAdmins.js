@@ -352,7 +352,7 @@ const ManageAdmin = () => {
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="btn"
+                  className={`${isSaving ? "btn-disabled" : "btn"}`}
                 >
                   Cancel
                 </button>
