@@ -134,6 +134,7 @@ const ManageAdmin = () => {
         alert("Admin Account successfully created.");
 
         setIsModalOpen(false);
+        fetchAdminData();
       } else {
         const data = await response.json();
         alert(`Error: ${data.error}`);

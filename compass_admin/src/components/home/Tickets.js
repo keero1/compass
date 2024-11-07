@@ -113,6 +113,17 @@ const Tickets = () => {
 
   const handleReply = async () => {
     if (!selectedTicket) return;
+
+    try {
+      const ticketRef = doc(db, "tickets", selectedTicket.ticket_id);
+      await updateDoc(ticketRef, {
+        status: "pending", // Update ticket status
+      });
+      fetchTicketData(); // Refresh ticket data
+      closeEditModal();
+    } catch (error) {
+      console.error("Error pending ticket:", error);
+    }
   };
 
   const handleCloseTicket = async () => {
@@ -168,6 +179,7 @@ const Tickets = () => {
           >
             <option value="all">All Status</option>
             <option value="open">Open</option>
+            <option value="pending">Pending</option>
             <option value="closed">Closed</option>
           </select>
         </div>
@@ -288,11 +300,11 @@ const Tickets = () => {
             <div className="modal-action">
               {selectedTicket.status === "Open" && (
                 <button onClick={handleReply} className="btn btn-primary">
-                  Reply
+                  Pending
                 </button>
               )}
               {/* Conditionally render the Close Ticket button */}
-              {selectedTicket.status !== "closed" && (
+              {selectedTicket.status === "pending" && (
                 <button onClick={handleCloseTicket} className="btn btn-primary">
                   Close Ticket
                 </button>
