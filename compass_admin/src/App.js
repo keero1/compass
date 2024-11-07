@@ -49,13 +49,13 @@ function App() {
           <Route
             path="/d/user"
             element={
-              <Download fileUrl="https://drive.google.com/file/d/1v-03FRWOPjRywHppDVDidRHvOnqFUZ5v/view?usp=drive_link" />
+              <Download fileUrl="https://drive.google.com/file/d/17ZV-qSZt5yfqvYjtopn_IloirRwzozmB/view?usp=sharing" />
             }
           />
           <Route
             path="/d/bus-driver"
             element={
-              <Download fileUrl="https://drive.google.com/file/d/1KsJArvPs2Twd_tWbJHVbu99w8BukMx2o/view?usp=drive_link" />
+              <Download fileUrl="https://drive.google.com/file/d/1oWoiX92fzftPTD7_v09UtNXWPvAg1we9/view?usp=sharing" />
             }
           />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
