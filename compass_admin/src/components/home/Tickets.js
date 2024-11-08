@@ -17,8 +17,11 @@ const Tickets = () => {
   });
 
   // modal
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+
+  const [modalType, setModalType] = useState("view");
+  const [replyContent, setReplyContent] = useState("");
 
   const fetchTicketData = useCallback(async () => {
     try {
@@ -99,30 +102,52 @@ const Tickets = () => {
     startIndex + rowsPerPage
   );
 
-  const openEditModal = (ticket) => {
+  const openModal = (ticket, type = "view") => {
     setSelectedTicket(ticket);
-    setIsEditModalOpen(true);
+    setModalType(type);
+    setIsModalOpen(true);
   };
 
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
     setSelectedTicket(null);
+    setReplyContent(""); // Clear the reply content
   };
 
   // handle
 
-  const handleReply = async () => {
+  const handleSendReply = async () => {
     if (!selectedTicket) return;
 
+    console.log("Sending reply..");
+
     try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subject: selectedTicket.subject,
+          content: replyContent,
+          toEmail: selectedTicket.email, // Send email to the customer
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send email");
+      }
+
+      // Update the ticket status to "pending" after sending the email
       const ticketRef = doc(db, "tickets", selectedTicket.ticket_id);
       await updateDoc(ticketRef, {
-        status: "pending", // Update ticket status
+        status: "pending", // Update status to pending
       });
+
       fetchTicketData(); // Refresh ticket data
-      closeEditModal();
+      closeModal(); // Close the modal after the action
     } catch (error) {
-      console.error("Error pending ticket:", error);
+      console.error("Error replying to the ticket:", error);
     }
   };
 
@@ -135,7 +160,7 @@ const Tickets = () => {
         status: "closed", // Update ticket status
       });
       fetchTicketData(); // Refresh ticket data
-      closeEditModal();
+      closeModal();
     } catch (error) {
       console.error("Error closing ticket:", error);
     }
@@ -234,7 +259,7 @@ const Tickets = () => {
                   <td className="text-lg">{ticket.date}</td>
                   <td>
                     <button
-                      onClick={() => openEditModal(ticket)}
+                      onClick={() => openModal(ticket)}
                       className="btn btn-ghost btn-xs"
                     >
                       View
@@ -279,40 +304,59 @@ const Tickets = () => {
         </div>
       )}
 
-      {isEditModalOpen && selectedTicket && (
+      {isModalOpen && selectedTicket && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Edit Ticket</h3>
-            <div className="mb-4">
-              <p>
-                <strong>Subject:</strong> {selectedTicket.subject}
-              </p>
-              <p>
-                <strong>Description:</strong> {selectedTicket.description}
-              </p>
-              <p>
-                <strong>Email:</strong> {selectedTicket.email}
-              </p>
-              <p>
-                <strong>Status:</strong> {selectedTicket.status}
-              </p>
-            </div>
-            <div className="modal-action">
-              {selectedTicket.status === "Open" && (
-                <button onClick={handleReply} className="btn btn-primary">
-                  Pending
-                </button>
-              )}
-              {/* Conditionally render the Close Ticket button */}
-              {selectedTicket.status === "pending" && (
-                <button onClick={handleCloseTicket} className="btn btn-primary">
-                  Close Ticket
-                </button>
-              )}
-              <button onClick={closeEditModal} className="btn">
-                Cancel
-              </button>
-            </div>
+            {modalType === "view" ? (
+              <>
+                <h3 className="font-bold text-lg mb-4">View Ticket</h3>
+                <div className="mb-4">
+                  <p>
+                    <strong>Subject:</strong> {selectedTicket.subject}
+                  </p>
+                  <p>
+                    <strong>Description:</strong> {selectedTicket.description}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {selectedTicket.email}
+                  </p>
+                  <p>
+                    <strong>Status:</strong> {selectedTicket.status}
+                  </p>
+                </div>
+                <div className="modal-action">
+                  {selectedTicket.status === "Open" && (
+                    <button
+                      onClick={() => openModal(selectedTicket, "reply")}
+                      className="btn btn-primary"
+                    >
+                      Reply
+                    </button>
+                  )}
+                  <button className="btn" onClick={closeModal}>
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : modalType === "reply" ? (
+              <>
+                <h2 className="text-2xl font-bold mb-5">Reply to Ticket</h2>
+                <textarea
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  className="textarea textarea-bordered w-full"
+                  placeholder="Write your reply here"
+                />
+                <div className="modal-action">
+                  <button className="btn btn-primary" onClick={handleSendReply}>
+                    Send Reply
+                  </button>
+                  <button className="btn" onClick={closeModal}>
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       )}
