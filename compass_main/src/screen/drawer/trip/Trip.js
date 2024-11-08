@@ -240,8 +240,19 @@ const Trip = props => {
             try {
               await firestore().collection('buses').doc(userId).update({
                 conductor_name: firestore.FieldValue.delete(),
+                conductor_id: firestore.FieldValue.delete(),
               });
-              setConductorNameFromFirestore('None'); // Reset state
+              const busDataString = await AsyncStorage.getItem('bus-data');
+              if (busDataString) {
+                const busData = JSON.parse(busDataString);
+
+                delete busData.conductor_name;
+                delete busData.conductor_id;
+
+                await AsyncStorage.setItem('bus-data', JSON.stringify(busData));
+              }
+
+              setConductorNameFromFirestore('None'); 
               Alert.alert(
                 'Sign Out Successful',
                 `${conductorNameFromFirestore} has been signed out.`,
