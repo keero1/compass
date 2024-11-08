@@ -193,10 +193,11 @@ const ManageConductor = () => {
 
     try {
       // Transfer to deleted_conductors
-      const deletedConductorsCollection = collection(db, "deleted_conductors");
+      const deletedConductorsCollection = collection(db, "deletedData");
       await addDoc(deletedConductorsCollection, {
-        ...selectedConductor, // Transfer all fields or select specific ones
-        deletedAt: new Date().toISOString(), // Optional: timestamp of deletion
+        ...selectedConductor,
+        deleted_at: new Date(),
+        account_type: "conductor",
       });
 
       // Delete from conductors collection

@@ -48,7 +48,7 @@ const AdminLogs = () => {
       );
 
       // Sort the fetched logs by timestamp in descending order
-      fetchedLogs.sort((a, b) => b.timestamp - a.timestamp);
+      fetchedLogs.sort((a, b) => a.timestamp - b.timestamp);
 
       // Convert timestamp to local string format after sorting
       const formattedLogs = fetchedLogs.map((log) => ({

@@ -137,14 +137,16 @@ const ManageDriver = () => {
     if (!selectedBus) return;
 
     try {
-      // Prepare data to store in deletedData
-      const deletedData = {
-        ...selectedBus,
-        deleted_at: new Date().toISOString(), // Timestamp for deletion
+      const { id, ...deletedData } = selectedBus;
+
+      const dataToDelete = {
+        ...deletedData,
+        deleted_at: new Date(),
+        account_type: "driver",
       };
 
       // Store deleted bus in the deletedData collection
-      await setDoc(doc(db, "deleted_drivers", busId), deletedData);
+      await setDoc(doc(db, "deleted_Data", busId), dataToDelete);
 
       // delete the document
       await deleteDoc(doc(db, "buses", busId));

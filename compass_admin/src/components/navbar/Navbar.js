@@ -18,6 +18,7 @@ import {
   NewspaperIcon,
   UserGroupIcon,
   TicketIcon,
+  TrashIcon,
 } from "@heroicons/react/24/solid";
 
 import NotificationDropdown from "./NotificationDropdown";
@@ -292,6 +293,12 @@ const Navbar = () => {
             <Link to="tickets">
               <TicketIcon className="size-6" />
               Support Tickets
+            </Link>
+          </li>
+          <li>
+            <Link to="deleted-data">
+              <TrashIcon className="size-6" />
+              Deleted Accounts
             </Link>
           </li>
           {/* Super Admin Controls */}

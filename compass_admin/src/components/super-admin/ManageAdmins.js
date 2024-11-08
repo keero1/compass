@@ -176,12 +176,17 @@ const ManageAdmin = () => {
     if (!selectedAdmin) return;
 
     try {
-      const deletedData = {
-        ...selectedAdmin,
-        deleted_at: new Date().toISOString(),
+      const { id, ...deletedData } = selectedAdmin;
+
+      const dataToDelete = {
+        ...deletedData,
+        deleted_at: new Date(),
+        account_type: "admin", // Or use dynamic account_type based on your logic
       };
 
-      await setDoc(doc(db, "deleted_admin", adminId), deletedData);
+      console.log(dataToDelete);
+
+      await setDoc(doc(db, "deletedData", adminId), dataToDelete);
 
       await deleteDoc(doc(db, "company", adminId));
 
