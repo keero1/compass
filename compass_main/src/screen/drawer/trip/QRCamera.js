@@ -20,8 +20,6 @@ import {Svg, Defs, Rect, Mask, Line} from 'react-native-svg';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
-import {ROUTES} from '../../../constants/';
-
 const QRCamera = ({navigation}) => {
   const device = useCameraDevice('back');
   const [cameraPermissionStatus, setCameraPermissionStatus] =
@@ -309,7 +307,10 @@ const QRCamera = ({navigation}) => {
                   Conductor Name: {conductorDetails.name}
                 </Text>
                 <Text style={styles.modalText}>
-                  Conductor ID: {conductorDetails.id}
+                  Conductor User ID: {conductorDetails.user_id}
+                </Text>
+                <Text style={styles.modalText}>
+                  Conductor Phone Number: {conductorDetails.phone_number}
                 </Text>
               </>
             )}
@@ -317,7 +318,7 @@ const QRCamera = ({navigation}) => {
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={bindConductorToBus}>
-                <Text style={styles.modalButtonText}>Bind to Bus</Text>
+                <Text style={styles.modalButtonText}>Sign in Conductor</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalButton}

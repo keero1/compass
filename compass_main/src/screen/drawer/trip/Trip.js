@@ -15,8 +15,12 @@ import auth from '@react-native-firebase/auth';
 
 import {ROUTES} from '../../../constants';
 
+import {useIsFocused} from '@react-navigation/native';
+
 const Trip = props => {
   const {navigation} = props;
+
+  const focus = useIsFocused();
 
   const [currentRoute, setCurrentRoute] = useState('Loading...');
   const [kmPlace, setKmPlace] = useState([]);
@@ -26,7 +30,6 @@ const Trip = props => {
   // conductor
   const [conductorNameFromFirestore, setConductorNameFromFirestore] =
     useState('None');
-  // modal
 
   const [transactions, setTransactions] = useState([]);
 
@@ -56,27 +59,32 @@ const Trip = props => {
   }, []);
 
   useEffect(() => {
-    const fetchConductorName = async () => {
-      try {
-        const busDoc = await firestore().collection('buses').doc(userId).get();
-        if (busDoc.exists) {
-          const data = busDoc.data();
-          if (data.conductor_name) {
-            setConductorNameFromFirestore(data.conductor_name);
+    if (focus) {
+      const fetchConductorName = async () => {
+        try {
+          const busDoc = await firestore()
+            .collection('buses')
+            .doc(userId)
+            .get();
+          if (busDoc.exists) {
+            const data = busDoc.data();
+            if (data.conductor_name) {
+              setConductorNameFromFirestore(data.conductor_name);
+            } else {
+              setConductorNameFromFirestore('None');
+            }
           } else {
             setConductorNameFromFirestore('None');
           }
-        } else {
+        } catch (error) {
+          console.error('Error fetching conductor name: ', error);
           setConductorNameFromFirestore('None');
         }
-      } catch (error) {
-        console.error('Error fetching conductor name: ', error);
-        setConductorNameFromFirestore('None');
-      }
-    };
+      };
 
-    fetchConductorName();
-  }, [userId]);
+      fetchConductorName();
+    }
+  }, [focus, userId]);
 
   const fetchFareData = async () => {
     try {
