@@ -279,7 +279,7 @@ function PrivacyPolicy() {
 
               <p className="mt-3">
                 To exercise your rights, please contact us at
-                keero.dev@gmail.com
+                johnjoshua.dev@gmail.com
               </p>
             </div>
 

@@ -265,7 +265,7 @@ function TermsOfUsePage() {
               <span className="before:content-['12.1'] before:mr-1 font-semibold">
                 Email: {""}
               </span>
-              keero.dev@gmail.com
+              johnjoshua.dev@gmail.com
             </p>
             <p>
               <span className="before:content-['12.2'] before:mr-1 font-semibold">
