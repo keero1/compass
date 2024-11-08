@@ -78,7 +78,9 @@ const ManageBus = () => {
     setIsEditModalOpen(!isEditModalOpen);
   };
 
-  const handleAddBus = async () => {
+  const handleAddBus = async (e) => {
+    e.preventDefault();
+
     setLoading(true);
     const busNumber = getNextBusNumber();
     const newBus = {
@@ -107,7 +109,9 @@ const ManageBus = () => {
     toggleEditModal(); // Open edit modal
   };
 
-  const handleUpdateBus = async () => {
+  const handleUpdateBus = async (e) => {
+    e.preventDefault();
+
     setLoading(true);
     const updatedBus = {
       license_number: newLicensePlate,
@@ -261,7 +265,7 @@ const ManageBus = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
             <h2 className="text-2xl mb-4">Add New Bus</h2>
-            <form>
+            <form onSubmit={handleAddBus}>
               <div className="mb-4">
                 <label className="block text-lg">License Plate</label>
                 <input
@@ -285,9 +289,8 @@ const ManageBus = () => {
               </div>
               <div className="flex justify-end">
                 <button
-                  type="button"
+                  type="submit"
                   className="btn btn-primary"
-                  onClick={handleAddBus}
                   disabled={loading}
                 >
                   {loading ? "Saving..." : "Add Bus"}
@@ -311,7 +314,7 @@ const ManageBus = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
             <h2 className="text-2xl mb-4">Edit Bus</h2>
-            <form>
+            <form onSubmit={handleUpdateBus}>
               <div className="mb-4">
                 <label className="block text-lg">License Plate</label>
                 <input
@@ -335,9 +338,8 @@ const ManageBus = () => {
               </div>
               <div className="flex justify-end">
                 <button
-                  type="button"
+                  type="submit"
                   className="btn btn-primary"
-                  onClick={handleUpdateBus}
                   disabled={loading}
                 >
                   {loading ? "Updating..." : "Update Bus"}
