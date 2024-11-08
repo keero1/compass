@@ -166,6 +166,7 @@ const Deleted = () => {
       } else if (account_type === "driver") {
         collectionRef = collection(db, "buses");
       } else if (account_type === "conductor") {
+        delete dataToSave.email;
         collectionRef = collection(db, "conductors");
       }
 
