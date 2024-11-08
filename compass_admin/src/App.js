@@ -40,12 +40,19 @@ import Download from "./components/download/Download";
 import Tickets from "./components/home/Tickets";
 import ManageAdmin from "./components/super-admin/ManageAdmins";
 import Deleted from "./components/home/Deleted";
+import ConductorPage from "./components/conductor/ConductorPage";
+import ConductorDashboard from "./components/conductor/ConductorDashboard";
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/conductor" element={<ConductorPage />} />
+          <Route
+            path="/conductor/dashboard/:conductorId"
+            element={<ConductorDashboard />}
+          />
           <Route path="/download-app" element={<DownloadPage />} />
           <Route
             path="/d/user"
