@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { db } from "../../firebase/firebase";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 
+import generateEmailContent from "../ticket/TicketUtils";
+
 const ticketsCollection = collection(db, "tickets");
 
 const Tickets = () => {
@@ -9,6 +11,8 @@ const Tickets = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
+
+  const [isSaving, setIsSaving] = useState(false);
 
   const [filters, setFilters] = useState({
     searchQuery: "",
@@ -121,6 +125,8 @@ const Tickets = () => {
 
     console.log("Sending reply..");
 
+    setIsSaving(true);
+
     try {
       const response = await fetch(
         "https://compass-backend-coral.vercel.app/api/send-email",
@@ -130,9 +136,10 @@ const Tickets = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            subject: selectedTicket.subject,
-            content: replyContent,
-            toEmail: selectedTicket.email, // Send email to the customer
+            subject: `RE: ${selectedTicket.subject}`,
+            selectedTicket,
+            content: generateEmailContent(selectedTicket, replyContent),
+            toEmail: selectedTicket.email,
           }),
         }
       );
@@ -147,15 +154,24 @@ const Tickets = () => {
         status: "pending", // Update status to pending
       });
 
+      alert(
+        "Successfully replied to ticket. visit gmail and wait for the reply of the user"
+      );
+
       fetchTicketData(); // Refresh ticket data
       closeModal(); // Close the modal after the action
     } catch (error) {
+      alert("Failed to reply to ticket");
       console.error("Error replying to the ticket:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCloseTicket = async () => {
     if (!selectedTicket) return;
+
+    setIsSaving(true);
 
     try {
       const ticketRef = doc(db, "tickets", selectedTicket.ticket_id);
@@ -166,6 +182,8 @@ const Tickets = () => {
       closeModal();
     } catch (error) {
       console.error("Error closing ticket:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -339,12 +357,17 @@ const Tickets = () => {
                   {selectedTicket.status === "pending" && (
                     <button
                       onClick={handleCloseTicket}
-                      className="btn btn-primary"
+                      className={`btn ${
+                        isSaving ? "btn-disabled" : "btn-primary"
+                      }`}
                     >
-                      Close Ticket
+                      {isSaving ? "Closing..." : "Close Ticket"}
                     </button>
                   )}
-                  <button className="btn" onClick={closeModal}>
+                  <button
+                    className={` ${isSaving ? "btn-disabled" : "btn"}`}
+                    onClick={closeModal}
+                  >
                     Cancel
                   </button>
                 </div>
@@ -359,18 +382,18 @@ const Tickets = () => {
                   placeholder="Write your reply here"
                 />
                 <div className="modal-action">
-                  <button className="btn btn-primary" onClick={handleSendReply}>
-                    Send Reply
+                  <button
+                    className={`btn ${
+                      isSaving ? "btn-disabled" : "btn-primary"
+                    }`}
+                    onClick={handleSendReply}
+                  >
+                    {isSaving ? "Replying..." : "Reply"}
                   </button>
-                  {selectedTicket.status === "pending" && (
-                    <button
-                      onClick={handleCloseTicket}
-                      className="btn btn-primary"
-                    >
-                      Close Ticket
-                    </button>
-                  )}
-                  <button className="btn" onClick={closeModal}>
+                  <button
+                    className={`${isSaving ? "btn-disabled" : "btn"}`}
+                    onClick={closeModal}
+                  >
                     Cancel
                   </button>
                 </div>
