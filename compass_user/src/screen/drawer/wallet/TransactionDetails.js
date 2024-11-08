@@ -66,12 +66,6 @@ const TransactionDetails = ({route}) => {
         {/* Travel & Date Section */}
         <View style={styles.sectionBox}>
           <View style={styles.detailBox}>
-            {transactionName && (
-              <View style={styles.detailItemX}>
-                <Text style={styles.detailTitle}>Transaction Name</Text>
-                <Text style={styles.detailText}>{transactionName}</Text>
-              </View>
-            )}
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Bus Driver</Text>
               <Text style={styles.detailText}>{bus_driver_name}</Text>
@@ -86,7 +80,7 @@ const TransactionDetails = ({route}) => {
               <Text style={styles.detailTitle}>Date and Time</Text>
               <Text style={styles.detailText}>{formatDate(date)}</Text>
             </View>
-            {transactionName && (
+            {type && (
               <View style={styles.detailItemX}>
                 <Text style={styles.detailTitle}>Type</Text>
                 <Text style={styles.detailText}>{type}</Text>
@@ -98,6 +92,14 @@ const TransactionDetails = ({route}) => {
         {/* Reference Number Section */}
         <View style={styles.sectionBox}>
           <View style={styles.detailBox}>
+            {transactionName && (
+              <View style={styles.detailItemX}>
+                <Text style={styles.detailTitle}>Transaction Name</Text>
+              </View>
+            )}
+            {transactionName && (
+              <Text style={styles.referenceValue}>{transactionName}</Text>
+            )}
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Reference Number</Text>
               <TouchableOpacity

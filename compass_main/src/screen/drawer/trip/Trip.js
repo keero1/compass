@@ -162,6 +162,7 @@ const Trip = props => {
           payment_type: data.payment_type,
           ...(data.transactionName && {transactionName: data.transactionName}),
           ...(data.coordinates && {coordinates: data.coordinates}),
+          type: data.type,
         };
       });
 
@@ -252,7 +253,7 @@ const Trip = props => {
                 await AsyncStorage.setItem('bus-data', JSON.stringify(busData));
               }
 
-              setConductorNameFromFirestore('None'); 
+              setConductorNameFromFirestore('None');
               Alert.alert(
                 'Sign Out Successful',
                 `${conductorNameFromFirestore} has been signed out.`,
@@ -282,6 +283,7 @@ const Trip = props => {
       destination: transaction.destination,
       transactionName: transaction.transactionName,
       coordinates: transaction.coordinates,
+      type: transaction.type,
     });
   };
 

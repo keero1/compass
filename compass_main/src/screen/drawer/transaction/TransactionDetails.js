@@ -4,20 +4,19 @@ import {
   View,
   StyleSheet,
   SafeAreaView,
-  TouchableOpacity,
 } from 'react-native';
 
 const TransactionDetails = ({route}) => {
   const {
     fare_amount,
     timestamp,
-    transactionName, // Transaction name can be null
-    reference_number, // Reference number will be displayed if transactionName doesn't exist
+    reference_number,
     payment_type,
     passenger_type,
     origin,
     destination,
-    coordinates = [],
+    transactionName,
+    type,
   } = route.params;
 
   // Convert the timestamp back to a Date object
@@ -45,70 +44,64 @@ const TransactionDetails = ({route}) => {
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.detailsContainer}>
+        {/* Payment Section */}
         <View style={styles.sectionBox}>
           <Text style={styles.sectionTitle}>Payment</Text>
-
           <View style={styles.detailBox}>
             <View style={styles.detailItem}>
               <Text style={styles.detailTitle}>You Earned</Text>
-              <Text style={styles.detailText}>{formatNumber(fare_amount)}</Text>
+              <Text style={styles.fareAmount}>{formatNumber(fare_amount)}</Text>
             </View>
           </View>
         </View>
 
+        {/* Travel & Date Section */}
         <View style={styles.sectionBox}>
           <View style={styles.detailBox}>
             <View style={styles.detailItemX}>
-              <Text style={styles.detailTitle}>Travel</Text>
+              <Text style={styles.detailTitle}>Trip</Text>
               <Text
-                style={
-                  styles.detailTextSameLine
-                }>{`${origin} - ${destination}`}</Text>
+                style={styles.detailText}>{`${origin} - ${destination}`}</Text>
             </View>
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Payment Type</Text>
-              <Text style={styles.detailTextSameLine}>{payment_type}</Text>
+              <Text style={styles.detailText}>{payment_type}</Text>
             </View>
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Passenger Type</Text>
-              <Text style={styles.detailTextSameLine}>{passenger_type}</Text>
+              <Text style={styles.detailText}>{passenger_type}</Text>
             </View>
             <View style={styles.detailItemX}>
               <Text style={styles.detailTitle}>Date and Time</Text>
-              <Text style={styles.detailTextSameLine}>{formatDate(date)}</Text>
+              <Text style={styles.detailText}>{formatDate(date)}</Text>
             </View>
-          </View>
-        </View>
-
-        <View style={styles.sectionBox}>
-          <View style={styles.detailBox}>
-            {transactionName ? (
+            {type && (
               <View style={styles.detailItemX}>
-                <Text style={styles.detailTitle}>Transaction Name</Text>
-                <Text style={styles.detailTextSameLine}>{transactionName}</Text>
-              </View>
-            ) : (
-              <View style={styles.detailItemX}>
-                <Text style={styles.detailTitle}>Reference Number</Text>
-                <Text style={styles.detailTextSameLine}>
-                  {reference_number}
-                </Text>
+                <Text style={styles.detailTitle}>Type</Text>
+                <Text style={styles.detailText}>{type}</Text>
               </View>
             )}
           </View>
         </View>
+
+        {/* Reference Number Section */}
+        <View style={styles.sectionBox}>
+          <View style={styles.detailBox}>
+            {transactionName && (
+              <View style={styles.detailItemX}>
+                <Text style={styles.detailTitle}>Transaction Name</Text>
+              </View>
+            )}
+            {transactionName && (
+              <Text style={styles.referenceValue}>{transactionName}</Text>
+            )}
+            <View style={styles.detailItemX}>
+              <Text style={styles.detailTitle}>Reference Number</Text>
+            </View>
+            <Text style={styles.referenceValue}>{reference_number}</Text>
+          </View>
+        </View>
       </View>
-
-      {/* Only show the button if transactionName or coordinates exist */}
-      {/* {(transactionName || coordinates) && (
-        <TouchableOpacity style={styles.showMarkerButton} onPress={() => {}}>
-          <Text style={styles.showMarkerButtonText}>Show Marker</Text>
-        </TouchableOpacity>
-      )} */}
-
-      <TouchableOpacity style={styles.reprintButton} onPress={() => {}}>
-        <Text style={styles.reprintButtonText}>Reprint Receipt</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -116,74 +109,63 @@ const TransactionDetails = ({route}) => {
 const styles = StyleSheet.create({
   main: {
     flex: 1,
-    backgroundColor: '#F4F4FB',
+    backgroundColor: '#F7F7FB',
+    padding: 16,
   },
   detailsContainer: {
     width: '100%',
   },
   sectionBox: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    paddingHorizontal: 10,
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#333',
   },
   detailBox: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 5,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+    padding: 16,
   },
   detailItem: {
-    padding: 20,
+    marginBottom: 12,
   },
   detailItemX: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 10,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
   detailTitle: {
     fontSize: 16,
+    fontWeight: '500',
+    color: '#555',
+  },
+  fareAmount: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#176B87',
+    textAlign: 'right',
   },
   detailText: {
-    fontSize: 30,
-    textAlign: 'right',
-    color: '#000000',
-  },
-  detailTextSameLine: {
     fontSize: 16,
+    color: '#333',
     textAlign: 'right',
     marginLeft: 10,
   },
-  reprintButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#176B87',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  reprintButtonText: {
-    color: '#FFFFFF',
+  referenceValue: {
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  showMarkerButton: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    backgroundColor: '#176B87',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  showMarkerButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 8,
+    textAlign: 'left',
   },
 });
 

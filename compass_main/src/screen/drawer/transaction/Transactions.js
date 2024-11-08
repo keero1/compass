@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput, // Import TextInput for search bar
 } from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
@@ -17,7 +18,9 @@ const Transactions = props => {
   const {navigation} = props;
 
   const [transactions, setTransactions] = useState([]);
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState(''); // State for search input
   const user = auth().currentUser;
 
   const fetchTransactions = async () => {
@@ -42,10 +45,12 @@ const Transactions = props => {
           payment_type: data.payment_type,
           ...(data.transactionName && {transactionName: data.transactionName}),
           ...(data.coordinates && {coordinates: data.coordinates}), // Include coordinates if they exist
+          type: data.type,
         };
       });
 
       setTransactions(transactionData);
+      setFilteredTransactions(transactionData); // Set filtered transactions initially as all transactions
     } catch (error) {
       console.log('Error fetching transactions: ', error);
     } finally {
@@ -74,7 +79,7 @@ const Transactions = props => {
     }, {});
   };
 
-  const groupedTransactions = groupByDate(transactions);
+  const groupedTransactions = groupByDate(filteredTransactions);
 
   // Format fare amount as currency
   const formatNumber = number => {
@@ -95,16 +100,57 @@ const Transactions = props => {
       destination: transaction.destination,
       transactionName: transaction.transactionName, // Pass transactionName
       coordinates: transaction.coordinates, // Pass coordinates
+      type: transaction.type,
     });
+  };
+
+  const handleSearch = text => {
+    setSearchText(text);
+
+    if (text.trim() === '') {
+      setFilteredTransactions(transactions); // If search is empty, show all transactions
+    } else {
+      const filtered = transactions.filter(transaction => {
+        const referenceNumber = transaction.reference_number;
+
+        // Check if referenceNumber is a valid string
+        if (typeof referenceNumber === 'string') {
+          return referenceNumber.toLowerCase().includes(text.toLowerCase());
+        } else {
+          return false; // If reference_number is not a string, skip this transaction
+        }
+      });
+      setFilteredTransactions(filtered);
+    }
+  };
+
+  const formatDate = date => {
+    if (!date) return 'Unknown Date';
+
+    const timeOptions = {hour: 'numeric', minute: 'numeric', hour12: true};
+
+    const timePart = date.toLocaleTimeString('en-US', timeOptions);
+
+    return `${timePart}`;
   };
 
   return (
     <SafeAreaView style={styles.main}>
+      {/* Search Bar */}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by Reference Number"
+        value={searchText}
+        onChangeText={handleSearch}
+      />
+
       {!loading ? (
         <>
-          {transactions.length === 0 ? ( // Check if there are no transactions
+          {filteredTransactions.length === 0 ? ( // Check if there are no filtered transactions
             <View style={styles.noTransactionsContainer}>
-              <Text style={styles.noTransactionsText}>No Transactions</Text>
+              <Text style={styles.noTransactionsText}>
+                No Transactions Found
+              </Text>
             </View>
           ) : (
             <ScrollView style={styles.detailsContainer}>
@@ -136,17 +182,13 @@ const Transactions = props => {
                           </View>
                           <View style={styles.detailItem}>
                             <Text style={styles.passengerTypeText}>
-                              {`${transaction.passenger_type} - ${transaction.payment_type}`}
+                              {`Time: ${formatDate(transaction.timestamp)}`}
                             </Text>
-                            {transaction.transactionName && (
-                              <Text 
-                                style={styles.transactionNameText}
-                                numberOfLines={1} // Limit to 1 line
-                                ellipsizeMode='tail' // Use 'tail' for ellipsis at the end
-                              >
-                                {transaction.transactionName}
-                              </Text>
-                            )}
+                          </View>
+                          <View style={styles.detailItem}>
+                            <Text style={styles.passengerTypeText}>
+                              {`Ref: ${transaction.reference_number}`}
+                            </Text>
                           </View>
                         </TouchableOpacity>
                       ))}
@@ -158,7 +200,7 @@ const Transactions = props => {
         </>
       ) : (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color="#176B87" />
         </View>
       )}
     </SafeAreaView>
@@ -169,23 +211,36 @@ const styles = StyleSheet.create({
   main: {
     flex: 1,
     backgroundColor: '#F4F4FB',
+    paddingHorizontal: 15,
+  },
+  searchInput: {
+    height: 45,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginVertical: 15,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#333',
   },
   detailsContainer: {
     width: '100%',
   },
   sectionBox: {
-    marginBottom: 20,
+    marginBottom: 25,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 10,
-    marginBottom: 10,
+    marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
   },
   transactionCount: {
     fontSize: 16,
@@ -193,36 +248,45 @@ const styles = StyleSheet.create({
   },
   detailBox: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 5,
-    marginBottom: 1,
+    borderRadius: 10,
+    marginBottom: 12,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 4},
   },
   detailItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center', // Center the items vertically
-    paddingVertical: 7,
-    paddingHorizontal: 10,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
     flexWrap: 'wrap',
   },
   detailTitle: {
     fontSize: 16,
-    flex: 1, // Allow the origin-destination text to take up space
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
   },
   detailText: {
     fontSize: 16,
     textAlign: 'right',
     marginLeft: 10,
-    color: '#000000',
+    color: '#333',
   },
   passengerTypeText: {
-    fontSize: 16,
+    fontSize: 14,
+    color: '#555',
     flex: 1,
+    marginBottom: -20,
   },
   transactionNameText: {
     fontSize: 14,
-    color: '#444', // Color for transactionName
+    color: '#444',
     marginLeft: 10,
-    flex: 1, // This allows the text to fill the remaining space
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
