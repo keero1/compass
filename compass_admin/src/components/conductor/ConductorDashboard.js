@@ -48,6 +48,7 @@ const ConductorDashboard = () => {
       const unsubscribe = fetchTransactionHistory();
       return () => unsubscribe();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conductorId]);
 
   // Filtered transactions based on filters
