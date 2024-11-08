@@ -181,7 +181,7 @@ const ManageAdmin = () => {
         deleted_at: new Date().toISOString(),
       };
 
-      await setDoc(doc(db, "deletedData", adminId), deletedData);
+      await setDoc(doc(db, "deleted_admin", adminId), deletedData);
 
       await deleteDoc(doc(db, "company", adminId));
 
@@ -256,7 +256,7 @@ const ManageAdmin = () => {
                       >
                         <TrashIcon className="h-4 w-4 mr-1" />{" "}
                         {/* Set height and width for the icon */}
-                        Delete
+                        Remove
                       </div>
                     </td>
                   </tr>

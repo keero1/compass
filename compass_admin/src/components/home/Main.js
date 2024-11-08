@@ -19,7 +19,7 @@ import {
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
 
 import Frieren from "../../assets/images/frieren.png";
-import bus1 from "../../assets/images/bus1_final.png";
+import bus1 from "../../assets/images/bus1_final.svg";
 import bus2 from "../../assets/images/bus2_final.png";
 
 import "./Main.css";

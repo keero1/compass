@@ -144,7 +144,7 @@ const ManageDriver = () => {
       };
 
       // Store deleted bus in the deletedData collection
-      await setDoc(doc(db, "deletedData", busId), deletedData);
+      await setDoc(doc(db, "deleted_drivers", busId), deletedData);
 
       // delete the document
       await deleteDoc(doc(db, "buses", busId));
@@ -277,7 +277,7 @@ const ManageDriver = () => {
                       >
                         <TrashIcon className="h-4 w-4 mr-1" />{" "}
                         {/* Set height and width for the icon */}
-                        Delete
+                        Remove
                       </div>
                     </td>
                   </tr>
