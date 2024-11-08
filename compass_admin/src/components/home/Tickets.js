@@ -122,17 +122,20 @@ const Tickets = () => {
     console.log("Sending reply..");
 
     try {
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subject: selectedTicket.subject,
-          content: replyContent,
-          toEmail: selectedTicket.email, // Send email to the customer
-        }),
-      });
+      const response = await fetch(
+        "https://compass-backend-coral.vercel.app/api/send-email",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subject: selectedTicket.subject,
+            content: replyContent,
+            toEmail: selectedTicket.email, // Send email to the customer
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to send email");
@@ -333,8 +336,16 @@ const Tickets = () => {
                       Reply
                     </button>
                   )}
+                  {selectedTicket.status === "pending" && (
+                    <button
+                      onClick={handleCloseTicket}
+                      className="btn btn-primary"
+                    >
+                      Close Ticket
+                    </button>
+                  )}
                   <button className="btn" onClick={closeModal}>
-                    Close
+                    Cancel
                   </button>
                 </div>
               </>
@@ -351,8 +362,16 @@ const Tickets = () => {
                   <button className="btn btn-primary" onClick={handleSendReply}>
                     Send Reply
                   </button>
+                  {selectedTicket.status === "pending" && (
+                    <button
+                      onClick={handleCloseTicket}
+                      className="btn btn-primary"
+                    >
+                      Close Ticket
+                    </button>
+                  )}
                   <button className="btn" onClick={closeModal}>
-                    Close
+                    Cancel
                   </button>
                 </div>
               </>
