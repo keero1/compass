@@ -5,9 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Modal,
-  TextInput,
-  Button,
   ScrollView,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -30,9 +27,6 @@ const Trip = props => {
   const [conductorNameFromFirestore, setConductorNameFromFirestore] =
     useState('None');
   // modal
-  const [modalVisible, setModalVisible] = useState(false);
-  const [conductorName, setConductorName] = useState('');
-  const [conductorUserId, setConductorUserId] = useState('');
 
   const [transactions, setTransactions] = useState([]);
 
@@ -218,39 +212,9 @@ const Trip = props => {
     }
   };
 
-  const handleConductorSignIn = async () => {
-    try {
-      const conductorRef = firestore().collection('conductors');
-      const conductorDoc = await conductorRef
-        .where('user_id', '==', conductorUserId)
-        .get();
-
-      if (!conductorDoc.empty) {
-        const conductorData = conductorDoc.docs[0].data();
-        const name = conductorData.name;
-
-        // Bind conductor name to current user
-        await auth().currentUser.updateProfile({displayName: name});
-
-        // Update buses/userId with conductor_name
-        await firestore().collection('buses').doc(userId).set(
-          {
-            conductor_name: name,
-          },
-          {merge: true},
-        );
-
-        setConductorNameFromFirestore(name);
-
-        Alert.alert('Sign In Successful', `Welcome ${name}`);
-        setModalVisible(false);
-      } else {
-        Alert.alert('Error', 'Conductor not found.');
-      }
-    } catch (error) {
-      console.error('Error signing in conductor: ', error);
-      Alert.alert('Error', 'An error occurred. Please try again.');
-    }
+  const handleConductorSignIn = () => {
+    console.log('QR Camera');
+    navigation.navigate(ROUTES.QRCAMERA);
   };
 
   const handleConductorSignOut = () => {
@@ -329,8 +293,8 @@ const Trip = props => {
         ) : (
           <TouchableOpacity
             style={styles.leftSideButton}
-            onPress={() => setModalVisible(true)}>
-            <Text style={styles.leftSideText}>Sign In</Text>
+            onPress={handleConductorSignIn}>
+            <Text style={styles.leftSideText}>Scan QR</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -369,41 +333,6 @@ const Trip = props => {
           </Text>
         )}
       </ScrollView>
-
-      <Modal
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Conductor Sign In</Text>
-            <TextInput
-              placeholder="Conductor Name"
-              value={conductorName}
-              onChangeText={setConductorName}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="User ID"
-              value={conductorUserId}
-              onChangeText={setConductorUserId}
-              style={styles.input}
-            />
-            <View style={styles.buttonRow}>
-              <Button
-                title="Sign In"
-                onPress={handleConductorSignIn}
-                color="#176B87"
-              />
-              <Button
-                title="Cancel"
-                onPress={() => setModalVisible(false)}
-                color="red"
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -531,39 +460,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888',
     marginTop: 5,
-  },
-
-  // modal
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    marginBottom: 15,
-  },
-  input: {
-    width: '100%',
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 10,
-    paddingLeft: 10,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%', // Ensure buttons stretch to full width
   },
 });
 

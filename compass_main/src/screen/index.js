@@ -17,6 +17,8 @@ export {default as About} from './drawer/about/About';
 // trip
 export {default as Trip} from './drawer/trip/Trip';
 
+export {default as QRCamera} from './drawer/trip/QRCamera';
+
 // child of drawer
 export {default as Profile} from './drawer/profile/Profile';
 

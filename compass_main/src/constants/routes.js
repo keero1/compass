@@ -9,6 +9,8 @@ export default {
 
   TRIP: 'Trip',
 
+  QRCAMERA: 'QRCamera',
+
   ABOUT: 'About',
 
   PROFILE: 'Profile',

@@ -12,6 +12,7 @@ import {
   TransactionDetails,
   Trip,
   About,
+  QRCamera,
 } from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/inputs/CustomBack';
@@ -48,6 +49,17 @@ function HomeNavigator() {
           headerStyle: {
             backgroundColor: '#F4F4FB', // Set header background color
           },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.QRCAMERA}
+        component={QRCamera}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTransparent: true,
+          headerTitle: () => null,
         })}
       />
       <InsideStack.Screen
