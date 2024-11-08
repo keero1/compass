@@ -12,7 +12,11 @@ import {
   Alert,
 } from 'react-native';
 
+import moment from 'moment';
+
 import auth from '@react-native-firebase/auth';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {useIsFocused} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
@@ -167,10 +171,67 @@ const AdvancePayment = props => {
     setCancelButton(false);
   };
 
-  const generateReferenceNumber = () => {
-    const timestamp = Date.now();
-    const randomNum = Math.floor(Math.random() * 1000);
-    return `${timestamp}${randomNum}`;
+  const generateReferenceNumber = async () => {
+    const busNumber = busData.bus_number;
+
+    const today = moment().format('DMMMYYYY').toLowerCase();
+
+    const transactionCount = await getTransactionCountForToday();
+
+    const formattedTransactionCount = transactionCount
+      .toString()
+      .padStart(4, '0');
+
+    const trimmedUserName = userName.replace(/\s+/g, '');
+
+    const referenceNumber = `bus${busNumber}-${today}-${formattedTransactionCount}-${trimmedUserName}`;
+
+    console.log(referenceNumber);
+
+    return referenceNumber;
+  };
+
+  const getTransactionCountForToday = async () => {
+    const today = moment().format('YYYY-MM-DD');
+
+    const lastStoredDate = await AsyncStorage.getItem('lastTransactionDate');
+    console.log('Today:', today);
+    console.log('Last Stored Date:', lastStoredDate);
+
+    if (lastStoredDate !== today) {
+      console.log('reset transaction today');
+      await AsyncStorage.setItem(`transactions-${today}`, JSON.stringify([]));
+      await AsyncStorage.setItem('lastTransactionDate', today);
+      return 1;
+    }
+
+    const transactions = await AsyncStorage.getItem(`transactions-${today}`);
+
+    let transactionsArray = transactions ? JSON.parse(transactions) : [];
+
+    const transactionCount = transactionsArray.length + 1;
+
+    transactionsArray.push({});
+
+    await AsyncStorage.setItem(
+      `transactions-${today}`,
+      JSON.stringify(transactionsArray),
+    );
+
+    return transactionCount; // Return the incremented transaction count
+  };
+
+  const generateTransactionName = () => {
+    // Remove spaces from userName
+    const trimmedUserName = userName.replace(/\s+/g, '');
+
+    const currentDateTime = moment().format('DMMMYYYY').toLowerCase();
+
+    const transactionName = `${trimmedUserName}.${currentDateTime}`;
+
+    console.log(transactionName);
+
+    return transactionName;
   };
 
   const createTransaction = async data => {
@@ -178,12 +239,12 @@ const AdvancePayment = props => {
 
     const referenceNumber = data
       ? data.reference_number
-      : generateReferenceNumber();
+      : await generateReferenceNumber();
 
-    console.log(data);
+    console.log('Generated or Provided Reference Number:', referenceNumber);
 
     const receipt = {
-      transactionName: `${userName.replace(/\s+/g, '')}.${referenceNumber}`,
+      transactionName: `${generateTransactionName()}`,
       bus_id: busId,
       bus_type: busType,
       bus_number: busData.bus_number,
@@ -200,6 +261,7 @@ const AdvancePayment = props => {
       distance: travelDistance,
       timestamp: firestore.FieldValue.serverTimestamp(),
       coordinates: currentCoordinates,
+      type: 'AdvancePayment',
       status: 'onHold',
     };
 

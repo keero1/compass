@@ -31,7 +31,7 @@ const PrivacyModal = ({visible, onClose}) => {
               Privacy Policy
             </CustomText>
             <CustomText style={styles.lastUpdated}>
-              Last Updated: October 24, 2024
+              Last Updated: November 5, 2024
             </CustomText>
             <CustomText style={styles.modalSectionTitle}>
               1. Introduction

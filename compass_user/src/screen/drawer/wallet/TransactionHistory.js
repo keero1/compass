@@ -9,13 +9,11 @@ import {
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-
 import {ROUTES} from '../../../constants/';
 import {ScrollView} from 'react-native-gesture-handler';
 
 const TransactionHistory = props => {
   const {navigation} = props;
-
   const user = auth().currentUser;
 
   const [transactions, setTransactions] = useState([]);
@@ -40,6 +38,8 @@ const TransactionHistory = props => {
           timestamp: data.timestamp ? data.timestamp.toDate() : null,
           bus_driver_name: data.bus_driver_name,
           reference_number: data.reference_number,
+          transactionName: data.transactionName,
+          type: data.type,
         };
       });
 
@@ -82,11 +82,13 @@ const TransactionHistory = props => {
   const handleTransactionPress = transaction => {
     navigation.navigate(ROUTES.TRANSACTIONDETAILS, {
       fare_amount: transaction.fare_amount,
-      timestamp: transaction.timestamp.toISOString(), // Convert to ISO string
+      timestamp: transaction.timestamp.toISOString(),
       reference_number: transaction.reference_number,
       bus_driver_name: transaction.bus_driver_name,
       origin: transaction.origin,
       destination: transaction.destination,
+      transactionName: transaction.transactionName,
+      type: transaction.type,
     });
   };
 
@@ -94,7 +96,7 @@ const TransactionHistory = props => {
     <SafeAreaView style={styles.main}>
       {loading ? (
         <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#176B87" />
           <Text style={styles.loadingText}>Loading transactions...</Text>
         </View>
       ) : (
@@ -105,20 +107,22 @@ const TransactionHistory = props => {
               {transactions.map(transaction => (
                 <TouchableOpacity
                   key={transaction.id}
-                  style={styles.detailBox}
+                  style={styles.transactionCard}
                   onPress={() => handleTransactionPress(transaction)}>
-                  <View style={styles.detailItem}>
-                    <Text
-                      style={
-                        styles.detailTitle
-                      }>{`${transaction.origin} - ${transaction.destination}`}</Text>
-                    <Text style={styles.detailText}>
-                      {formatNumber(transaction.fare_amount)} {' >'}
+                  <View style={styles.transactionInfo}>
+                    <Text style={styles.transactionTitle}>
+                      {`${transaction.origin} - ${transaction.destination}`}
+                    </Text>
+                    <Text style={styles.transactionAmount}>
+                      {formatNumber(transaction.fare_amount)}
                     </Text>
                   </View>
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailTitle}>
+                  <View style={styles.driverInfo}>
+                    <Text style={styles.driverName}>
                       To {transaction.bus_driver_name}
+                    </Text>
+                    <Text style={styles.referenceNumber}>
+                      Ref: {transaction.reference_number}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -135,42 +139,60 @@ const styles = StyleSheet.create({
   main: {
     flex: 1,
     backgroundColor: '#F4F4FB',
+    paddingHorizontal: 16,
   },
-
   detailsContainer: {
     width: '100%',
   },
-
   sectionBox: {
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '600',
     marginBottom: 10,
-    paddingHorizontal: 10,
+    color: '#333',
   },
-  detailBox: {
+  transactionCard: {
     backgroundColor: '#FFFFFF',
-    marginBottom: 1,
-    borderWidth: 0.5,
-    borderColor: 'black',
+    marginBottom: 12,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    padding: 12,
   },
-  detailItem: {
+  transactionInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 10,
+    flexWrap: 'wrap',
   },
-  detailTitle: {
+  transactionTitle: {
     fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+    marginRight: 10,
   },
-  detailText: {
+  transactionAmount: {
     fontSize: 16,
+    color: '#FF9900',
+    flexShrink: 1,
+    maxWidth: '40%',
     textAlign: 'right',
-    marginLeft: 10,
-    color: '#000000',
+  },
+  driverInfo: {
+    marginTop: 8,
+  },
+  driverName: {
+    fontSize: 14,
+    color: '#555',
+  },
+  referenceNumber: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 4,
   },
   loaderContainer: {
     flex: 1,
@@ -180,7 +202,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#000000',
+    color: '#333',
   },
 });
 

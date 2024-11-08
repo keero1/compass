@@ -166,7 +166,7 @@ const Drawer = props => {
           style={styles.menuItemContainer}
           onPress={onHelpPressed}>
           <DocumentIcon size={25} color="gray" />
-          <Text style={styles.menuItem}>Support</Text>
+          <Text style={styles.menuItem}>Feedback</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

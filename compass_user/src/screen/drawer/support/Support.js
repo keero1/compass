@@ -44,7 +44,7 @@ const Support = props => {
           After you send a ticket, an admin will reply to you on the email you
           used for this account.
           {'\n'}
-          admin email: keero.dev@gmail.com
+          johnjoshua.dev@gmail.com
         </Text>
       </View>
     </SafeAreaView>

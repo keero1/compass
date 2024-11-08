@@ -113,7 +113,7 @@ const Feedback = () => {
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={submitTicket}
         disabled={loading}>
-        <Text style={styles.buttonText}>Submit Ticket</Text>
+        <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

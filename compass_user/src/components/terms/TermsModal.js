@@ -31,7 +31,7 @@ const TermsModal = ({visible, onClose}) => {
               Terms and Conditions
             </CustomText>
             <CustomText style={styles.lastUpdated}>
-              Last Updated: October 24, 2024
+              Last Updated: November 5, 2024
             </CustomText>
             <CustomText style={styles.modalSectionTitle}>
               1. Definition

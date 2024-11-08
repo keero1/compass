@@ -19,11 +19,10 @@ const Tickets = () => {
       }
 
       try {
-        // Query to fetch and sort tickets by createdAt in descending order
         const ticketCollection = await firestore()
           .collection('tickets')
           .where('email', '==', user.email)
-          .orderBy('createdAt', 'desc') // Sort by createdAt in descending order
+          .orderBy('createdAt', 'desc')
           .get();
 
         const ticketsData = ticketCollection.docs.map(doc => ({
@@ -43,14 +42,15 @@ const Tickets = () => {
     fetchTickets();
   }, []);
 
-  // Render ticket item
   const renderTicket = ({ item }) => (
     <View style={styles.ticketContainer}>
       <Text style={styles.ticketSubject}>{item.subject}</Text>
       <Text style={styles.ticketDescription}>{item.description}</Text>
-      <Text style={styles.ticketStatus}>Status: {item.status}</Text>
+      <Text style={[styles.ticketStatus, item.status === 'Open' ? styles.statusOpen : styles.statusClosed]}>
+        {item.status}
+      </Text>
       <Text style={styles.ticketDate}>
-        Created At: {item.createdAt?.toDate().toLocaleString()} {/* Format date */}
+        Created on {item.createdAt?.toDate().toLocaleDateString()} at {item.createdAt?.toDate().toLocaleTimeString()}
       </Text>
     </View>
   );
@@ -66,7 +66,7 @@ const Tickets = () => {
           data={tickets}
           renderItem={renderTicket}
           keyExtractor={item => item.id}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={styles.listContent}
         />
       )}
     </SafeAreaView>
@@ -76,38 +76,58 @@ const Tickets = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F4FB',
-    paddingHorizontal: 20,
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+  },
+  listContent: {
+    paddingVertical: 16,
   },
   ticketContainer: {
-    backgroundColor: '#FFF',
-    padding: 15,
-    borderRadius: 5,
-    marginBottom: 15,
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 10,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3, // For Android shadow
+    shadowRadius: 10,
+    elevation: 5,
   },
   ticketSubject: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 6,
   },
   ticketDescription: {
-    fontSize: 16,
-    marginVertical: 5,
+    fontSize: 15,
+    color: '#666',
+    marginBottom: 8,
   },
   ticketStatus: {
-    fontSize: 14,
-    color: 'gray',
+    fontSize: 13,
+    fontWeight: '500',
+    marginVertical: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  statusOpen: {
+    backgroundColor: '#e0f7e9',
+    color: '#2e7d32',
+  },
+  statusClosed: {
+    backgroundColor: '#ffe0e0',
+    color: '#d32f2f',
   },
   ticketDate: {
     fontSize: 12,
-    color: 'gray',
+    color: '#999',
   },
   errorText: {
     color: 'red',
     textAlign: 'center',
+    fontSize: 16,
     marginTop: 20,
   },
 });

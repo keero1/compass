@@ -14,6 +14,8 @@ import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import {ScrollView} from 'react-native-gesture-handler';
 
+import moment from 'moment';
+
 const AdvancePaymentHistory = props => {
   const {navigation} = props;
   const user = auth().currentUser;
@@ -22,6 +24,8 @@ const AdvancePaymentHistory = props => {
   const [loading, setLoading] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [loadingModalVisible, setLoadingModalVisible] = useState(false);
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -54,6 +58,7 @@ const AdvancePaymentHistory = props => {
           transactionName: data.transactionName,
           distance: data.distance,
           route_name: data.route_name,
+          type: data.type,
         };
       });
 
@@ -101,18 +106,15 @@ const AdvancePaymentHistory = props => {
   const handleComplete = async () => {
     Alert.alert(
       'Confirm Completion',
-      'Please ensure that all information is accurate: origin, passenger and confirm that you have selected the correct bus and that there are available seats as reversal may be difficult.',
+      'Please ensure that all information is accurate: destination and confirm that you have selected the correct bus and that there are available seats as reversal may be difficult.',
       [
         {text: 'Cancel', style: 'cancel'},
         {
           text: 'Confirm',
           onPress: async () => {
+            setLoadingModalVisible(true);
             try {
-              // Copy the transaction data to the `transactions` collection
               const {status, ...transactionData} = selectedTransaction;
-
-              console.log(transactionData);
-              console.log(selectedTransaction);
 
               await firestore()
                 .collection('transactions')
@@ -121,13 +123,11 @@ const AdvancePaymentHistory = props => {
                   completedTimestamp: firestore.FieldValue.serverTimestamp(),
                 });
 
-              // Update the original transaction's status to 'completed'
               await firestore()
                 .collection('advancePayment')
                 .doc(selectedTransaction.id)
                 .update({status: 'completed'});
 
-              // Close the modal and refresh the transactions
               setModalVisible(false);
               fetchTransactions();
             } catch (error) {
@@ -136,26 +136,39 @@ const AdvancePaymentHistory = props => {
                 'Error',
                 'An error occurred while completing the transaction. Please try again.',
               );
+            } finally {
+              setLoadingModalVisible(false);
             }
           },
         },
       ],
     );
   };
+
   const handleCancel = async () => {
-    await firestore()
-      .collection('advancePayment')
-      .doc(selectedTransaction.id)
-      .update({status: 'cancelled'});
-    setModalVisible(false);
-    fetchTransactions();
+    try {
+      await firestore()
+        .collection('advancePayment')
+        .doc(selectedTransaction.id)
+        .update({status: 'cancelled'});
+
+      fetchTransactions();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setModalVisible(false);
+    }
+  };
+
+  const formatTimestamp = timestamp => {
+    return moment(timestamp).format('DMMMYYYY:HH.mm').toLowerCase(); // Format as '2nov2024:21.23'
   };
 
   return (
     <SafeAreaView style={styles.main}>
       {loading ? (
         <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#176B87" />
           <Text style={styles.loadingText}>Loading transactions...</Text>
         </View>
       ) : (
@@ -165,23 +178,28 @@ const AdvancePaymentHistory = props => {
               <Text style={styles.sectionTitle}>{date}</Text>
               {transactions.map(transaction => (
                 <TouchableOpacity
-                  key={transaction.id} // Ensure this is a unique value
-                  style={styles.detailBox}
+                  key={transaction.id}
+                  style={styles.transactionCard}
                   onPress={() => handleTransactionPress(transaction)}>
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailTitle}>
+                  <View style={styles.transactionInfo}>
+                    <Text style={styles.transactionTitle}>
                       {`${transaction.origin} - ${transaction.destination}`}
                     </Text>
-                    <Text style={styles.detailText}>
+                    <Text style={styles.transactionStatus}>
                       {transaction.status
                         ? transaction.status.toUpperCase()
                         : 'N/A'}
                     </Text>
                   </View>
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailTitle}>
-                      To {transaction.bus_driver_name}
+                  <View style={styles.driverContainer}>
+                    <Text style={styles.driverName}>
+                      Driver: {transaction.bus_driver_name}
                     </Text>
+                    {transaction.timestamp && (
+                      <Text style={styles.timestamp}>
+                        {formatTimestamp(transaction.timestamp)}
+                      </Text>
+                    )}
                   </View>
                 </TouchableOpacity>
               ))}
@@ -197,7 +215,6 @@ const AdvancePaymentHistory = props => {
         onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            {/* Close button at the top left of the modal */}
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setModalVisible(false)}>
@@ -207,58 +224,68 @@ const AdvancePaymentHistory = props => {
             {selectedTransaction && (
               <>
                 <Text style={styles.modalTitle}>Transaction Info</Text>
-                <Text>
-                  {selectedTransaction.transactionName
-                    ? selectedTransaction.transactionName
+                <Text style={styles.modalDetails}>
+                  {selectedTransaction.transactionName || 'N/A'}
+                </Text>
+                <Text style={styles.modalDetails}>
+                  {selectedTransaction.bus_driver_name || 'N/A'}
+                </Text>
+                <Text style={styles.modalDetails}>
+                  {`${selectedTransaction.origin || 'N/A'} - ${
+                    selectedTransaction.destination || 'N/A'
+                  }`}
+                </Text>
+                <Text style={styles.modalDetails}>
+                  {selectedTransaction.passenger_type || 'N/A'}
+                </Text>
+                <Text style={styles.modalDetails}>
+                  {selectedTransaction.reference_number || 'N/A'}
+                </Text>
+                <Text style={styles.modalDetails}>
+                  {selectedTransaction.fare_amount
+                    ? formatNumber(selectedTransaction.fare_amount)
                     : 'N/A'}
                 </Text>
-                <Text>{`${
-                  selectedTransaction.origin
-                    ? selectedTransaction.origin
-                    : 'N/A'
-                } - ${
-                  selectedTransaction.destination
-                    ? selectedTransaction.destination
-                    : 'N/A'
-                }`}</Text>
-                <Text>{`${
-                  selectedTransaction.passenger_type
-                    ? selectedTransaction.passenger_type
-                    : 'N/A'
-                }`}</Text>
-                <Text>{`${
-                  selectedTransaction.bus_driver_name
-                    ? selectedTransaction.bus_driver_name
-                    : 'N/A'
-                }`}</Text>
-                <Text>{`${
-                  selectedTransaction.fare_amount !== undefined
-                    ? formatNumber(selectedTransaction.fare_amount)
-                    : 'N/A'
-                }`}</Text>
-                <Text>{`${
-                  selectedTransaction.status
+                <Text style={styles.modalDetails}>
+                  {selectedTransaction.timestamp
+                    ? formatTimestamp(selectedTransaction.timestamp)
+                    : 'N/A'}
+                </Text>
+                <Text style={styles.modalDetails}>
+                  {selectedTransaction.status
                     ? selectedTransaction.status.toUpperCase()
-                    : 'N/A'
-                }`}</Text>
+                    : 'N/A'}
+                </Text>
                 <View style={styles.buttonContainer}>
                   {selectedTransaction.status === 'onHold' && (
                     <>
-                      <Button
-                        title="Complete"
-                        onPress={handleComplete}
-                        color="#176B87"
-                      />
-                      <Button
-                        title="Cancel"
-                        onPress={handleCancel}
-                        color="red"
-                      />
+                      <TouchableOpacity
+                        style={[styles.button, styles.completeButton]}
+                        onPress={handleComplete}>
+                        <Text style={styles.buttonText}>Complete</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.button, styles.cancelButton]}
+                        onPress={handleCancel}>
+                        <Text style={styles.buttonText}>Cancel</Text>
+                      </TouchableOpacity>
                     </>
                   )}
                 </View>
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        transparent={true}
+        visible={loadingModalVisible}
+        onRequestClose={() => setLoadingModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.loadingModalContent}>
+            <ActivityIndicator size="large" color="#176B87" />
+            <Text style={styles.processingText}>Processing Payment...</Text>
           </View>
         </View>
       </Modal>
@@ -270,6 +297,7 @@ const styles = StyleSheet.create({
   main: {
     flex: 1,
     backgroundColor: '#F4F4FB',
+    paddingHorizontal: 16,
   },
   detailsContainer: {
     width: '100%',
@@ -278,32 +306,52 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '600',
     marginBottom: 10,
-    paddingHorizontal: 10,
+    color: '#333',
   },
-  detailBox: {
+  transactionCard: {
     backgroundColor: '#FFFFFF',
-    marginBottom: 1,
-    borderWidth: 0.5,
-    borderColor: 'black',
+    marginBottom: 12,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    padding: 12,
   },
-  detailItem: {
+  transactionInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 10,
+    flexWrap: 'wrap', // Allow wrapping for child elements
   },
-  detailTitle: {
+  transactionTitle: {
     fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1, // Allow it to take up available space and wrap if needed
+    marginRight: 10, // Add some space between title and status
   },
-  detailText: {
-    fontSize: 16,
+  transactionStatus: {
+    fontSize: 14,
+    color: '#FF9900',
+    flexShrink: 1, // Allow the status text to shrink if necessary to avoid overflow
+    maxWidth: '40%', // Limit the width of the status so it doesn't push the title
+  },
+  driverContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  driverName: {
+    fontSize: 14,
+    color: '#333',
+  },
+  timestamp: {
+    fontSize: 14,
+    color: '#777',
     textAlign: 'right',
-    marginLeft: 10,
-    color: '#000000',
   },
   loaderContainer: {
     flex: 1,
@@ -313,7 +361,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#000000',
+    color: '#333',
   },
   modalContainer: {
     flex: 1,
@@ -322,34 +370,71 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
-    backgroundColor: 'white',
-    borderRadius: 10,
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
     padding: 20,
     alignItems: 'center',
-    position: 'relative', // Allow absolute positioning of close button
+    position: 'relative',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 15,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  modalDetails: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 8,
   },
   closeButton: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    padding: 5,
+    top: 12,
+    right: 12,
+    padding: 8,
   },
   closeButtonText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: 'gray', // Change color as per your design
+    color: '#555',
   },
+  // button onhold
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 10,
+    marginTop: 20,
+  },
+  button: {
+    width: '48%',
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  completeButton: {
+    backgroundColor: '#176B87',
+  },
+  cancelButton: {
+    backgroundColor: '#FF4C4C',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  loadingModalContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '60%',
+  },
+  processingText: {
+    fontSize: 18,
+    color: '#333',
+    marginTop: 10,
   },
 });
 

@@ -1,13 +1,5 @@
 import React, {useRef, useEffect, useState} from 'react';
-import {
-  StyleSheet,
-  View,
-  Alert,
-  Text,
-  Modal,
-  TouchableOpacity,
-  Button,
-} from 'react-native';
+import {StyleSheet, View, Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 // ROUTES
@@ -34,6 +26,7 @@ import FooterComponent from './FooterComponent';
 
 import {calculateDistance, calculateETAWithDirectionsAPI} from './MapUtils';
 import CustomCallout from './CustomCallout';
+import ProximityAlertModal from './ProximityAlertModal';
 
 const Main = props => {
   const {navigation} = props;
@@ -558,78 +551,12 @@ const Main = props => {
           ROUTES={ROUTES}
         />
       </View>
-      <Modal
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          }}>
-          <View
-            style={{
-              width: 300,
-              padding: 20,
-              backgroundColor: 'white',
-              borderRadius: 10,
-            }}>
-            <Text style={{fontSize: 16, textAlign: 'center'}}>
-              Select the radius for proximity alerts:
-            </Text>
-
-            <TouchableOpacity
-              onPress={async () => {
-                await handleMarkerPlacement(selectedRadius, 1000);
-                setModalVisible(false);
-              }}
-              style={{
-                backgroundColor: '#176B87', // Example blue color
-                padding: 10,
-                borderRadius: 5,
-                marginVertical: 5, // Space between buttons
-              }}>
-              <Text style={{color: 'white', textAlign: 'center'}}>1 km</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={async () => {
-                await handleMarkerPlacement(selectedRadius, 3000);
-                setModalVisible(false);
-              }}
-              style={{
-                backgroundColor: '#176B87', // Example green color
-                padding: 10,
-                borderRadius: 5,
-                marginVertical: 5,
-              }}>
-              <Text style={{color: 'white', textAlign: 'center'}}>3 km</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={async () => {
-                await handleMarkerPlacement(selectedRadius, 5000);
-                setModalVisible(false);
-              }}
-              style={{
-                backgroundColor: '#176B87', // Example red color
-                padding: 10,
-                borderRadius: 5,
-                marginVertical: 5,
-              }}>
-              <Text style={{color: 'white', textAlign: 'center'}}>5 km</Text>
-            </TouchableOpacity>
-
-            <Button
-              title="Cancel"
-              onPress={() => setModalVisible(false)}
-              color="red"
-            />
-          </View>
-        </View>
-      </Modal>
+      <ProximityAlertModal
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        handleMarkerPlacement={handleMarkerPlacement}
+        selectedRadius={selectedRadius}
+      />
     </SafeAreaView>
   );
 };
