@@ -12,7 +12,7 @@ const PaginatedTable = ({ id, transaction }) => {
         {transaction.bus_driver_name}
       </td>
       <td className="border border-white text-center px-4 py-2">
-        {transaction.bus_number}
+        {transaction.conductor_name || "N/A"}
       </td>
       <td className="border border-white text-center px-4 py-2">
         {transaction.origin} - {transaction.destination}

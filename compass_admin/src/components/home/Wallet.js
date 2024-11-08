@@ -68,7 +68,7 @@ const Wallet = () => {
 
   useEffect(() => {
     calculateTotalsFromFilteredTransactions(); // Recalculate totals whenever filters or transactions change
-    // eslint-disable-next-line 
+    // eslint-disable-next-line
   }, [filters, transactionHistory]);
 
   const fetchTransactionHistory = () => {
@@ -491,7 +491,9 @@ const Wallet = () => {
                 <th className="border border-white px-4 py-2">
                   Bus Driver Name
                 </th>
-                <th className="border border-white px-4 py-2">Bus Number</th>
+                <th className="border border-white px-4 py-2">
+                  Conductor Name
+                </th>
                 <th className="border border-white px-4 py-2">Trip</th>
                 <th className="border border-white px-4 py-2">
                   Reference Number

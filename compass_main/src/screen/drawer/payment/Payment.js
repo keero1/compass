@@ -249,7 +249,7 @@ const Payment = props => {
     console.log('Last Stored Date:', lastStoredDate);
 
     if (lastStoredDate !== today) {
-      console.log('reset transaction today')
+      console.log('reset transaction today');
       await AsyncStorage.setItem(`transactions-${today}`, JSON.stringify([]));
       await AsyncStorage.setItem('lastTransactionDate', today);
       return 1;
@@ -286,6 +286,8 @@ const Payment = props => {
       bus_type: busType,
       bus_number: busData.bus_number,
       bus_driver_name: busData.bus_driver_name,
+      conductor_name: busData.conductor_name || 'N/A',
+      conductor_id: busData.conductor_id || 'N/A',
       route_name: routeName,
       origin: selectedOrigin,
       destination: selectedDestination,

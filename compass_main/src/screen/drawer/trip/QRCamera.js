@@ -16,6 +16,8 @@ import {
 } from 'react-native-vision-camera';
 import {Svg, Defs, Rect, Mask, Line} from 'react-native-svg';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // messaging api
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
@@ -119,12 +121,36 @@ const QRCamera = ({navigation}) => {
           conductor_name: name,
         });
 
-        ToastAndroid.show('Conductor assigned to bus!', ToastAndroid.SHORT);
-        setModalVisible(false);
-        setScanningEnabled(true);
+        const busDataString = await AsyncStorage.getItem('bus-data');
 
-        // Navigate back to the previous screen
-        navigation.goBack();
+        if (busDataString) {
+          const busData = JSON.parse(busDataString);
+
+          // Update the bus data with the conductor details
+          const updatedBusData = {
+            ...busData,
+            conductor_id: id,
+            conductor_name: name,
+          };
+
+          // Store the updated bus data back into AsyncStorage
+          await AsyncStorage.setItem(
+            'bus-data',
+            JSON.stringify(updatedBusData),
+          );
+
+          ToastAndroid.show('Conductor assigned to bus!', ToastAndroid.SHORT);
+          setModalVisible(false);
+          setScanningEnabled(true);
+
+          // Navigate back to the previous screen
+          navigation.goBack();
+        } else {
+          ToastAndroid.show(
+            'Bus data not found in AsyncStorage.',
+            ToastAndroid.SHORT,
+          );
+        }
       } catch (error) {
         ToastAndroid.show(
           'Error binding conductor to bus.',
@@ -151,13 +177,6 @@ const QRCamera = ({navigation}) => {
 
   const handleTorchPress = () => {
     setTorch(prev => !prev);
-  };
-
-  const formatNumber = number => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'PHP',
-    }).format(number);
   };
 
   const onError = useCallback(error => {
