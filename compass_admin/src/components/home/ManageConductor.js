@@ -9,6 +9,8 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 
+import { QRCodeSVG } from "qrcode.react";
+
 const conductorsCollection = collection(db, "conductors");
 
 const ManageConductor = () => {
@@ -38,6 +40,8 @@ const ManageConductor = () => {
 
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
     useState(false);
+
+  const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
 
   const fetchConductorData = async () => {
     try {
@@ -124,6 +128,18 @@ const ManageConductor = () => {
     setSelectedConductor(null);
     setNewConductor({ name: "", phone_number: "" });
     setPhoneNumber("");
+  };
+
+  //qrcode
+
+  const openQRCodeModal = (conductor) => {
+    setSelectedConductor(conductor); // Set the selected conductor for QR code
+    setIsQRCodeModalOpen(true); // Open the QR code modal
+  };
+
+  const closeQRCodeModal = () => {
+    setIsQRCodeModalOpen(false);
+    setSelectedConductor(null);
   };
 
   const handleInputChange = (e) => {
@@ -244,7 +260,8 @@ const ManageConductor = () => {
               <th className="text-left text-xl">User ID</th>
               <th className="text-left text-xl">Name</th>
               <th className="text-left text-xl">Phone Number</th>
-              <th className="text-left text-xl">Actions</th>
+              <th className="text-left text-xl"></th>
+              <th className="text-left text-xl"></th>
             </tr>
           </thead>
           <tbody>
@@ -278,6 +295,14 @@ const ManageConductor = () => {
                         className="btn btn-ghost btn-xs"
                       >
                         Edit
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => openQRCodeModal(conductor)}
+                        className="btn btn-ghost btn-xs"
+                      >
+                        Show ID
                       </button>
                     </td>
                   </tr>
@@ -315,6 +340,57 @@ const ManageConductor = () => {
             >
               &gt;
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {isQRCodeModalOpen && selectedConductor && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Conductor ID Card</h3>
+
+            {/* ID Card Layout */}
+            <div
+              className="flex items-center border p-4 rounded-lg mx-auto"
+              style={{
+                width: "450px", // Slightly larger width to balance content
+                height: "200px",
+                display: "flex",
+                justifyContent: "space-between", // Push QR code to the end
+              }}
+            >
+              {/* Left side: Name and Phone Number */}
+              <div className="flex flex-col justify-between w-3/5">
+                <div className="font-bold text-lg">Santrans Corporation</div>
+                <div className="text-sm mt-2">
+                  Full Name: {selectedConductor.name}
+                </div>
+                <div className="text-sm mt-1">
+                  Phone Number: (+63) {selectedConductor.phone_number}
+                </div>
+                <div className="text-sm mt-1">Conductor</div>
+              </div>
+
+              {/* Right side: QR Code */}
+              <div className="flex justify-end items-center w-2/5 mr-5">
+                <QRCodeSVG
+                  value={JSON.stringify({
+                    id: selectedConductor.conductor_id,
+                    name: selectedConductor.name,
+                    user_id: selectedConductor.user_id,
+                  })}
+                  size={100} // You can adjust the size of the QR code here
+                />
+              </div>
+            </div>
+
+            <div className="modal-action">
+              <button className="btn btn-disabled">Print</button>
+              <button onClick={closeQRCodeModal} className="btn">
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
