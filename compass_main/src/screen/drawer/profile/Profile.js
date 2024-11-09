@@ -34,6 +34,7 @@ const Profile = () => {
   const [userName, setUserName] = useState(null);
   const [newDriverName, setNewDriverName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [busData, setBusData] = useState([]);
 
   // password
   const [currentPassword, setCurrentPassword] = useState('');
@@ -77,6 +78,33 @@ const Profile = () => {
       getUserInfo();
     }
   }, [focus]);
+
+  useEffect(() => {
+    const fetchBusData = async () => {
+      try {
+        const busDataString = await AsyncStorage.getItem('bus-data');
+        const routeDataString = await AsyncStorage.getItem('route-data');
+
+        if (busDataString && routeDataString) {
+          const busData = JSON.parse(busDataString);
+
+          // Extract and set only the needed fields
+          setBusData({
+            license_number: busData.license_plate,
+            bus_number: busData.bus_number,
+            route_name: routeDataString.route_name,
+          });
+        }
+      } catch (error) {
+        console.error(
+          'Error fetching bus and route data from AsyncStorage:',
+          error,
+        );
+      }
+    };
+
+    fetchBusData();
+  }, []);
 
   const requestNameChange = async () => {
     const user = auth().currentUser;
@@ -241,6 +269,28 @@ const Profile = () => {
                 <Text style={styles.detailTitle}>Phone Number</Text>
                 <Text style={styles.detailText}>
                   (+63) {phoneNumber || 912345678}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Bus Information</Text>
+
+            <View style={styles.detailBox}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailTitle}>Bus License</Text>
+                <Text style={styles.detailText}>
+                  {busData.license_number || 'license'}
+                </Text>
+              </View>
+
+              <View style={styles.separator} />
+
+              <View style={styles.detailItem}>
+                <Text style={styles.detailTitle}>Bus Number</Text>
+                <Text style={styles.detailText}>
+                  {busData.bus_number || 'bus number'}
                 </Text>
               </View>
             </View>

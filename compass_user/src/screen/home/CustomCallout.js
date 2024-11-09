@@ -14,11 +14,7 @@ const CustomCallout = ({navigation, routes, currentLocation, eta, bus}) => {
     <Callout
       style={{alignItems: 'center'}}
       onPress={() => {
-        navigation.navigate(routes, {
-          busId: bus.id,
-          routeId: bus.details.route_id,
-          currentCoordinates: currentLocation,
-        });
+        console.log('press');
       }}>
       <Svg width={120} height={120}>
         <Defs>
@@ -45,7 +41,7 @@ const CustomCallout = ({navigation, routes, currentLocation, eta, bus}) => {
       <Text>
         Last Update: {bus.details.timestamp.toDate().toLocaleString()}
       </Text>
-
+      {/* 
       <View
         style={{
           backgroundColor: '#176B87',
@@ -55,7 +51,7 @@ const CustomCallout = ({navigation, routes, currentLocation, eta, bus}) => {
           alignItems: 'center',
         }}>
         <Text style={{color: 'white'}}>Pay in Advance</Text>
-      </View>
+      </View> */}
     </Callout>
   );
 };

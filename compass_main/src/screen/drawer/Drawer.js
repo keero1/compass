@@ -69,9 +69,9 @@ const Drawer = props => {
     navigation.navigate(ROUTES.PAYMENT);
   };
 
-  const onPaymentRequestPressed = () => {
-    navigation.navigate(ROUTES.PAYMENTREQUEST);
-  };
+  // const onPaymentRequestPressed = () => {
+  //   navigation.navigate(ROUTES.PAYMENTREQUEST);
+  // };
 
   const onTransactionPressed = () => {
     navigation.navigate(ROUTES.TRANSACTIONS);
@@ -140,12 +140,12 @@ const Drawer = props => {
           <BanknotesIcon size={30} color="gray" />
           <Text style={styles.menuItem}>Payment</Text>
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={onPaymentRequestPressed}
           style={styles.menuItemContainer}>
           <BanknotesIcon size={30} color="gray" />
           <Text style={styles.menuItem}>Payment Request</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
           onPress={onTransactionPressed}
           style={styles.menuItemContainer}>

@@ -268,7 +268,7 @@ const Navbar = () => {
           <li>
             <Link to="/wallet">
               <WalletIcon className="size-6" />
-              Wallet
+              Dashboard
             </Link>
           </li>
           <li>

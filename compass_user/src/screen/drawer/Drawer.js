@@ -115,7 +115,8 @@ const Drawer = props => {
   };
 
   const onAdvancePaymentPressed = () => {
-    navigation.navigate(ROUTES.ADVANCEPAYMENTHISTORY);
+    // navigation.navigate(ROUTES.ADVANCEPAYMENTHISTORY);
+    console.log('pressed');
   };
 
   const onHelpPressed = () => {
