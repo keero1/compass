@@ -16,7 +16,7 @@ import {ScrollView} from 'react-native-gesture-handler';
 
 import moment from 'moment';
 
-const AdvancePaymentHistory = props => {
+const PaymentRequest = props => {
   const {navigation} = props;
   const user = auth().currentUser;
 
@@ -32,7 +32,7 @@ const AdvancePaymentHistory = props => {
     try {
       const transactionSnapshot = await firestore()
         .collection('advancePayment')
-        .where('passenger_id', '==', user.uid)
+        .where('bus_id', '==', user.uid)
         .orderBy('timestamp', 'desc')
         .get();
 
@@ -60,7 +60,6 @@ const AdvancePaymentHistory = props => {
           route_name: data.route_name,
           type: data.type,
           triggered: false,
-          triggeredApp: false,
         };
       });
 
@@ -105,23 +104,119 @@ const AdvancePaymentHistory = props => {
     setModalVisible(true);
   };
 
-  const handleCancel = async () => {
-    try {
-      await firestore()
-        .collection('advancePayment')
-        .doc(selectedTransaction.id)
-        .update({status: 'cancelled', triggeredApp: true});
+  const handleCancel = () => {
+    Alert.alert(
+      'Cancel Transaction',
+      'Are you sure you want to reject this request?',
+      [
+        {
+          text: 'No',
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: async () => {
+            try {
+              await firestore()
+                .collection('advancePayment')
+                .doc(selectedTransaction.id)
+                .update({status: 'rejected', triggeredApp: false});
 
-      fetchTransactions();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setModalVisible(false);
-    }
+              fetchTransactions();
+            } catch (error) {
+              console.error(error);
+            } finally {
+              setModalVisible(false);
+            }
+          },
+        },
+      ],
+      {cancelable: false},
+    );
   };
-
   const formatTimestamp = timestamp => {
     return moment(timestamp).format('DMMMYYYY:HH.mm').toLowerCase(); // Format as '2nov2024:21.23'
+  };
+
+  const handleComplete = async () => {
+    Alert.alert(
+      'Accept request',
+      'Please verify the information of the passenger that requested this advance payment.',
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            setLoadingModalVisible(true);
+            try {
+              const {status, ...transactionData} = selectedTransaction;
+
+              const walletRef = firestore()
+                .collection('users')
+                .doc(selectedTransaction.passenger_id)
+                .collection('wallet')
+                .doc('wallet');
+
+              const walletSnapshot = await walletRef.get();
+
+              if (!walletSnapshot.exists) {
+                throw new Error('Wallet not found');
+              }
+
+              const walletData = walletSnapshot.data();
+              const currentBalance = walletData.balance || 0;
+              const fareAmount = selectedTransaction.fare_amount;
+
+              if (currentBalance < fareAmount) {
+                Alert.alert(
+                  'Insufficient Balance',
+                  'The balance in the wallet is insufficient to complete this payment.',
+                );
+
+                await firestore()
+                  .collection('advancePayment')
+                  .doc(selectedTransaction.id)
+                  .update({status: 'rejected', triggeredApp: false});
+
+                setModalVisible(false);
+                fetchTransactions();
+                return;
+              }
+
+              const newBalance = currentBalance - fareAmount;
+              await walletRef.update({
+                balance: newBalance,
+                last_updated: firestore.FieldValue.serverTimestamp(),
+              });
+
+              await firestore()
+                .collection('transactions')
+                .add({
+                  ...transactionData,
+                  completedTimestamp: firestore.FieldValue.serverTimestamp(),
+                });
+
+              await firestore()
+                .collection('advancePayment')
+                .doc(selectedTransaction.id)
+                .update({status: 'completed', triggeredApp: false});
+
+              setModalVisible(false);
+              fetchTransactions();
+            } catch (error) {
+              console.log('Error completing transaction:', error);
+              Alert.alert(
+                'Error',
+                'An error occurred while completing the transaction. Please try again.',
+              );
+            } finally {
+              setLoadingModalVisible(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -229,9 +324,14 @@ const AdvancePaymentHistory = props => {
                   {selectedTransaction.status === 'onHold' && (
                     <>
                       <TouchableOpacity
+                        style={[styles.button, styles.completeButton]}
+                        onPress={handleComplete}>
+                        <Text style={styles.buttonText}>Accept Payment</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
                         style={[styles.button, styles.cancelButton]}
                         onPress={handleCancel}>
-                        <Text style={styles.buttonText}>Cancel</Text>
+                        <Text style={styles.buttonText}>Reject Payment</Text>
                       </TouchableOpacity>
                     </>
                   )}
@@ -365,8 +465,8 @@ const styles = StyleSheet.create({
   },
   // button onhold
   buttonContainer: {
-    justifyContent: 'center',
-    alignItems: 'center', // Center buttons horizontally
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     width: '100%',
     marginTop: 20,
   },
@@ -375,8 +475,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
+  completeButton: {
+    backgroundColor: '#176B87',
+  },
   cancelButton: {
-    justifyContent: 'center',
     backgroundColor: '#FF4C4C',
   },
   buttonText: {
@@ -411,4 +513,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AdvancePaymentHistory;
+export default PaymentRequest;

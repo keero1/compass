@@ -11,6 +11,9 @@ export {default as Main} from './home/Main';
 // drawer
 export {default as Drawer} from './drawer/Drawer';
 
+//
+export {default as PaymentRequest} from './drawer/advance/PaymentRequest';
+
 //about
 export {default as About} from './drawer/about/About';
 

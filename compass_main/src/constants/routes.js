@@ -7,6 +7,8 @@ export default {
 
   DRAWER: 'Drawer',
 
+  PAYMENTREQUEST: 'PaymentRequest',
+
   TRIP: 'Trip',
 
   QRCAMERA: 'QRCamera',

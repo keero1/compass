@@ -1,12 +1,5 @@
 import React, {useRef, useEffect, useState} from 'react';
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
-  Text,
-} from 'react-native';
+import {StyleSheet, View, TouchableOpacity, Dimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -25,6 +18,8 @@ import Geolocation from '@react-native-community/geolocation';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
+import notifee, {EventType} from '@notifee/react-native';
+
 const Main = props => {
   const {navigation} = props;
   const mapRef = useRef(MapView);
@@ -41,6 +36,22 @@ const Main = props => {
   const [seatCount, setSeatCount] = useState(0);
 
   const user = auth().currentUser.uid;
+
+  useEffect(() => {
+    const handleNotificationPress = async () => {
+      navigation.navigate(ROUTES.PAYMENTREQUEST);
+    };
+
+    const unsubscribe = notifee.onForegroundEvent(({type}) => {
+      if (type === EventType.PRESS) {
+        handleNotificationPress();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     // Fetch initial location

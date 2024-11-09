@@ -9,12 +9,13 @@ import {
 
 //firebase
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 //navigator
 import AuthNavigator from './src/navigations/AuthNavigator';
 import HomeNavigator from './src/navigations/HomeNavigator';
 
-import notifee from '@notifee/react-native';
+import notifee, {AndroidImportance} from '@notifee/react-native';
 
 export default function App() {
   // Set an initializing state whilst Firebase connects
@@ -113,6 +114,56 @@ export default function App() {
       await notifee.cancelNotification(initialNotification.notification.id);
     }
   }
+
+  async function showAdvancePaymentNotification(status) {
+    const channelId = await notifee.createChannel({
+      id: 'advance-payment',
+      name: 'Advance Payment Notifications',
+      importance: AndroidImportance.HIGH,
+    });
+
+    const notificationBody =
+      status === 'rejected'
+        ? 'Your Payment Request was rejected.'
+        : status === 'completed'
+        ? 'Your Payment Request was completed.'
+        : 'Your Payment Request status has been updated.';
+
+    await notifee.displayNotification({
+      title: 'Advance Payment Status',
+      body: notificationBody,
+      android: {
+        channelId,
+        smallIcon: 'ic_notification',
+        pressAction: {id: 'default'},
+      },
+    });
+  }
+
+  useEffect(() => {
+    if (user) {
+      const unsubscribe = firestore()
+        .collection('advancePayment')
+        .where('passenger_id', '==', user.uid) // Use 'user.uid' or a specific bus_id
+        .where('triggered', '==', true)
+        .where('triggeredApp', '==', false)
+        .onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(async change => {
+            if (change.type === 'modified') {
+              console.log('qweqwe');
+
+              showAdvancePaymentNotification(change.doc.data().status);
+
+              await firestore()
+                .collection('advancePayment')
+                .doc(change.doc.id)
+                .update({triggered: true});
+            }
+          });
+        });
+      return unsubscribe;
+    }
+  }, [user]);
 
   useEffect(() => {
     bootstrap()

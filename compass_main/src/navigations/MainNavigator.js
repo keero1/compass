@@ -13,6 +13,7 @@ import {
   Trip,
   About,
   QRCamera,
+  PaymentRequest,
 } from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/inputs/CustomBack';
@@ -37,6 +38,18 @@ function HomeNavigator() {
           title: false,
           headerRight: () => <CustomBack navigation={navigation} />,
           headerTransparent: true,
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.PAYMENTREQUEST}
+        component={PaymentRequest}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
         })}
       />
       <InsideStack.Screen

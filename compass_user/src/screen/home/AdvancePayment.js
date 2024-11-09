@@ -263,6 +263,8 @@ const AdvancePayment = props => {
       coordinates: currentCoordinates,
       type: 'AdvancePayment',
       status: 'onHold',
+      triggered: false,
+      triggeredApp: false,
     };
 
     console.log(receipt);
