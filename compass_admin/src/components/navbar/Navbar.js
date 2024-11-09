@@ -295,6 +295,12 @@ const Navbar = () => {
               Support Tickets
             </Link>
           </li>
+          <li>
+            <Link to="deleted-data">
+              <TrashIcon className="size-6" />
+              Deleted Accounts
+            </Link>
+          </li>
           {/* Super Admin Controls */}
           {userRole === "superadmin" && (
             <>
@@ -311,12 +317,6 @@ const Navbar = () => {
                 <Link to="manage-admins">
                   <UserGroupIcon className="size-6" />
                   Manage Admins
-                </Link>
-              </li>
-              <li>
-                <Link to="deleted-data">
-                  <TrashIcon className="size-6" />
-                  Deleted Accounts
                 </Link>
               </li>
               <li>

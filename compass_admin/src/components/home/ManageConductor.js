@@ -483,7 +483,7 @@ const ManageConductor = () => {
                   onClick={() => setIsDeleteConfirmationOpen(true)}
                   className="btn btn-error" // Change to btn-error for red color
                 >
-                  Delete
+                  Remove
                 </button>
                 <div className="flex space-x-2">
                   <button
