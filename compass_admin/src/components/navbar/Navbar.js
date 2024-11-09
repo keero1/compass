@@ -190,7 +190,7 @@ const Navbar = () => {
               </svg>
             </label>
             {/* NOTIFICATION */}
-            <NotificationDropdown />
+            {/* <NotificationDropdown /> */}
             <div className="dropdown dropdown-end mr-5">
               <div
                 tabIndex={0}
