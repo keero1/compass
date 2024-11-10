@@ -156,12 +156,12 @@ const Drawer = props => {
           <Text style={styles.menuItem}>Wallet</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={onAdvancePaymentPressed}
           style={styles.menuItemContainer}>
           <DocumentCheckIcon size={25} color="gray" />
           <Text style={styles.menuItem}>Advance Payments</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={styles.menuItemContainer}

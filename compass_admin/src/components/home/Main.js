@@ -106,6 +106,7 @@ const Main = () => {
             lat: data.coordinates.latitude,
             lng: data.coordinates.longitude,
             timestamp: data.timestamp.toDate(),
+            speed: data.speed,
             id: busId, // Include the bus ID
             details: busDetails, // Include the bus details
           };
@@ -187,6 +188,8 @@ const Main = () => {
     setClickedMarkerIndex(index); // Track the clicked marker index
     setInfoWindowOpen({
       details: markers[index].details,
+      speed: markers[index].speed,
+       timestamp: markers[index].timestamp.toLocaleString(),
       markerRef: markerInstancesRef.current[index],
     });
   };
@@ -195,6 +198,8 @@ const Main = () => {
     const markerRef = markerInstancesRef.current[index];
     setInfoWindowOpen({
       details: markers[index].details,
+      speed: markers[index].speed,
+      timestamp: markers[index].timestamp.toLocaleString(),
       markerRef,
     });
   };
@@ -301,6 +306,16 @@ const Main = () => {
                     <p>
                       <strong>Seat Taken:</strong>{" "}
                       {infoWindowOpen.details.seat_count} / 56
+                    </p>
+                    <p>
+                      <strong>Speed:</strong>{" "}
+                      {isNaN(infoWindowOpen.speed)
+                        ? 0
+                        : Math.round(infoWindowOpen.speed / 10) * 10}{" "}
+                      KM/h
+                    </p>
+                    <p>
+                      <strong>Last Updated:</strong> {infoWindowOpen.timestamp}
                     </p>
                   </div>
                 </div>

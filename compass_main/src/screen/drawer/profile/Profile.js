@@ -279,6 +279,15 @@ const Profile = () => {
 
             <View style={styles.detailBox}>
               <View style={styles.detailItem}>
+                <Text style={styles.detailTitle}>Route Name</Text>
+                <Text style={styles.detailText}>
+                  {busData.route_name || 'license'}
+                </Text>
+              </View>
+
+              <View style={styles.separator} />
+
+              <View style={styles.detailItem}>
                 <Text style={styles.detailTitle}>Bus License</Text>
                 <Text style={styles.detailText}>
                   {busData.license_number || 'license'}
