@@ -96,7 +96,7 @@ const Main = props => {
       },
       {
         enableHighAccuracy: true,
-        distanceFilter: 100, // Trigger updates only if the device moves more than 10 meters
+        distanceFilter: 100, // Trigger updates only if the device moves more than 100 meters
       },
     );
 

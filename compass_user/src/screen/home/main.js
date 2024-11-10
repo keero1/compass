@@ -91,11 +91,8 @@ const Main = props => {
 
   // get bus location
 
-  // Optimized bus marker fetching and updating logic
   useEffect(() => {
     console.log('Effect triggered');
-    const fiveMinutesAgo = new Date();
-    fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
 
     const unsubscribe = firestore()
       .collection('busLocation')
@@ -112,7 +109,7 @@ const Main = props => {
           console.log('Processing document:', doc.id);
           const data = doc.data();
 
-          // Ensure data and doc.id are valid
+          // check if data and doc.id are valid
           if (!data || !doc.id) {
             console.error('Invalid data or document ID');
             return null; // Skip this document

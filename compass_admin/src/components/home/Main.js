@@ -59,7 +59,7 @@ const Main = () => {
   const fetchBusDetails = async (busId) => {
     console.log("fetching bus details");
     try {
-      const busDoc = doc(db, "buses", busId); // Adjust the collection name if needed
+      const busDoc = doc(db, "buses", busId); 
       const busSnapshot = await getDoc(busDoc);
 
       if (busSnapshot.exists()) {

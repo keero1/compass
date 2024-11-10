@@ -11,7 +11,7 @@ const calculateETAWithDirectionsAPI = async (
       return 'Bus is not moving';
     }
 
-    const apiKey = Config.GMP_KEY; // Your Google Maps API key
+    const apiKey = Config.GMP_KEY; 
     const origin = `${currentLocation.latitude},${currentLocation.longitude}`;
     const destination = `${busLocation.latitude},${busLocation.longitude}`;
 
