@@ -418,6 +418,8 @@ const Main = props => {
     }
   };
 
+  const markerRefs = useRef([]);
+
   const onBusMarkerPressed = async (busX, index) => {
     try {
       console.log('Selected routeId:', busX.details.route_id);
@@ -447,6 +449,7 @@ const Main = props => {
         }
       }
 
+      // reshow the callout cause the first callout dont load the eta and speed
       setTimeout(() => {
         markerRefs.current[index].showCallout();
       });
@@ -456,25 +459,6 @@ const Main = props => {
       console.error('Error processing route:', error);
     }
   };
-
-  const markerRefs = useRef([]);
-
-  /**
-   * This is for pre-loading the callout (tanginang package yan may bug di nag loload image sa first tap/load ng callout).
-   * Diko pa natest sa nagalaw na bus since nag a-update yon ng marker HAHAHAHHH
-   */
-
-  useEffect(() => {
-    if (busMarkers.length > 0) {
-      busMarkers.forEach((bus, index) => {
-        if (markerRefs.current[index]) {
-          markerRefs.current[index].showCallout(); // load the callout to cook the image
-        }
-
-        markerRefs.current[index].hideCallout(); // unload the callout ready to be pressed
-      });
-    }
-  }, [busMarkers]);
 
   return (
     <SafeAreaView style={styles.container}>

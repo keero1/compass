@@ -8,6 +8,7 @@ import {
   Dimensions,
   ToastAndroid,
   Modal,
+  Alert
 } from 'react-native';
 import {
   Camera,
@@ -83,19 +84,37 @@ const QRCamera = ({navigation}) => {
         );
         setScanningEnabled(false);
 
-        const scannedCode = codes[0];
-        const qrDataString = scannedCode.value;
+        try {
+          const scannedCode = codes[0];
+          const qrDataString = scannedCode.value;
 
-        // Assuming QR data is JSON formatted
-        const qrData = JSON.parse(qrDataString);
-        console.log(qrData);
+          // Assuming QR data is JSON formatted
+          const qrData = JSON.parse(qrDataString);
+          console.log(qrData);
 
-        setToken(qrData.token);
+          setToken(qrData.token);
 
-        // Set payment details and show modal
-        setPaymentDetails(qrData);
-        await fetchUserBalance(); // Fetch user balance
-        setModalVisible(true);
+          // Set payment details and show modal
+          setPaymentDetails(qrData);
+          await fetchUserBalance(); // Fetch user balance
+          setModalVisible(true);
+        } catch (error) {
+          console.log(error);
+          Alert.alert(
+            'Error',
+            'Invalid QRCode detected. Exiting camera...',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  // Code to execute after pressing "OK"
+                  navigation.navigate(ROUTES.WALLET);
+                },
+              },
+            ],
+            {cancelable: false}, // Set to true if you want it dismissible with a back button on Android
+          );
+        }
       } else {
         console.log('QR code detected outside the scan area');
       }

@@ -66,7 +66,7 @@ const Login = () => {
       console.log(error);
       Alert.alert(
         'Sign In Failed!',
-        "Please check your username and password and try again. If you've forgotten your password, you can reset it using the 'Forgot Password?'",
+        "Please check your username and password and try again. If you've forgotten your password, contact the adminds to reset your password.",
       );
     } finally {
       setLoading(false);

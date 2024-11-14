@@ -8,6 +8,7 @@ import {
   Dimensions,
   ToastAndroid,
   Modal,
+  Alert,
 } from 'react-native';
 import {
   Camera,
@@ -81,29 +82,47 @@ const QRCamera = ({navigation}) => {
         );
         setScanningEnabled(false);
 
-        const scannedCode = codes[0];
-        const qrDataString = scannedCode.value;
+        try {
+          const scannedCode = codes[0];
+          const qrDataString = scannedCode.value;
 
-        // Assuming QR data is JSON formatted
-        const qrData = JSON.parse(qrDataString);
-        console.log(qrData);
+          // Assuming QR data is JSON formatted
+          const qrData = JSON.parse(qrDataString);
+          console.log(qrData);
 
-        const {id, name, user_id} = qrData;
+          const {id, name, user_id} = qrData;
 
-        const conductorDoc = await firestore()
-          .collection('conductors')
-          .doc(id)
-          .get();
+          const conductorDoc = await firestore()
+            .collection('conductors')
+            .doc(id)
+            .get();
 
-        if (conductorDoc.exists) {
-          setConductorDetails({id, name, user_id});
+          if (conductorDoc.exists) {
+            setConductorDetails({id, name, user_id});
+            setModalVisible(true);
+          } else {
+            ToastAndroid.show('Conductor not found!', ToastAndroid.SHORT);
+            setScanningEnabled(true);
+          }
+
           setModalVisible(true);
-        } else {
-          ToastAndroid.show('Conductor not found!', ToastAndroid.SHORT);
-          setScanningEnabled(true);
+        } catch (error) {
+          console.log(error);
+          Alert.alert(
+            'Error',
+            'Invalid QRCode detected. Exiting camera...',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  // Code to execute after pressing "OK"
+                  navigation.goBack();
+                },
+              },
+            ],
+            {cancelable: false}, // Set to true if you want it dismissible with a back button on Android
+          );
         }
-
-        setModalVisible(true);
       } else {
         console.log('QR code detected outside the scan area');
       }
