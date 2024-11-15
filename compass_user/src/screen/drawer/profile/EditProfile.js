@@ -17,6 +17,8 @@ import firestore from '@react-native-firebase/firestore';
 import AuthInput from '../../../components/auth/AuthInput';
 import AuthButton from '../../../components/auth/AuthButton';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const MIN_PASSWORD_LENGTH = 8;
 
 const EditProfile = () => {
@@ -105,7 +107,25 @@ const EditProfile = () => {
         [
           {
             text: 'OK',
-            onPress: () => {
+            onPress: async () => {
+              const existingUserData = await AsyncStorage.getItem('user-data');
+
+              if (existingUserData) {
+                const userData = JSON.parse(existingUserData);
+                console.log(data);
+                if (profileDataType === 'Full Name') {
+                  userData.fullName = data;
+                } else if (profileDataType === 'User Name') {
+                  userData.username = data;
+                }
+                await AsyncStorage.setItem(
+                  'user-data',
+                  JSON.stringify(userData),
+                );
+
+                console.log(userData);
+              }
+
               navigation.goBack();
             },
           },

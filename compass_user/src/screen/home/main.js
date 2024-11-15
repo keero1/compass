@@ -232,7 +232,8 @@ const Main = props => {
         },
         {
           enableHighAccuracy: true,
-          distanceFilter: 10, // Update the location only if the user moves by 10 meters or more
+          distanceFilter: 10,
+          interval: 30000,
         },
       );
     };

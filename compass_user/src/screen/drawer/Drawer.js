@@ -20,6 +20,8 @@ import {IMAGES, ROUTES} from '../../constants';
 // Google
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import {
   ArrowLeftStartOnRectangleIcon,
   BanknotesIcon,
@@ -78,31 +80,24 @@ const Drawer = props => {
   const [userDisplayName, setUserDisplayName] = useState(null);
 
   useEffect(() => {
-    const getUserDisplayName = async () => {
-      const user = auth().currentUser;
+    const getUserData = async () => {
+      try {
+        const userDoc = await AsyncStorage.getItem('user-data');
 
-      if (user) {
-        try {
-          // Fetch user data from Firestore 'users' collection using the current user ID (uid)
-          const userDoc = await firestore()
-            .collection('users')
-            .doc(user.uid)
-            .get();
-
-          if (userDoc.exists) {
-            const userData = userDoc.data();
-            setUserDisplayName(userData.fullName); // Assuming 'fullName' is a field in the user document
-          } else {
-            console.log('User document does not exist');
-          }
-        } catch (error) {
-          console.error('Error fetching user data: ', error);
+        if (userDoc) {
+          const userData = JSON.parse(userDoc);
+          console.log('Fetched user data:', userData);
+          setUserDisplayName(userData.fullName || 'ComPass User');
+        } else {
+          console.log('No bus data found in AsyncStorage');
         }
+      } catch (error) {
+        console.error('Error fetching bus data from AsyncStorage: ', error);
       }
     };
 
-    if (focus === true) {
-      getUserDisplayName();
+    if (focus) {
+      getUserData();
     }
   }, [focus]);
 
