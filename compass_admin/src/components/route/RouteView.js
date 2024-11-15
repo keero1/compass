@@ -70,26 +70,17 @@ const RouteView = () => {
           point.longitude,
         ]);
 
-        const pickupCoordinates = data.pickup_points.map((point) => [
-          point.latitude,
-          point.longitude,
-        ]);
-
         if (coordinates.length === 0) {
           setRouteCoordinates([]);
-          return;
-        }
-
-        if (pickupCoordinates.length === 0) {
-          setPickupPointCoordinates([]);
           return;
         }
 
         const route = await getRoute(coordinates);
 
         setRouteCoordinates(route.route);
+        setPickupPointCoordinates(route.pickup_points);
 
-        setPickupPointCoordinates(pickupCoordinates);
+        console.log(route.pickup_points);
       } catch (error) {
         console.error("Error processing route:", error);
       }
@@ -220,7 +211,16 @@ const RouteView = () => {
 
     try {
       const routeDocRef = doc(db, "routes", routeId);
-
+      await updateDoc(routeDocRef, {
+        route_name: routeDataCopy.route_name,
+        description: routeDataCopy.description,
+        keypoints: routeDataCopy.keypoints.map((point) => ({
+          latitude: point.latitude,
+          longitude: point.longitude,
+          placeName: point.placeName,
+        })),
+      });
+      console.log("Route updated successfully!");
       setRouteData(routeDataCopy);
 
       setIsChangedMarker(false);
@@ -241,22 +241,6 @@ const RouteView = () => {
 
       setRouteCoordinates(route.route);
       setPickupPointCoordinates(route.pickup_points);
-
-      await updateDoc(routeDocRef, {
-        route_name: routeDataCopy.route_name,
-        description: routeDataCopy.description,
-        keypoints: routeDataCopy.keypoints.map((point) => ({
-          latitude: point.latitude,
-          longitude: point.longitude,
-          placeName: point.placeName,
-        })),
-        pickup_points: route.pickup_points.map((point) => ({
-          latitude: point.latitude,
-          longitude: point.longitude,
-          distance: point.distance,
-        })),
-      });
-      console.log("Route updated successfully!");
     } catch (error) {
       console.error("Error updating route:", error);
     }
