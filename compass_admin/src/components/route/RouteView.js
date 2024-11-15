@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 import { useNavigate, useParams } from "react-router-dom";
 import { Polyline } from "./components/polyline.tsx";
-import GeocodeComponent from "./components/GeocodeComponent.js";
 import { db } from "../../firebase/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
@@ -10,6 +9,7 @@ import { getRoute } from "./components/RoutesUtils.js";
 import redMarker from "../../assets/images/pins/pin_red.png";
 import blueMarker from "../../assets/images/pins/pin_blue.png";
 
+import GeocodeComponent from "./components/GeocodeComponent.js";
 import PlaceSearchComponent from "./components/PlaceSearchComponent.js";
 
 const RouteView = () => {
@@ -27,6 +27,8 @@ const RouteView = () => {
   const [mapZoom, setMapZoom] = useState(null);
   const [routeData, setRouteData] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const [pickupPointCoordinates, setPickupPointCoordinates] = useState([]);
+
   const [routeDataCopy, setRouteDataCopy] = useState();
 
   const [placePosition, setPlacePosition] = useState(null);
@@ -43,6 +45,8 @@ const RouteView = () => {
   const EDITING_TEXT = "Are you sure you want to edit this route's markers?";
   const CANCEL_TEXT =
     "Are you sure you want to cancel? Your changes will not be saved.";
+
+  const [togglePickupPointMarker, setTogglePickupPointMarker] = useState(false);
 
   useEffect(() => {
     if (!routeId) return;
@@ -66,18 +70,26 @@ const RouteView = () => {
           point.longitude,
         ]);
 
+        const pickupCoordinates = data.pickup_points.map((point) => [
+          point.latitude,
+          point.longitude,
+        ]);
+
         if (coordinates.length === 0) {
           setRouteCoordinates([]);
           return;
         }
 
-        const route = await getRoute(coordinates);
-        const routeCoordinates = route.map((coord) => ({
-          lat: coord.latitude,
-          lng: coord.longitude,
-        }));
+        if (pickupCoordinates.length === 0) {
+          setPickupPointCoordinates([]);
+          return;
+        }
 
-        setRouteCoordinates(routeCoordinates);
+        const route = await getRoute(coordinates);
+
+        setRouteCoordinates(route.route);
+
+        setPickupPointCoordinates(pickupCoordinates);
       } catch (error) {
         console.error("Error processing route:", error);
       }
@@ -208,16 +220,7 @@ const RouteView = () => {
 
     try {
       const routeDocRef = doc(db, "routes", routeId);
-      await updateDoc(routeDocRef, {
-        route_name: routeDataCopy.route_name,
-        description: routeDataCopy.description,
-        keypoints: routeDataCopy.keypoints.map((point) => ({
-          latitude: point.latitude,
-          longitude: point.longitude,
-          placeName: point.placeName,
-        })),
-      });
-      console.log("Route updated successfully!");
+
       setRouteData(routeDataCopy);
 
       setIsChangedMarker(false);
@@ -235,12 +238,25 @@ const RouteView = () => {
         return;
       }
       const route = await getRoute(coordinates);
-      const routeCoords = route.map((coord) => ({
-        lat: coord.latitude,
-        lng: coord.longitude,
-      }));
 
-      setRouteCoordinates(routeCoords);
+      setRouteCoordinates(route.route);
+      setPickupPointCoordinates(route.pickup_points);
+
+      await updateDoc(routeDocRef, {
+        route_name: routeDataCopy.route_name,
+        description: routeDataCopy.description,
+        keypoints: routeDataCopy.keypoints.map((point) => ({
+          latitude: point.latitude,
+          longitude: point.longitude,
+          placeName: point.placeName,
+        })),
+        pickup_points: route.pickup_points.map((point) => ({
+          latitude: point.latitude,
+          longitude: point.longitude,
+          distance: point.distance,
+        })),
+      });
+      console.log("Route updated successfully!");
     } catch (error) {
       console.error("Error updating route:", error);
     }
@@ -331,14 +347,25 @@ const RouteView = () => {
             styles: noLandMarkStyle,
           }}
         >
-          {routeDataCopy?.keypoints.map((point, index) => (
-            <Marker
-              key={index}
-              position={{ lat: point.latitude, lng: point.longitude }}
-              onClick={() => handleMarkerClick(index, point)}
-              icon={getMarkerIcon(index)}
-            />
-          ))}
+          {!togglePickupPointMarker &&
+            routeDataCopy?.keypoints.map((point, index) => (
+              <Marker
+                key={index}
+                position={{ lat: point.latitude, lng: point.longitude }}
+                onClick={() => handleMarkerClick(index, point)}
+                icon={getMarkerIcon(index)}
+              />
+            ))}
+
+          {togglePickupPointMarker &&
+            pickupPointCoordinates.map((point, index) => (
+              <Marker
+                key={`pickup-${index}`}
+                position={{ lat: point.lat, lng: point.lng }}
+                icon={redMarker} // You can use any marker for the pickup points
+              />
+            ))}
+
           {placePosition && (
             <GeocodeComponent
               position={placePosition}
@@ -367,22 +394,34 @@ const RouteView = () => {
           </div>
         )}
 
-        {/* SAVE BUTTON */}
-        <button
-          className="absolute bottom-5 right-5 btn btn-primary"
-          onClick={onSaveClick}
-          disabled={!isChangedX && !isChangedMarker}
-        >
-          Save
-        </button>
-        <button
-          className="absolute bottom-5 right-28 btn btn-secondary"
-          onClick={() =>
-            document.getElementById("confirm_edit_modal").showModal()
-          }
-        >
-          {isEditing ? "Cancel Edit" : "Edit Markers"}
-        </button>
+        <div className="absolute bottom-5 right-5 flex space-x-2">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setTogglePickupPointMarker(!togglePickupPointMarker)}
+            disabled={isEditing}
+          >
+            {togglePickupPointMarker
+              ? "Hide Pickup Points"
+              : "Show Pickup Points"}
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={() =>
+              document.getElementById("confirm_edit_modal").showModal()
+            }
+          >
+            {isEditing ? "Cancel Edit" : "Edit Markers"}
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={onSaveClick}
+            disabled={!isChangedX && !isChangedMarker}
+          >
+            Save
+          </button>
+        </div>
+
         {/* Toast */}
         {showToast && (
           <div className="toast toast-top toast-center">
