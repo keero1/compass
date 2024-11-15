@@ -133,6 +133,7 @@ const Main = props => {
       {
         enableHighAccuracy: true,
         distanceFilter: 100, // Trigger updates only if the device moves more than 100 meters
+        interval: 30000, //updates 30 seconds if no movement
       },
     );
 

@@ -8,7 +8,10 @@ import dayjs from "dayjs";
 
 import ExportTransactions from "../../components/wallet/ExportTransactions";
 
-import { formatNumber } from "../../components/wallet/WalletUtils";
+import {
+  formatDateTime,
+  formatNumber,
+} from "../../components/wallet/WalletUtils";
 import SkeletonTable from "../wallet/SkeletonTable";
 import PaginatedTable from "../wallet/PaginatedTable";
 
@@ -45,12 +48,19 @@ const Wallet = () => {
   // dropdown
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // transaction
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // filter
   const [filters, setFilters] = useState({
     searchQuery: "",
     paymentType: "",
     dateRange: "",
   });
+
+  // state
+  const [sortOrder, setSortOrder] = useState("asc");
 
   // loading
   const [loading, setLoading] = useState(true);
@@ -200,8 +210,11 @@ const Wallet = () => {
       !filters.paymentType || transaction.payment_type === filters.paymentType;
     const searchMatch =
       !searchQuery ||
-      transaction.bus_driver_name.toLowerCase().includes(searchQuery) ||
-      transaction.reference_number.toString().includes(searchQuery); // Check for reference number
+      (transaction.bus_driver_name?.toLowerCase() ?? "").includes(
+        searchQuery
+      ) ||
+      (transaction.conductor_name?.toLowerCase() ?? "").includes(searchQuery) ||
+      (transaction.reference_number?.toString() ?? "").includes(searchQuery); // Check for reference number
 
     let dateMatch = true;
     if (filters.dateRange) {
@@ -255,6 +268,29 @@ const Wallet = () => {
   );
 
   // handle
+  const handleSortByDate = () => {
+    const sortedTransactions = [...transactionHistory].sort((a, b) => {
+      if (sortOrder === "asc") {
+        return a.timestamp - b.timestamp; // Ascending order
+      } else {
+        return b.timestamp - a.timestamp; // Descending order
+      }
+    });
+
+    setTransactionHistory(sortedTransactions);
+    setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+  };
+
+  const handleRowClick = (transaction) => {
+    setSelectedTransaction(transaction);
+    setIsModalOpen(true); // Open the modal when a row is clicked
+  };
+
+  const handleCancel = () => {
+    setSelectedTransaction(null); // Reset the selected transaction
+    setIsModalOpen(false); // Close modal
+  };
+
   const handlePointClick = (event, elements) => {
     if (elements.length > 0) {
       const firstPoint = elements[0];
@@ -431,7 +467,7 @@ const Wallet = () => {
             <input
               type="text"
               name="searchQuery"
-              placeholder="Filter by Bus Driver Name, Bus Number, or Reference Number"
+              placeholder="Filter by Bus Driver Name, Conductor Name, or Reference Number"
               value={filters.searchQuery}
               onChange={handleFilterChange}
               className="input input-bordered w-4/12" // Smaller width for the search input
@@ -487,7 +523,45 @@ const Wallet = () => {
           <table className="min-w-full border-collapse bor">
             <thead>
               <tr>
-                <th className="border border-white px-4 py-2">Date</th>
+                <th
+                  className="border border-white px-4 py-2 cursor-pointer flex items-center gap-2"
+                  onClick={handleSortByDate}
+                >
+                  <span>
+                    {sortOrder === "asc" ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 15l7-7 7 7"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  Date
+                </th>
                 <th className="border border-white px-4 py-2">
                   Bus Driver Name
                 </th>
@@ -512,6 +586,7 @@ const Wallet = () => {
                   <PaginatedTable
                     key={transaction.id}
                     transaction={transaction}
+                    onRowClick={handleRowClick}
                   /> // Data
                 ))
               ) : (
@@ -604,6 +679,65 @@ const Wallet = () => {
             >
               &gt;
             </button>
+          </div>
+        </div>
+      )}
+
+      {isModalOpen && selectedTransaction && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md w-3/4">
+            <h2 className="font-bold text-lg">Transaction Details</h2>
+
+            {/* Modal content */}
+            <div>
+              <p>
+                <strong>Transaction ID:</strong> {selectedTransaction.id}
+              </p>
+              <p>
+                <strong>Bus Driver Name:</strong>{" "}
+                {selectedTransaction.bus_driver_name}
+              </p>
+              <p>
+                <strong>Bus Number:</strong> {selectedTransaction.bus_number}
+              </p>
+              <p>
+                <strong>Bus Type:</strong> {selectedTransaction.bus_type}
+              </p>
+              <p>
+                <strong>Conductor Name:</strong>{" "}
+                {selectedTransaction.conductor_name}
+              </p>
+              <p>
+                <strong>Trip:</strong> {selectedTransaction.origin} -{" "}
+                {selectedTransaction.destination}
+              </p>
+              <p>
+                <strong>Payment Type:</strong>{" "}
+                {selectedTransaction.payment_type}
+              </p>
+              <p>
+                <strong>Passenger Type:</strong>{" "}
+                {selectedTransaction.passenger_type}
+              </p>
+              <p>
+                <strong>Reference Number:</strong>{" "}
+                {selectedTransaction.reference_number}
+              </p>
+              <p>
+                <strong>Fare Amount:</strong>{" "}
+                {formatNumber(selectedTransaction.fare_amount)}
+              </p>
+              <p>
+                <strong>Date and Time:</strong>{" "}
+                {formatDateTime(selectedTransaction.timestamp)}
+              </p>
+            </div>
+
+            <div className="modal-action">
+              <button className="btn" onClick={handleCancel}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

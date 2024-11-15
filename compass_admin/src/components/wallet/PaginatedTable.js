@@ -2,9 +2,13 @@ import React from "react";
 
 import { formatNumber, formatDate } from "./WalletUtils";
 
-const PaginatedTable = ({ id, transaction }) => {
+const PaginatedTable = ({ id, transaction, onRowClick }) => {
   return (
-    <tr key={id}>
+    <tr
+      key={id}
+      onClick={() => onRowClick(transaction)}
+      className="cursor-pointer"
+    >
       <td className="border border-white px-4 py-2">
         {formatDate(transaction.timestamp)}
       </td>

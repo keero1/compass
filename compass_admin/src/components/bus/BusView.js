@@ -13,7 +13,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import { useAuth } from "../../contexts/authContext";
 
-import Frieren from "../../assets/images/frieren.png";
+import Frieren from "../../assets/images/user_icon.png";
 
 const BusView = () => {
   const navigate = useNavigate();

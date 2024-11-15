@@ -7,7 +7,7 @@ import Divider from "@mui/material/Divider";
 
 import dayjs from "dayjs";
 
-import { formatDate } from "./WalletUtils";
+import { formatDateTime } from "./WalletUtils";
 
 // export
 import { CSVLink } from "react-csv";
@@ -76,8 +76,10 @@ const ExportTransactions = ({ transactionHistory }) => {
     }
 
     const csvHeaders = [
+      { label: "Transaction ID", key: "transaction_id" },
       { label: "Bus Driver Name", key: "bus_driver_name" },
       { label: "Bus Number", key: "bus_number" },
+      { label: "Conductor Name", key: "conductor_name" },
       { label: "Origin", key: "origin" },
       { label: "Destination", key: "destination" },
       { label: "Reference Number", key: "reference_number" },
@@ -88,15 +90,17 @@ const ExportTransactions = ({ transactionHistory }) => {
     ];
 
     const csvData = filteredTransactions.map((transaction) => ({
+      transaction_id: transaction.id,
       bus_driver_name: transaction.bus_driver_name,
       bus_number: transaction.bus_number,
+      conductor_name: transaction.conductor_name,
       origin: transaction.origin,
       destination: transaction.destination,
       reference_number: transaction.reference_number,
       payment_type: transaction.payment_type,
       passenger_type: transaction.passenger_type,
       fare_amount: transaction.fare_amount,
-      date: formatDate(transaction.timestamp),
+      date: formatDateTime(transaction.timestamp),
     }));
 
     setCsvData({ data: csvData, headers: csvHeaders });

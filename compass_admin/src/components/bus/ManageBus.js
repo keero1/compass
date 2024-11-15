@@ -263,7 +263,7 @@ const ManageBus = () => {
       {/* Add Bus Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
+          <div className="bg-base-300 p-6 rounded-md shadow-md w-full max-w-md">
             <h2 className="text-2xl mb-4">Add New Bus</h2>
             <form onSubmit={handleAddBus}>
               <div className="mb-4">
@@ -312,7 +312,7 @@ const ManageBus = () => {
       {/* Edit Bus Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
+          <div className="bg-base-300 p-6 rounded-md shadow-md w-full max-w-md">
             <h2 className="text-2xl mb-4">Edit Bus</h2>
             <form onSubmit={handleUpdateBus}>
               <div className="mb-4">

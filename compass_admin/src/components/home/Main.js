@@ -18,7 +18,7 @@ import {
 
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
 
-import Frieren from "../../assets/images/frieren.png";
+import Frieren from "../../assets/images/user_icon.png";
 import bus1 from "../../assets/images/bus1_final.svg";
 import bus2 from "../../assets/images/bus2_final.png";
 
@@ -59,7 +59,7 @@ const Main = () => {
   const fetchBusDetails = async (busId) => {
     console.log("fetching bus details");
     try {
-      const busDoc = doc(db, "buses", busId); 
+      const busDoc = doc(db, "buses", busId);
       const busSnapshot = await getDoc(busDoc);
 
       if (busSnapshot.exists()) {
@@ -189,7 +189,7 @@ const Main = () => {
     setInfoWindowOpen({
       details: markers[index].details,
       speed: markers[index].speed,
-       timestamp: markers[index].timestamp.toLocaleString(),
+      timestamp: markers[index].timestamp.toLocaleString(),
       markerRef: markerInstancesRef.current[index],
     });
   };

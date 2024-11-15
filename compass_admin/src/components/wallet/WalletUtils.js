@@ -15,4 +15,18 @@ const formatDate = (timestamp) => {
   });
 };
 
-export { formatNumber, formatDate };
+const formatDateTime = (timestamp) => {
+  if (!timestamp) return "N/A";
+  const date = timestamp.toDate();
+  return date.toLocaleString("en-PH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false, // Use 24-hour format
+  });
+};
+
+export { formatNumber, formatDate, formatDateTime };

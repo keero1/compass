@@ -86,7 +86,6 @@ const Drawer = props => {
 
         if (userDoc) {
           const userData = JSON.parse(userDoc);
-          console.log('Fetched user data:', userData);
           setUserDisplayName(userData.fullName || 'ComPass User');
         } else {
           console.log('No bus data found in AsyncStorage');
