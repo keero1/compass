@@ -98,7 +98,7 @@ const QRCamera = ({navigation}) => {
             .get();
 
           if (conductorDoc.exists) {
-            setConductorDetails({id, name, user_id});
+            setConductorDetails({id, name, user_id, phone_number});
             setModalVisible(true);
           } else {
             ToastAndroid.show('Conductor not found!', ToastAndroid.SHORT);

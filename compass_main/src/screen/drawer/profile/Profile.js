@@ -238,11 +238,13 @@ const Profile = () => {
         <TouchableOpacity onPress={handleChoosePhoto} disabled={loading}>
           <View>
             <Image
-              source={profilePicture ? {uri: profilePicture} : IMAGES.frieren}
+              source={
+                profilePicture ? {uri: profilePicture} : IMAGES.user_profile
+              }
               style={styles.logo}
             />
             <View style={styles.iconOverlay}>
-              <PlusCircleIcon size={40} color="#176B87" />
+              <PlusCircleIcon size={40} color="gray" />
             </View>
           </View>
         </TouchableOpacity>
@@ -254,14 +256,12 @@ const Profile = () => {
             <Text style={styles.sectionTitle}>Account Details</Text>
 
             <View style={styles.detailBox}>
-              <TouchableOpacity
-                style={styles.detailItem}
-                onPress={() => setModalVisible(true)}>
+              <View style={styles.detailItem}>
                 <Text style={styles.detailTitle}>Full Name</Text>
                 <Text style={styles.detailText}>
                   {userFullName || 'ComPass Driver'}
                 </Text>
-              </TouchableOpacity>
+              </View>
 
               <View style={styles.separator} />
 

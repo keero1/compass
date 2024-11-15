@@ -112,7 +112,9 @@ const Drawer = props => {
         <View style={styles.profileContainer}>
           <View style={styles.profileContent}>
             <Image
-              source={profilePicture ? {uri: profilePicture} : IMAGES.frieren}
+              source={
+                profilePicture ? {uri: profilePicture} : IMAGES.user_profile
+              }
               style={styles.profileImage}
             />
             <View style={styles.textContainer}>

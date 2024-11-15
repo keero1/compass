@@ -5,12 +5,14 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import {getRoute} from './RouteUtils';
+
 // ROUTES
 
 import ROUTES from '../../constants/routes';
 
 // MAP
-import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {PROVIDER_GOOGLE, Marker, Polyline} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 // firebase
@@ -19,6 +21,7 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 import notifee, {EventType} from '@notifee/react-native';
+import TrafficLegend from './TrafficLegend';
 
 const Main = props => {
   const {navigation} = props;
@@ -36,6 +39,39 @@ const Main = props => {
   const [seatCount, setSeatCount] = useState(0);
 
   const user = auth().currentUser.uid;
+
+  // keypoints
+
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
+
+  useEffect(() => {
+    const fetchKeypoints = async () => {
+      try {
+        const polylineData = await AsyncStorage.getItem('polyline-data');
+
+        if (polylineData) {
+          console.log('loading data from local storage');
+          const decodedRoute = JSON.parse(polylineData);
+          setRouteCoordinates(decodedRoute);
+
+          return;
+        }
+
+        const keypointsData = await AsyncStorage.getItem('keypoints');
+        if (keypointsData) {
+          console.log('fetching data from direction api');
+          const route = await getRoute(JSON.parse(keypointsData));
+
+          await AsyncStorage.setItem('polyline-data', JSON.stringify(route));
+
+          setRouteCoordinates(route);
+        }
+      } catch (error) {
+        console.error('Error fetching keypoints:', error);
+      }
+    };
+    fetchKeypoints();
+  }, []);
 
   useEffect(() => {
     const handleNotificationPress = async () => {
@@ -223,7 +259,6 @@ const Main = props => {
 
     console.log('payment');
   };
-
   // save the current region
   const onRegionChangeComplete = region => {
     setMapRegion(region);
@@ -253,7 +288,6 @@ const Main = props => {
           onRegionChangeComplete={onRegionChangeComplete}
           pitchEnabled={false}
           showsCompass={false}
-          followsUserLocation
           toolbarEnabled={false}>
           {/* Render markers on the map */}
           {markers.map(marker => (
@@ -267,10 +301,19 @@ const Main = props => {
               description={marker.description} // Assuming you have description field
             />
           ))}
+
+          {routeCoordinates.length > 0 && (
+            <Polyline
+              coordinates={routeCoordinates}
+              strokeColor="#0051ff" // Customize the color
+              strokeWidth={2} // Customize the width
+            />
+          )}
         </MapView>
         <TouchableOpacity onPress={centerToUser} style={styles.centerButton}>
           <Icon name="my-location" size={30} color="black" />
         </TouchableOpacity>
+        <TrafficLegend screenWidth={screenWidth} />
         {/* Pay button */}
         <TouchableOpacity onPress={onPayPressed} style={styles.payButton}>
           <Icon name="payment" size={30} color="black" />

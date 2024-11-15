@@ -9,6 +9,7 @@ import {
   Modal,
   ActivityIndicator,
   ToastAndroid,
+  Alert,
 } from 'react-native';
 import {useIsFocused} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
@@ -136,6 +137,35 @@ const Payment = props => {
       console.error('Error fetching fare data: ', error);
     }
   };
+
+  // conductor check
+
+  const checkForConductor = async () => {
+    const busData = await AsyncStorage.getItem('bus-data');
+    const parsedBusData = busData ? JSON.parse(busData) : null;
+
+    if (!parsedBusData?.conductor_id || !parsedBusData?.conductor_name) {
+      // Show alert only if component is focused
+      Alert.alert(
+        'No Conductor Signed In',
+        'Please sign in before doing any transaction.',
+        [
+          {
+            text: 'Go Back',
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: 'Redirect',
+            onPress: () => navigation.replace('Trip'),
+          },
+        ],
+      );
+    }
+  };
+
+  useEffect(() => {
+    checkForConductor();
+  }, []);
 
   // Calculate distance for navigation
   const calculateDistance = (destinationIndex, place) => {

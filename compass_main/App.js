@@ -68,8 +68,19 @@ export default function App() {
       if (fareData)
         await AsyncStorage.setItem('fare-data', JSON.stringify(fareData));
 
-      const routeName = await fetchRouteName(routeId);
-      if (routeName) await AsyncStorage.setItem('route-data', routeName);
+      const routeData = await fetchRouteName(routeId);
+      if (routeData) {
+        await AsyncStorage.setItem(
+          'route-data',
+          JSON.stringify(routeData.route_name),
+        );
+        await AsyncStorage.setItem(
+          'keypoints',
+          JSON.stringify(
+            routeData.keypoints.map(point => [point.latitude, point.longitude]),
+          ),
+        );
+      }
 
       await AsyncStorage.setItem('bus-type', busType);
     } catch (error) {
@@ -92,7 +103,12 @@ export default function App() {
         .collection('routes')
         .doc(routeId)
         .get();
-      return routeDoc.exists ? routeDoc.data().route_name : null;
+      if (routeDoc.exists) {
+        const routeData = routeDoc.data();
+        const {route_name, keypoints} = routeData;
+        return {route_name, keypoints};
+      }
+      return null;
     } catch (error) {
       console.error('Error fetching route name:', error);
     }
