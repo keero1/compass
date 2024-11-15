@@ -4,6 +4,8 @@ import {
   View,
   StyleSheet,
   SafeAreaView,
+  ToastAndroid,
+  TouchableOpacity,
 } from 'react-native';
 
 const TransactionDetails = ({route}) => {
@@ -39,6 +41,10 @@ const TransactionDetails = ({route}) => {
     const timePart = date.toLocaleTimeString('en-US', timeOptions);
 
     return `${datePart}, ${timePart}`;
+  };
+
+  const handleReprintReceipt = () => {
+    ToastAndroid.show('No Thermal Printer detected', ToastAndroid.SHORT);
   };
 
   return (
@@ -102,6 +108,12 @@ const TransactionDetails = ({route}) => {
           </View>
         </View>
       </View>
+
+      <TouchableOpacity
+        style={styles.reprintButton}
+        onPress={handleReprintReceipt}>
+        <Text style={styles.reprintButtonText}>Reprint Receipt</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -166,6 +178,26 @@ const styles = StyleSheet.create({
     color: '#333',
     marginTop: 8,
     textAlign: 'left',
+  },
+  reprintButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#176B87',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  reprintButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 
