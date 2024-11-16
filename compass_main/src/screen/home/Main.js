@@ -111,7 +111,7 @@ const Main = props => {
       error => {
         console.error(error);
       },
-      {enableHighAccuracy: true, timeout: 20000},
+      {enableHighAccuracy: true, interval: 20000},
     );
 
     fetchSeatCount();

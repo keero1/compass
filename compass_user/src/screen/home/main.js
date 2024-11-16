@@ -85,7 +85,7 @@ const Main = props => {
       error => {
         console.error(error);
       },
-      {enableHighAccuracy: true, timeout: 20000},
+      {enableHighAccuracy: true, interval: 20000},
     );
   }, []); // Empty dependency array to run only on mount
 
@@ -295,6 +295,7 @@ const Main = props => {
       id: 'important',
       name: 'Important Notifications',
       importance: AndroidImportance.HIGH,
+      sound: 'hollow',
     });
 
     // Display a notification
@@ -305,6 +306,7 @@ const Main = props => {
         channelId,
         importance: AndroidImportance.HIGH,
         smallIcon: 'ic_notification',
+        sound: 'hollow',
         pressAction: {
           id: 'default',
         },

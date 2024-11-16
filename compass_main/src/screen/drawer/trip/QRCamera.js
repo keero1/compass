@@ -90,7 +90,7 @@ const QRCamera = ({navigation}) => {
           const qrData = JSON.parse(qrDataString);
           console.log(qrData);
 
-          const {id, name, user_id} = qrData;
+          const {id, name, user_id, phone_number} = qrData;
 
           const conductorDoc = await firestore()
             .collection('conductors')
