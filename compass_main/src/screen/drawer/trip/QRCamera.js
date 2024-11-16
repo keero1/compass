@@ -347,9 +347,6 @@ const QRCamera = ({navigation}) => {
                 <Text style={styles.modalText}>
                   Conductor User ID: {conductorDetails.user_id}
                 </Text>
-                <Text style={styles.modalText}>
-                  Conductor Phone Number: {conductorDetails.phone_number}
-                </Text>
               </>
             )}
             <View style={styles.modalButtonContainer}>
