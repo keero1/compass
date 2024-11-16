@@ -19,6 +19,7 @@ export const getRoute = async (coordinates) => {
     const data = await response.json();
 
     if (response.ok) {
+      console.log(data);
       return data; // Return the decoded polyline coordinates
     } else {
       throw new Error(data.error || "Error fetching route");
