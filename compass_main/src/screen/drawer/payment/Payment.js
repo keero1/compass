@@ -345,6 +345,39 @@ const Payment = props => {
           });
         console.log('company wallet updated successfully in sub-collection');
       }
+
+      // Update seat count in the buses collection
+      const busRef = firestore().collection('buses').doc(busData.bus_id);
+      const busDoc = await busRef.get();
+
+      if (busDoc.exists) {
+        const bus = busDoc.data();
+        if (bus && bus.seat_count !== 'full') {
+          // Increase seat count by 1
+          const updatedSeatCount = bus.seat_count + 1;
+
+          // If the seat count reaches the full capacity (56), set it to "full"
+          if (updatedSeatCount >= 56) {
+            await busRef.update({
+              seat_count: 'full',
+            });
+            console.log('Bus seat count updated to "full" in Firestore');
+          } else {
+            await busRef.update({
+              seat_count: updatedSeatCount,
+            });
+            console.log('Seat count incremented in Firestore');
+          }
+        }
+      }
+
+      // Update seat count in local AsyncStorage (bus-data)
+      const updatedBusData = {...busData, seat_count: busData.seat_count + 1};
+      if (updatedBusData.seat_count >= 56) {
+        updatedBusData.seat_count = 'full'; // Set to "full" if it reaches capacity
+      }
+      await AsyncStorage.setItem('bus-data', JSON.stringify(updatedBusData));
+      console.log('Seat count updated in local AsyncStorage');
     } catch (error) {
       console.error('Error syncing transaction and company wallet:', error);
     } finally {
