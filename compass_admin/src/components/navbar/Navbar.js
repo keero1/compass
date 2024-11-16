@@ -66,62 +66,6 @@ const Navbar = () => {
     return unsubscribe;
   };
 
-  const listenToTransactions = () => {
-    const transactionsRef = db.collection("transactions");
-    const unsubscribe = onSnapshot(transactionsRef, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const transactionData = change.doc.data();
-          const busId = transactionData.bus_id;
-
-          if (!busId) {
-            console.error("Transaction does not contain a bus_id.");
-            return;
-          }
-
-          updateBusSeatCount(busId);
-        }
-      });
-    });
-    return unsubscribe;
-  };
-
-  const updateBusSeatCount = async (busId) => {
-    try {
-      const busRef = doc(db, "buses", busId);
-      const busDoc = await getDoc(busRef);
-
-      if (!busDoc.exists()) {
-        console.error(`Bus with ID ${busId} does not exist.`);
-        return;
-      }
-
-      const busData = busDoc.data();
-      let newSeatCount = (busData.seat_count || 0) + 1;
-
-      // Cap the seat count to 56
-      if (newSeatCount >= 56) {
-        newSeatCount = 56;
-        await updateDoc(busRef, { status: "Full", seat_count: newSeatCount });
-      } else {
-        await updateDoc(busRef, { seat_count: newSeatCount });
-      }
-
-      console.log(`Updated bus ${busId}: seat_count = ${newSeatCount}`);
-    } catch (error) {
-      console.error("Error updating bus seat count:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUser) {
-      const transactionUnsubscribe = listenToTransactions();
-      return () => {
-        if (transactionUnsubscribe) transactionUnsubscribe();
-      };
-    }
-  }, [currentUser]);
-
   useEffect(() => {
     let unsubscribe;
     if (currentUser && currentUser.uid) {
