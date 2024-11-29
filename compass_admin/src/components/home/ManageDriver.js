@@ -218,6 +218,7 @@ const ManageDriver = () => {
                 alert(
                   `${responseData.createdBuses.length} buses were successfully imported.`
                 );
+                fetchBusData();
                 console.log("Created buses:", responseData.createdBuses);
                 if (responseData.skippedBuses.length > 0) {
                   console.log("Skipped buses:", responseData.skippedBuses);
