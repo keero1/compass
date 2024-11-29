@@ -24,6 +24,7 @@ const ManageDriver = () => {
   const [buses, setBuses] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingImport, setLoadingImport] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
 
@@ -180,6 +181,7 @@ const ManageDriver = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setLoadingImport(true);
       Papa.parse(file, {
         complete: async (result) => {
           const csvData = result.data;
@@ -236,6 +238,8 @@ const ManageDriver = () => {
               "Invalid CSV format. Please make sure it contains 'bus_driver_name', 'phone_number', 'route', and 'license_number'."
             );
           }
+
+          setLoadingImport(false);
         },
         header: true,
         skipEmptyLines: true,
@@ -425,16 +429,21 @@ const ManageDriver = () => {
               </li>
             </ul>
             <div className="modal-action">
-              <label className="btn btn-secondary">
-                Import
+              <label className="btn btn-secondary" disabled={loadingImport}>
+                {loadingImport ? "Processing..." : "Import"}
                 <input
                   type="file"
                   accept=".csv"
                   className="hidden"
                   onChange={handleFileChange}
+                  disabled={loadingImport}
                 />
               </label>
-              <button className="btn" onClick={toggleImportModal}>
+              <button
+                className="btn"
+                onClick={toggleImportModal}
+                disabled={loadingImport}
+              >
                 Close
               </button>
             </div>
