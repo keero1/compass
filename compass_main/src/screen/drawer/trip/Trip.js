@@ -302,6 +302,10 @@ const Trip = props => {
           <Text style={styles.infoLabel}>Today's Earnings</Text>
           <Text style={styles.infoText}>{formatNumber(earnings)}</Text>
         </View>
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoLabel}>Today's Remit</Text>
+          <Text style={styles.infoText}>{formatNumber(earnings * 0.1)}</Text>
+        </View>
       </View>
 
       <View style={styles.buttonContainer}>

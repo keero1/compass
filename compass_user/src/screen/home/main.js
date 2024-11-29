@@ -135,15 +135,14 @@ const Main = props => {
               longitude: data.coordinates.longitude,
             },
             details: {
-              name: busData.bus_driver_name,
-              conductor_name: busData.conductor_name || null,
+              bus_number: busData.bus_number,
               license_plate: busData.license_plate,
               route_id: data.route_id,
               timestamp: data.timestamp,
               seat_count: busData.seat_count,
-              profile_picture: profilePicture,
               speed: data.speed,
             },
+            emergency_status: data.emergency_status,
           };
 
           switch (change.type) {
@@ -498,8 +497,9 @@ const Main = props => {
               qaeFwYGWez7U8kQWF10b: 'bus2',
             };
 
-            // Use a default icon if route_id is not in routeIcons
-            const busIcon = routeIcons[bus.details.route_id] || 'bus1';
+            const busIcon = bus.emergency_status
+              ? 'bus3'
+              : routeIcons[bus.details.route_id] || 'bus1';
 
             return (
               <Marker

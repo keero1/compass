@@ -19,6 +19,7 @@ import {
   UserGroupIcon,
   TicketIcon,
   TrashIcon,
+  ExclamationCircleIcon,
 } from "@heroicons/react/24/solid";
 
 import NotificationDropdown from "./NotificationDropdown";
@@ -293,6 +294,12 @@ const Navbar = () => {
             <Link to="tickets">
               <TicketIcon className="size-6" />
               Support Tickets
+            </Link>
+          </li>
+          <li>
+            <Link to="reports">
+              <ExclamationCircleIcon className="size-6" />
+              Emergency
             </Link>
           </li>
           <li>

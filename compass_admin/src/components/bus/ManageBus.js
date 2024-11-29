@@ -8,6 +8,7 @@ import {
   doc,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import Papa from "papaparse";
 
 const ManageBus = () => {
   const navigate = useNavigate();
@@ -137,6 +138,82 @@ const ManageBus = () => {
     }
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      Papa.parse(file, {
+        complete: async (result) => {
+          const csvData = result.data;
+          const validData = csvData.filter(
+            (row) => row.bus_type && row.license_number
+          );
+
+          if (validData.length > 0) {
+            const nextBusNumber = getNextBusNumber();
+            const newBuses = validData.map((row, index) => ({
+              bus_number: nextBusNumber + index,
+              license_number: row.license_number,
+              bus_type: row.bus_type,
+            }));
+
+            let importedCount = 0;
+            let skippedCount = 0;
+
+            try {
+              setLoading(true);
+
+              for (const bus of newBuses) {
+                // Check if a bus with the same license_number exists in the collection
+                const busExists = await checkIfBusExists(bus.license_number);
+
+                if (!busExists) {
+                  // If bus doesn't exist, add it to the collection
+                  await addDoc(busesCollection, bus);
+                  importedCount++;
+                  setBuses((prevBuses) => [...prevBuses, bus]);
+                } else {
+                  // If bus exists, skip it
+                  skippedCount++;
+                }
+              }
+
+              console.log(skippedCount);
+
+              alert(
+                `${importedCount} buses were successfully imported. ${skippedCount} buses were skipped because they already exist.`
+              );
+            } catch (error) {
+              console.error("Error adding buses from CSV:", error);
+              alert("An error occurred while importing buses.");
+            } finally {
+              setLoading(false);
+            }
+          } else {
+            alert(
+              "Invalid CSV format. Please make sure it contains 'bus_type' and 'license_number'."
+            );
+          }
+        },
+        header: true,
+        skipEmptyLines: true,
+      });
+    }
+  };
+
+  // Function to check if a bus with a specific license number already exists in the collection
+  const checkIfBusExists = async (licenseNumber) => {
+    try {
+      const querySnapshot = await getDocs(busesCollection);
+      const busExists = querySnapshot.docs.some(
+        (doc) => doc.data().license_number === licenseNumber
+      );
+      return busExists;
+    } catch (error) {
+      console.error("Error checking if bus exists:", error);
+      return false; // Return false if there was an error querying the database
+    }
+  };
+
   // Pagination logic
   const filteredBuses = buses.filter((bus) =>
     bus.bus_number.toString().includes(filters.searchQuery)
@@ -175,12 +252,23 @@ const ManageBus = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Manage Buses</h1>
-          <button
-            className="btn btn-primary"
-            onClick={toggleModal} // Open add bus modal
-          >
-            Add Bus
-          </button>
+          <div className="flex space-x-2 justify-end">
+            <button
+              className="btn btn-primary"
+              onClick={toggleModal} // Open add bus modal
+            >
+              Add Bus
+            </button>
+            <label className="btn btn-secondary">
+              Import Bus CSV
+              <input
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </label>
+          </div>
         </div>
 
         {/* Table */}

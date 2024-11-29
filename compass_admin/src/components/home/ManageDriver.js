@@ -13,6 +13,10 @@ import { Link } from "react-router-dom";
 
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
 
+import { useAuth } from "../../contexts/authContext";
+
+import Papa from "papaparse";
+
 const busesCollection = collection(db, "buses");
 const routesCollection = collection(db, "routes");
 
@@ -22,6 +26,10 @@ const ManageDriver = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
+
+  const [parsedBuses, setParsedBuses] = useState([]);
+
+  const { currentUser } = useAuth();
 
   const [filters, setFilters] = useState({
     searchQuery: "",
@@ -33,6 +41,7 @@ const ManageDriver = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBus, setSelectedBus] = useState(null);
   const [confirmName, setConfirmName] = useState("");
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   //route
   const fetchRouteData = async () => {
@@ -64,7 +73,6 @@ const ManageDriver = () => {
           phone_number: data.phone_number,
           route_id: data.route_id,
           created_at: data.created_at,
-          bus_number: data.bus_number,
         };
       });
 
@@ -165,6 +173,76 @@ const ManageDriver = () => {
     }
   };
 
+  const toggleImportModal = () => {
+    setIsImportModalOpen(!isImportModalOpen);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      Papa.parse(file, {
+        complete: async (result) => {
+          const csvData = result.data;
+
+          // Validate CSV data to ensure required fields are present
+          const validData = csvData.filter(
+            (row) =>
+              row.bus_driver_name &&
+              row.phone_number &&
+              row.route &&
+              row.license_number
+          );
+
+          if (validData.length > 0) {
+            console.log("Valid bus driver data:", validData);
+
+            // Send the valid data to the backend
+            try {
+              const response = await fetch(
+                "https://compass-backend-coral.vercel.app/api/import-buses", // Adjust the URL if necessary
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ busData: validData }), // Send the valid data
+                }
+              );
+
+              const responseData = await response.json();
+
+              if (response.ok) {
+                // Display success message and list of created and skipped buses
+                alert(
+                  `${responseData.createdBuses.length} buses were successfully imported.`
+                );
+                console.log("Created buses:", responseData.createdBuses);
+                if (responseData.skippedBuses.length > 0) {
+                  console.log("Skipped buses:", responseData.skippedBuses);
+                  alert(
+                    `${responseData.skippedBuses.length} buses were skipped due to errors.`
+                  );
+                }
+              } else {
+                alert("Failed to import buses. Please try again.");
+                console.error("Error importing buses:", responseData.error);
+              }
+            } catch (error) {
+              alert("An error occurred while importing buses.");
+              console.error("Error importing buses:", error);
+            }
+          } else {
+            alert(
+              "Invalid CSV format. Please make sure it contains 'bus_driver_name', 'phone_number', 'route', and 'license_number'."
+            );
+          }
+        },
+        header: true,
+        skipEmptyLines: true,
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -180,6 +258,12 @@ const ManageDriver = () => {
           >
             Add Bus Driver
           </Link>
+          <button
+            className="btn btn-primary text-lg"
+            onClick={toggleImportModal}
+          >
+            Import Bus Driver CSV
+          </button>
         </div>
       </div>
 
@@ -316,6 +400,44 @@ const ManageDriver = () => {
             >
               &gt;
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Import Bus Driver CSV Modal */}
+      {isImportModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h2 className="font-bold text-lg">Import Bus Driver CSV</h2>
+            <p>Please prepare your CSV file with the following format:</p>
+            <ul className="list-disc ml-4">
+              <li>
+                <strong>bus_driver_name</strong>: Full name of the driver
+              </li>
+              <li>
+                <strong>phone_number</strong>: Driver's phone number
+              </li>
+              <li>
+                <strong>route</strong>: "1" for Sta Cruz, "2" for Quezon Ave.
+              </li>
+              <li>
+                <strong>license_number</strong>: Driver's license number
+              </li>
+            </ul>
+            <div className="modal-action">
+              <label className="btn btn-secondary">
+                Import
+                <input
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </label>
+              <button className="btn" onClick={toggleImportModal}>
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

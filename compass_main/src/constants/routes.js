@@ -15,6 +15,8 @@ export default {
 
   ABOUT: 'About',
 
+  REPORT: 'Report',
+
   PROFILE: 'Profile',
 
   PAYMENT: 'Payment',

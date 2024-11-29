@@ -7,6 +7,8 @@ import PaginatedTable from "../wallet/PaginatedTable";
 import SkeletonTable from "../wallet/SkeletonTable";
 import { useParams } from "react-router-dom";
 
+import { formatNumber, formatDateTime } from "../wallet/WalletUtils";
+
 const ConductorDashboard = () => {
   const { conductorId } = useParams();
   const [transactionHistory, setTransactionHistory] = useState([]);
@@ -18,6 +20,9 @@ const ConductorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  const [selectedTransaction, setSelectedTransaction] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const rowsOptions = [5, 10, 15, 20];
 
@@ -50,6 +55,32 @@ const ConductorDashboard = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conductorId]);
+
+  const today = dayjs();
+
+  // Filter today's transactions
+  const todayTransactions = transactionHistory.filter((transaction) =>
+    dayjs(transaction.timestamp.toDate()).isSame(today, "day")
+  );
+
+  const todayRemit =
+    todayTransactions.reduce(
+      (sum, t) => sum + parseFloat(t.fare_amount || 0),
+      0
+    ) * 0.08;
+
+  const totalRemit =
+    transactionHistory.reduce(
+      (sum, t) => sum + parseFloat(t.fare_amount || 0),
+      0
+    ) * 0.08;
+
+  const totalTransactions = transactionHistory.length;
+
+  const totalEarnings = transactionHistory.reduce(
+    (sum, t) => sum + parseFloat(t.fare_amount || 0),
+    0
+  );
 
   // Filtered transactions based on filters
   const filteredTransactions = transactionHistory.filter((transaction) => {
@@ -105,6 +136,16 @@ const ConductorDashboard = () => {
     startIndex + rowsPerPage
   );
 
+  const handleRowClick = (transaction) => {
+    setSelectedTransaction(transaction);
+    setIsModalOpen(true); // Open the modal when a row is clicked
+  };
+
+  const handleCancel = () => {
+    setSelectedTransaction(null); // Reset the selected transaction
+    setIsModalOpen(false); // Close modal
+  };
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prevFilters) => ({
@@ -134,6 +175,33 @@ const ConductorDashboard = () => {
 
   return (
     <div className="p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Earnings Card */}
+        <div className="bg-base-300 shadow-lg rounded-lg p-4">
+          <div className="text-lg font-semibold">Today's Remit</div>
+          <div className="text-2xl truncate">{formatNumber(todayRemit)}</div>
+          {/* <div className="text-sm text-green-500">↑ 12% Since last month</div> */}
+        </div>
+
+        {/* Transactions Card */}
+        <div className="bg-base-300 shadow-lg rounded-lg p-4">
+          <div className="text-lg font-semibold">Total Remit</div>
+          <div className="text-2xl truncate">{formatNumber(totalRemit)}</div>
+          {/* <div className="text-sm text-red-500">↓ 16% Since last month</div> */}
+        </div>
+
+        {/* Wallet Card */}
+        <div className="bg-base-300 shadow-lg rounded-lg p-4">
+          <div className="text-lg font-semibold">Total Transactions</div>
+          <div className="text-2xl truncate">{totalTransactions}</div>
+        </div>
+
+        {/* Buses Card */}
+        <div className="bg-base-300 shadow-lg rounded-lg p-4">
+          <div className="text-lg font-semibold">Total Earnings</div>
+          <div className="text-2xl truncate">{formatNumber(totalEarnings)}</div>
+        </div>
+      </div>
       <div className="bg-base-300 shadow-lg rounded-lg p-4 mt-4">
         <div className="text-lg font-semibold">Transaction History</div>
 
@@ -203,6 +271,7 @@ const ConductorDashboard = () => {
                   <PaginatedTable
                     key={transaction.id}
                     transaction={transaction}
+                    onRowClick={handleRowClick}
                   />
                 ))
               ) : (
@@ -265,6 +334,65 @@ const ConductorDashboard = () => {
             >
               Next
             </button>
+          </div>
+        </div>
+      )}
+
+      {isModalOpen && selectedTransaction && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md w-3/4">
+            <h2 className="font-bold text-lg">Transaction Details</h2>
+
+            {/* Modal content */}
+            <div>
+              <p>
+                <strong>Transaction ID:</strong> {selectedTransaction.id}
+              </p>
+              <p>
+                <strong>Bus Driver Name:</strong>{" "}
+                {selectedTransaction.bus_driver_name}
+              </p>
+              <p>
+                <strong>Bus Number:</strong> {selectedTransaction.bus_number}
+              </p>
+              <p>
+                <strong>Bus Type:</strong> {selectedTransaction.bus_type}
+              </p>
+              <p>
+                <strong>Conductor Name:</strong>{" "}
+                {selectedTransaction.conductor_name}
+              </p>
+              <p>
+                <strong>Trip:</strong> {selectedTransaction.origin} -{" "}
+                {selectedTransaction.destination}
+              </p>
+              <p>
+                <strong>Payment Type:</strong>{" "}
+                {selectedTransaction.payment_type}
+              </p>
+              <p>
+                <strong>Passenger Type:</strong>{" "}
+                {selectedTransaction.passenger_type}
+              </p>
+              <p>
+                <strong>Reference Number:</strong>{" "}
+                {selectedTransaction.reference_number}
+              </p>
+              <p>
+                <strong>Fare Amount:</strong>{" "}
+                {formatNumber(selectedTransaction.fare_amount)}
+              </p>
+              <p>
+                <strong>Date and Time:</strong>{" "}
+                {formatDateTime(selectedTransaction.timestamp)}
+              </p>
+            </div>
+
+            <div className="modal-action">
+              <button className="btn" onClick={handleCancel}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

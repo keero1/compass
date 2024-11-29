@@ -17,6 +17,7 @@ import {
   MapPinIcon,
   ArrowLeftStartOnRectangleIcon,
   QuestionMarkCircleIcon,
+  ExclamationCircleIcon,
 } from 'react-native-heroicons/solid';
 
 import auth from '@react-native-firebase/auth';
@@ -75,6 +76,10 @@ const Drawer = props => {
 
   const onTransactionPressed = () => {
     navigation.navigate(ROUTES.TRANSACTIONS);
+  };
+
+  const onReportPressed = () => {
+    navigation.navigate(ROUTES.REPORT);
   };
 
   const onAboutPressed = () => {
@@ -153,6 +158,12 @@ const Drawer = props => {
           style={styles.menuItemContainer}>
           <ArrowRightCircleIcon size={30} color="gray" />
           <Text style={styles.menuItem}>Transactions</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onReportPressed}
+          style={styles.menuItemContainer}>
+          <ExclamationCircleIcon size={30} color="gray" />
+          <Text style={styles.menuItem}>Report</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={onAboutPressed}

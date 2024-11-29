@@ -38,6 +38,7 @@ import ManageConductor from "./components/home/ManageConductor";
 
 import Download from "./components/download/Download";
 import Tickets from "./components/home/Tickets";
+import Reports from "./components/home/Reports";
 import ManageAdmin from "./components/super-admin/ManageAdmins";
 import Deleted from "./components/home/Deleted";
 import ConductorPage from "./components/conductor/ConductorPage";
@@ -77,6 +78,7 @@ function App() {
             <Route path="/manage-route" element={<ManageRoute />} />
             <Route path="/manage-conductor" element={<ManageConductor />} />
             <Route path="/tickets" element={<Tickets />} />
+            <Route path="/reports" element={<Reports />} />
             <Route path="/deleted-data" element={<Deleted />} />
             {/* Profile */}
             <Route path="/profile" element={<Profile />} />

@@ -17,6 +17,7 @@
     "firebase": "^10.13.0",
     "gmail-send": "^1.8.14",
     "jsqr": "^1.4.0",
+    "papaparse": "^5.4.1",
     "qrcode.react": "^4.1.0",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",

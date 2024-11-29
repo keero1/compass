@@ -17,6 +17,10 @@ export {default as PaymentRequest} from './drawer/advance/PaymentRequest';
 //about
 export {default as About} from './drawer/about/About';
 
+// report
+
+export {default as Report} from './drawer/report/Report';
+
 // trip
 export {default as Trip} from './drawer/trip/Trip';
 

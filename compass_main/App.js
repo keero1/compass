@@ -42,8 +42,33 @@ export default function App() {
         const {route_id, bus_type} = busData;
         await fetchRouteAndFareData(route_id, bus_type);
       }
+
+      const emergencyStatus = await fetchEmergencyStatus(uid);
+      if (emergencyStatus !== null) {
+        await AsyncStorage.setItem(
+          'emergency-status',
+          JSON.stringify(emergencyStatus),
+        );
+      }
     } catch (error) {
       console.error('Error initializing user data:', error);
+    }
+  }
+
+  async function fetchEmergencyStatus(uid) {
+    try {
+      const busLocationDoc = await firestore()
+        .collection('busLocation')
+        .doc(uid)
+        .get();
+      if (busLocationDoc.exists) {
+        const data = busLocationDoc.data();
+        return data.emergency_status ?? false; // Return emergency_status, default to false if not present
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching emergency status:', error);
+      return null;
     }
   }
 

@@ -16,28 +16,33 @@ const CustomCallout = ({navigation, routes, currentLocation, eta, bus}) => {
       onPress={() => {
         console.log('press');
       }}>
-      <Svg width={120} height={120}>
-        <Defs>
-          <ClipPath id="clip">
-            <Circle cx="50%" cy="50%" r="40%" />
-          </ClipPath>
-        </Defs>
-        <ImageSvg
-          width={120}
-          height={120}
-          preserveAspectRatio="xMidYMid slice"
-          href={bus.details.profile_picture}
-          clipPath="url(#clip)"
-        />
-      </Svg>
-      <Text>Driver Name: {bus.details.name}</Text>
-      {bus.details.conductor_name && (
-        <Text>Conductor Name: {bus.details.conductor_name}</Text>
+      {bus.emergency_status && (
+        <View>
+          <Text style={{color: 'red', fontWeight: 'bold'}}>
+            🚨 EMERGENCY: Active 🚨
+          </Text>
+        </View>
       )}
+      <Text>Bus Number: {bus.details.bus_number}</Text>
       <Text>License Plate: {bus.details.license_plate}</Text>
       <Text>Seat Slots: {bus.details.seat_count} / 56</Text>
-      <Text>Speed: {speed > 0 ? `around ${speed} km/h` : `${speed} km/h`}</Text>
-      <Text>ETA: {eta ? `${eta} minutes` : 'Not Available'}</Text>
+      <Text>
+        Speed:{' '}
+        {bus.emergency_status
+          ? 'NOT AVAILABLE'
+          : speed > 0
+          ? `around ${speed} km/h`
+          : `${speed} km/h`}
+      </Text>
+      <Text>
+        ETA:{' '}
+        {bus.emergency_status
+          ? 'NOT AVAILABLE'
+          : eta
+          ? `${eta} minutes`
+          : 'Not Available'}
+      </Text>
+
       <Text>
         Last Update: {bus.details.timestamp.toDate().toLocaleString()}
       </Text>

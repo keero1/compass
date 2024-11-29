@@ -225,6 +225,10 @@ const Wallet = () => {
         case "today":
           dateMatch = transactionDate.isSame(today, "day");
           break;
+        case "yesterday":
+          const yesterday = today.clone().subtract(1, "day");
+          dateMatch = transactionDate.isSame(yesterday, "day");
+          break;
         case "thisWeek":
           dateMatch =
             transactionDate.isAfter(today.startOf("week")) &&
@@ -360,6 +364,26 @@ const Wallet = () => {
       }
     }
   };
+
+  const uniqueBusDrivers = new Set(
+    filteredTransactions
+      .map((transaction) => transaction.bus_driver_name?.toLowerCase()) // Extract and normalize bus driver names
+      .filter((name) => name) // Ensure only non-null names are considered
+  );
+
+  const isUniqueBusDriver =
+    uniqueBusDrivers.size === 1 &&
+    [...uniqueBusDrivers][0].includes(filters.searchQuery.toLowerCase());
+
+  const uniqueConductor = new Set(
+    filteredTransactions
+      .map((transaction) => transaction.conductor_name?.toLowerCase()) // Extract and normalize bus driver names
+      .filter((name) => name) // Ensure only non-null names are considered
+  );
+
+  const isUniqueConductor =
+    uniqueConductor.size === 1 &&
+    [...uniqueConductor][0].includes(filters.searchQuery.toLowerCase());
 
   return (
     <div className="p-6">
@@ -499,6 +523,12 @@ const Wallet = () => {
                 Today
               </option>
               <option
+                value="yesterday"
+                disabled={filters.dateRange === "custom"}
+              >
+                Yesterday
+              </option>
+              <option
                 value="thisWeek"
                 disabled={filters.dateRange === "custom"}
               >
@@ -601,10 +631,59 @@ const Wallet = () => {
                 filters.paymentType ||
                 filters.dateRange) ? (
                 <tr>
-                  <td
-                    colSpan="6"
-                    className="border border-white text-end px-4 py-2 font-bold"
-                  ></td>
+                  {filters.searchQuery ? (
+                    <>
+                      {isUniqueBusDriver && (
+                        <>
+                          <td
+                            colSpan="1"
+                            className="border border-white text-end px-4 py-2 font-bold"
+                          ></td>
+                          <td className="border border-white text-end px-4 py-2">
+                            <span className="font-bold">
+                              Total Remit (10%):
+                            </span>{" "}
+                            {formatNumber(totalFare * 0.1)}
+                          </td>
+                          <td
+                            colSpan="4"
+                            className="border border-white text-end px-4 py-2 font-bold"
+                          ></td>
+                        </>
+                      )}
+
+                      {isUniqueConductor && (
+                        <>
+                          <td
+                            colSpan="2"
+                            className="border border-white text-end px-4 py-2 font-bold"
+                          ></td>
+                          <td className="border border-white text-end px-4 py-2">
+                            <span className="font-bold">Total Remit (8%):</span>{" "}
+                            {formatNumber(totalFare * 0.08)}
+                          </td>
+                          <td
+                            colSpan="3"
+                            className="border border-white text-end px-4 py-2 font-bold"
+                          ></td>
+                        </>
+                      )}
+
+                      {/* Fallback if no unique bus driver or conductor */}
+                      {!(isUniqueBusDriver || isUniqueConductor) && (
+                        <td
+                          colSpan="6"
+                          className="border border-white text-end px-4 py-2 font-bold"
+                        ></td>
+                      )}
+                    </>
+                  ) : (
+                    <td
+                      colSpan="6"
+                      className="border border-white text-end px-4 py-2 font-bold"
+                    ></td>
+                  )}
+
                   <td className="border border-white text-end px-4 py-2">
                     <span className="font-bold">Total:</span>{" "}
                     {formatNumber(totalFare)}
