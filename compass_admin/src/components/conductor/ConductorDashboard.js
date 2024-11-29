@@ -10,6 +10,9 @@ import { useParams } from "react-router-dom";
 import { formatNumber, formatDateTime } from "../wallet/WalletUtils";
 
 const ConductorDashboard = () => {
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const [totalRemit, setTotalRemit] = useState(0);
   const { conductorId } = useParams();
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [filters, setFilters] = useState({
@@ -69,19 +72,6 @@ const ConductorDashboard = () => {
       0
     ) * 0.08;
 
-  const totalRemit =
-    transactionHistory.reduce(
-      (sum, t) => sum + parseFloat(t.fare_amount || 0),
-      0
-    ) * 0.08;
-
-  const totalTransactions = transactionHistory.length;
-
-  const totalEarnings = transactionHistory.reduce(
-    (sum, t) => sum + parseFloat(t.fare_amount || 0),
-    0
-  );
-
   // Filtered transactions based on filters
   const filteredTransactions = transactionHistory.filter((transaction) => {
     const searchQuery = filters.searchQuery.toLowerCase();
@@ -101,6 +91,10 @@ const ConductorDashboard = () => {
         case "today":
           dateMatch = transactionDate.isSame(today, "day");
           break;
+        case "yesterday":
+          const yesterday = today.clone().subtract(1, "day");
+          dateMatch = transactionDate.isSame(yesterday, "day");
+          break;
         case "thisWeek":
           dateMatch =
             transactionDate.isAfter(today.startOf("week")) &&
@@ -117,9 +111,6 @@ const ConductorDashboard = () => {
           dateMatch =
             transactionDate.isAfter(today.startOf("month")) &&
             transactionDate.isBefore(today.endOf("month"));
-          break;
-        case "past90Days":
-          dateMatch = transactionDate.isAfter(today.subtract(90, "day"));
           break;
         default:
           dateMatch = true;
@@ -172,6 +163,22 @@ const ConductorDashboard = () => {
   const handleRowsPerPageChange = (e) => {
     setRowsPerPage(Number(e.target.value)); // Update rowsPerPage based on user selection
   };
+
+  const calculateTotalsFromFilteredTransactions = () => {
+    const totalFare = filteredTransactions.reduce(
+      (acc, transaction) => acc + parseFloat(transaction.fare_amount || 0),
+      0
+    );
+
+    setTotalEarnings(totalFare.toFixed(2)); // Update total earnings
+    setTotalTransactions(filteredTransactions.length); // Update total transactions
+    setTotalRemit(totalFare.toFixed(2) * 0.08);
+  };
+
+  useEffect(() => {
+    calculateTotalsFromFilteredTransactions(); // Recalculate totals whenever filters or transactions change
+    // eslint-disable-next-line
+  }, [filters, transactionHistory]);
 
   return (
     <div className="p-6">
@@ -234,10 +241,10 @@ const ConductorDashboard = () => {
             >
               <option value="">All Transactions</option>
               <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
               <option value="thisWeek">This Week</option>
               <option value="lastWeek">Last Week</option>
               <option value="thisMonth">This Month</option>
-              <option value="past90Days">Past 90 Days</option>
             </select>
           </div>
         </div>
