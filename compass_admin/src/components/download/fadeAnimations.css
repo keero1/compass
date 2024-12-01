@@ -1,0 +1,26 @@
+/* fadeAnimations.css */
+
+/* Fade-in initial state (hidden) */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px); /* Start from 30px below */
+  transition: opacity 1s ease-out, transform 1s ease-out;  /* Smooth fade and slide-up */
+}
+
+/* Fade-in visible state */
+.fade-in-visible {
+  opacity: 1 !important;
+  transform: translateY(0);  /* Reset position to its original state */
+  transition: opacity 1s ease-out, transform 1s ease-out;  /* Smooth fade and slide-up */
+}
+
+/* Fade-out invisible state */
+.fade-out-invisible {
+  opacity: 0 !important;
+  transform: translateY(30px);  /* Start sliding out to 30px below */
+  transition: opacity 1s ease-in, transform 1s ease-in;  /* Smooth fade and slide-out */
+}
+
+html {
+  scroll-behavior: smooth;
+}

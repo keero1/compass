@@ -9,12 +9,15 @@ import {
 
 //firebase
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 //navigator
 import AuthNavigator from './src/navigations/AuthNavigator';
 import HomeNavigator from './src/navigations/HomeNavigator';
 
-import notifee from '@notifee/react-native';
+import notifee, {AndroidImportance} from '@notifee/react-native';
 
 export default function App() {
   // Set an initializing state whilst Firebase connects
@@ -23,8 +26,11 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(user => {
+    const subscriber = auth().onAuthStateChanged(async user => {
       setUser(user);
+      if (user) {
+        await initializeUserData(user.uid);
+      }
       setTimeout(() => {
         setInitializing(false); // Set initializing to false after 1 second
       }, 1000); // 1000 milliseconds = 1 second
@@ -32,6 +38,29 @@ export default function App() {
 
     return subscriber; // unsubscribe on unmount
   }, []);
+
+  // async storage
+
+  async function initializeUserData(uid) {
+    try {
+      await fetchUserData(uid);
+    } catch (error) {
+      console.error('Error initializing user data:', error);
+    }
+  }
+
+  async function fetchUserData(uid) {
+    try {
+      const userDoc = await firestore().collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        const userData = {...userDoc.data(), user_id: userDoc.id};
+        await AsyncStorage.setItem('user-data', JSON.stringify(userData));
+        return userData;
+      }
+    } catch (error) {
+      console.error('Error fetching bus data:', error);
+    }
+  }
 
   // Function to request location permission
   async function requestLocationPermission() {
@@ -113,6 +142,56 @@ export default function App() {
       await notifee.cancelNotification(initialNotification.notification.id);
     }
   }
+
+  async function showAdvancePaymentNotification(status) {
+    const channelId = await notifee.createChannel({
+      id: 'advance-payment',
+      name: 'Advance Payment Notifications',
+      importance: AndroidImportance.HIGH,
+    });
+
+    const notificationBody =
+      status === 'rejected'
+        ? 'Your Payment Request was rejected.'
+        : status === 'completed'
+        ? 'Your Payment Request was completed.'
+        : 'Your Payment Request status has been updated.';
+
+    await notifee.displayNotification({
+      title: 'Advance Payment Status',
+      body: notificationBody,
+      android: {
+        channelId,
+        smallIcon: 'ic_notification',
+        pressAction: {id: 'default'},
+      },
+    });
+  }
+
+  useEffect(() => {
+    if (user) {
+      const unsubscribe = firestore()
+        .collection('advancePayment')
+        .where('passenger_id', '==', user.uid) // Use 'user.uid' or a specific bus_id
+        .where('triggered', '==', true)
+        .where('triggeredApp', '==', false)
+        .onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(async change => {
+            if (change.type === 'modified') {
+              console.log('qweqwe');
+
+              showAdvancePaymentNotification(change.doc.data().status);
+
+              await firestore()
+                .collection('advancePayment')
+                .doc(change.doc.id)
+                .update({triggered: true});
+            }
+          });
+        });
+      return unsubscribe;
+    }
+  }, [user]);
 
   useEffect(() => {
     bootstrap()

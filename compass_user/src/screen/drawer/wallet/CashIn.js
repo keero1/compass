@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 
 import {WebView} from 'react-native-webview';
@@ -20,8 +21,12 @@ import {useNavigation} from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
+import {IMAGES} from '../../../constants/';
+
 const CashIn = () => {
   const navigation = useNavigation();
+
+  const userId = auth().currentUser.uid;
 
   const [scaleValue] = useState(new Animated.Value(1));
   const [amount, setAmount] = useState('');
@@ -56,8 +61,8 @@ const CashIn = () => {
         data: {
           attributes: {
             amount: parseInt(amount) * 100,
-            description: `Payment of PHP ${amount}`,
-            remarks: 'Cash in remarks',
+            description: `Payment of PHP ${amount} from ${userId}`,
+            remarks: `'Cash in remarks'`,
           },
         },
       };
@@ -118,6 +123,12 @@ const CashIn = () => {
         balance: firestore.FieldValue.increment(+amount),
         last_updated: firestore.FieldValue.serverTimestamp(),
       });
+
+    await firestore().collection('cashInTransactions').add({
+      userId: user.uid,
+      amount: amount,
+      timestamp: firestore.FieldValue.serverTimestamp(),
+    });
   };
 
   //animation
@@ -171,18 +182,33 @@ const CashIn = () => {
       ) : (
         <SafeAreaView style={styles.main}>
           <View style={styles.inputContainer}>
+            <Text style={styles.pesoSign}>₱</Text>
             <TextInput
-              placeholder={'Enter Amount from 100-1000 PHP'}
+              placeholder={'0.00'}
               style={styles.input}
               keyboardType="numeric"
               value={amount}
               onChangeText={text => {
                 const numericText = text.replace(/[^0-9]/g, '');
-                setAmount(numericText);
+
+                if (numericText && parseInt(numericText) > 1000) {
+                  setAmount('1000');
+                } else {
+                  setAmount(numericText);
+                }
               }}
             />
           </View>
 
+          {/* Add text below the input box */}
+          <Text style={styles.amountHint}>Enter Amount between 100-1000</Text>
+
+          {/* Text message above the button */}
+          <Text style={styles.warningText}>
+            Please check the amount before you proceed.
+          </Text>
+
+          {/* Bottom positioned button */}
           <Animated.View
             style={[
               styles.animatedContainer,
@@ -204,7 +230,7 @@ const CashIn = () => {
               {loading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.text}>Next</Text>
+                <Text style={styles.text}>Proceed</Text>
               )}
             </Pressable>
           </Animated.View>
@@ -221,25 +247,52 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#F4F4FB',
   },
+  cashImage: {
+    width: 300,
+    height: 300,
+    alignSelf: 'center',
+    marginBottom: 20,
+    marginTop: -150,
+  },
   inputContainer: {
+    position: 'relative',
     backgroundColor: 'white',
     width: '100%',
-
     borderColor: '#B2B2B2',
     borderWidth: 1,
     borderRadius: 20,
-
     paddingHorizontal: 10,
-
     marginVertical: 10,
+    justifyContent: 'center',
   },
-  input: {},
-
+  pesoSign: {
+    position: 'absolute',
+    left: 15,
+    fontSize: 18,
+    top: 10, // Adjust based on input padding
+  },
+  input: {
+    paddingLeft: 25, // Add padding to prevent overlap with the peso sign
+    fontSize: 18, // Adjust the font size for better appearance
+  },
+  amountHint: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20, // Adds space between the hint and next element
+  },
+  warningText: {
+    position: 'absolute', // Make it fixed
+    bottom: 100, // Place it above the button
+    alignSelf: 'center',
+    fontSize: 16,
+  },
   animatedContainer: {
-    width: '100%',
+    position: 'absolute', // Fixed at the bottom
+    bottom: 20, // Position the button near the bottom
+    left: 20,
+    right: 20,
     alignItems: 'center',
   },
-
   container: {
     backgroundColor: '#176B87',
 

@@ -135,8 +135,9 @@ const Login = () => {
 
         // Create user document
         await firestore().collection('users').doc(user.uid).set({
+          fullName: 'ComPass User',
           username: username,
-          coordinates: null,
+          timestamp: firestore.FieldValue.serverTimestamp(),
         });
       }
 

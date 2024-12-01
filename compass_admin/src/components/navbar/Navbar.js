@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { doSignOut } from "../../firebase/auth";
-import Frieren from "../../assets/images/frieren.png";
+import User from "../../assets/images/user_icon.png";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "../../contexts/authContext";
@@ -10,16 +10,22 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import {
   ArrowLeftStartOnRectangleIcon,
   UserIcon,
+  UsersIcon,
   HomeIcon,
   WalletIcon,
   TruckIcon,
   MapPinIcon,
+  NewspaperIcon,
+  UserGroupIcon,
+  TicketIcon,
+  TrashIcon,
+  ExclamationCircleIcon,
 } from "@heroicons/react/24/solid";
 
 import NotificationDropdown from "./NotificationDropdown";
 
 const Navbar = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userRole } = useAuth();
 
   const navigate = useNavigate();
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "nord");
@@ -39,8 +45,8 @@ const Navbar = () => {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setCompanyName(data.company_name); // Update with the company_name
-        localStorage.setItem("companyName", data.company_name); // Cache the company name
+        setCompanyName(data.company_name);
+        localStorage.setItem("companyName", data.company_name);
       } else {
         console.log("No such document!");
       }
@@ -73,7 +79,7 @@ const Navbar = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [currentUser]);
+  }, [currentUser, companyName]);
 
   // update theme
 
@@ -185,15 +191,15 @@ const Navbar = () => {
               </svg>
             </label>
             {/* NOTIFICATION */}
-            <NotificationDropdown />
+            {/* <NotificationDropdown /> */}
             <div className="dropdown dropdown-end mr-5">
               <div
                 tabIndex={0}
                 role="button"
                 className="btn btn-ghost btn-circle avatar"
               >
-                <div className="w-10 rounded-full">
-                  <img alt="Tailwind CSS Navbar component" src={Frieren} />
+                <div className="w-8 rounded-full">
+                  <img alt="User Profile" src={User} />
                 </div>
               </div>
               <ul
@@ -217,10 +223,7 @@ const Navbar = () => {
                   </Link>
                 </li>
                 <li>
-                  <button
-                    className="text-red-500"
-                    onClick={handleSignOut}
-                  >
+                  <button className="text-red-500" onClick={handleSignOut}>
                     <ArrowLeftStartOnRectangleIcon className="size-6" />
                     Logout
                   </button>
@@ -231,8 +234,8 @@ const Navbar = () => {
         </div>
         {/* <main className={`flex-1 ${isSidebarOpen ? "m-5" : "ml-5"}`}> */}
         <main
-          className={`flex-1 mt-16 ${
-            isSidebarOpen && !isSmallScreen ? "ml-52" : "ml-0"
+          className={`flex-1 mt-12 ${
+            isSidebarOpen && !isSmallScreen ? "ml-60" : "ml-0"
           }`}
         >
           <Outlet />
@@ -250,7 +253,7 @@ const Navbar = () => {
         ) : (
           <></>
         )}
-        <ul className="menu menu-lg min-h-full bg-base-200 w-56 rounded-r-lg fixed top-0 left-0 right-0 z-30">
+        <ul className="menu menu-lg min-h-full bg-base-200 w-64 rounded-r-lg fixed top-0 left-0 right-0 z-30">
           <li>
             <Link to="/">
               <h1 className="text-2xl">ComPass</h1>
@@ -266,27 +269,71 @@ const Navbar = () => {
           <li>
             <Link to="/wallet">
               <WalletIcon className="size-6" />
-              Wallet
+              Dashboard
             </Link>
           </li>
           <li>
             <Link to="manage-driver">
               <TruckIcon className="size-6" />
-              Manage Drivers
+              Manage drivers
             </Link>
           </li>
           <li>
             <Link to="manage-route">
               <MapPinIcon className="size-6" />
-              Manage Routes
+              Manage routes
             </Link>
           </li>
-          {/* <li>
-            <button>
-              <Cog6ToothIcon className="size-6" />
-              Settings
-            </button>
-          </li> */}
+          <li>
+            <Link to="manage-conductor">
+              <UsersIcon className="size-6" />
+              Manage conductors
+            </Link>
+          </li>
+          <li>
+            <Link to="tickets">
+              <TicketIcon className="size-6" />
+              Support Tickets
+            </Link>
+          </li>
+          <li>
+            <Link to="reports">
+              <ExclamationCircleIcon className="size-6" />
+              Emergency
+            </Link>
+          </li>
+          <li>
+            <Link to="deleted-data">
+              <TrashIcon className="size-6" />
+              Deleted Accounts
+            </Link>
+          </li>
+          {/* Super Admin Controls */}
+          {userRole === "superadmin" && (
+            <>
+              <li className="mt-4 pointer-events-none">
+                <h2 className="text-base">SUPER ADMIN</h2>
+              </li>
+              {/* <li>
+                <Link>
+                  <UsersIcon className="size-6" />
+                  Manage admins
+                </Link>
+              </li> */}
+              <li>
+                <Link to="manage-admins">
+                  <UserGroupIcon className="size-6" />
+                  Manage Admins
+                </Link>
+              </li>
+              <li>
+                <Link to="admin-logs">
+                  <NewspaperIcon className="size-6" />
+                  Admin logs
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </div>

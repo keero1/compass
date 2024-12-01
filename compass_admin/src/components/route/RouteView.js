@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 import { useNavigate, useParams } from "react-router-dom";
 import { Polyline } from "./components/polyline.tsx";
-import GeocodeComponent from "./components/GeocodeComponent.js";
 import { db } from "../../firebase/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
@@ -10,6 +9,7 @@ import { getRoute } from "./components/RoutesUtils.js";
 import redMarker from "../../assets/images/pins/pin_red.png";
 import blueMarker from "../../assets/images/pins/pin_blue.png";
 
+import GeocodeComponent from "./components/GeocodeComponent.js";
 import PlaceSearchComponent from "./components/PlaceSearchComponent.js";
 
 const RouteView = () => {
@@ -27,6 +27,8 @@ const RouteView = () => {
   const [mapZoom, setMapZoom] = useState(null);
   const [routeData, setRouteData] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const [pickupPointCoordinates, setPickupPointCoordinates] = useState([]);
+
   const [routeDataCopy, setRouteDataCopy] = useState();
 
   const [placePosition, setPlacePosition] = useState(null);
@@ -72,12 +74,11 @@ const RouteView = () => {
         }
 
         const route = await getRoute(coordinates);
-        const routeCoordinates = route.map((coord) => ({
-          lat: coord.latitude,
-          lng: coord.longitude,
-        }));
 
-        setRouteCoordinates(routeCoordinates);
+        setRouteCoordinates(route.route);
+        setPickupPointCoordinates(route.pickup_points);
+
+        console.log(route.pickup_points);
       } catch (error) {
         console.error("Error processing route:", error);
       }
@@ -235,12 +236,9 @@ const RouteView = () => {
         return;
       }
       const route = await getRoute(coordinates);
-      const routeCoords = route.map((coord) => ({
-        lat: coord.latitude,
-        lng: coord.longitude,
-      }));
 
-      setRouteCoordinates(routeCoords);
+      setRouteCoordinates(route.route);
+      setPickupPointCoordinates(route.pickup_points);
     } catch (error) {
       console.error("Error updating route:", error);
     }

@@ -123,11 +123,8 @@ const PaymentConfirmation = ({route}) => {
     try {
       await firestore().collection('transactions').add(receipt);
       console.log('Transaction synced to Firestore');
-      console.log(busData.company_id);
       if (isCashless) {
         await firestore()
-          .collection('company')
-          .doc(busData.company_id)
           .collection('wallet')
           .doc('wallet')
           .update({

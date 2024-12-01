@@ -5,11 +5,22 @@ export default {
 
   MAIN: 'Main',
 
+  ADVANCEPAYMENT: 'AdvancePayment',
   // DRAWER
   DRAWER: 'Drawer',
   WALLET: 'Wallet',
 
+  ABOUT: 'About',
+
+  SUPPORT: 'Support',
+
+  FEEDBACK: 'Feedback',
+
+  TICKETS: 'Tickets',
+
   //DRAWER CHILD
+
+  ADVANCEPAYMENTHISTORY: 'AdvancePaymentHistory',
 
   //Wallet
 

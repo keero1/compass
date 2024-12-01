@@ -12,6 +12,12 @@ import {
   CashIn,
   TransactionDetails,
   TransactionHistory,
+  About,
+  Support,
+  Feedback,
+  Tickets,
+  AdvancePayment,
+  AdvancePaymentHistory,
 } from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/custom/CustomBack';
@@ -42,12 +48,80 @@ function HomeNavigator() {
       />
 
       <InsideStack.Screen
+        name={ROUTES.ADVANCEPAYMENTHISTORY}
+        component={AdvancePaymentHistory}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'Advance Payment History',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+
+      <InsideStack.Screen
         name={ROUTES.WALLET}
         component={Wallet}
         options={() => ({
           ...TransitionPresets.SlideFromRightIOS,
           gestureDirection: 'horizontal',
           headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.ADVANCEPAYMENT}
+        component={AdvancePayment}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'Advance Payment',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.SUPPORT}
+        component={Support}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'Support',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.FEEDBACK}
+        component={Feedback}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'Feedback',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.TICKETS}
+        component={Tickets}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'Tickets',
           headerStyle: {
             backgroundColor: '#F4F4FB', // Set header background color
           },
@@ -103,6 +177,20 @@ function HomeNavigator() {
           headerTitleAlign: 'center',
           headerTransparent: true,
           headerTitle: () => null,
+        })}
+      />
+
+      <InsideStack.Screen
+        name={ROUTES.ABOUT}
+        component={About}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTitle: 'About',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
         })}
       />
 

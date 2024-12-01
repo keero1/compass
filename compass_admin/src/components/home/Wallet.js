@@ -4,6 +4,30 @@ import { db, auth } from "../../firebase/firebase";
 import { collection, getDocs, onSnapshot, doc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
+import dayjs from "dayjs";
+
+import ExportTransactions from "../../components/wallet/ExportTransactions";
+
+import {
+  formatDateTime,
+  formatNumber,
+} from "../../components/wallet/WalletUtils";
+import SkeletonTable from "../wallet/SkeletonTable";
+import PaginatedTable from "../wallet/PaginatedTable";
+
+// chart
+import {
+  Chart as ChartJS,
+  BarElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(BarElement, LinearScale, CategoryScale, Tooltip, Legend);
+
 const Wallet = () => {
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [totalTransactions, setTotalTransactions] = useState(0);
@@ -12,38 +36,50 @@ const Wallet = () => {
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  // chart
+  const [monthlyEarnings, setMonthlyEarnings] = useState(Array(12).fill(0));
+  const [selectedYear, setSelectedYear] = useState(dayjs().year());
 
-  // rows
+  // paginated
+  const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const rowsOptions = [5, 10, 15, 20];
 
   // dropdown
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // transaction
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // filter
   const [filters, setFilters] = useState({
     searchQuery: "",
     paymentType: "",
+    dateRange: "",
   });
 
+  // state
+  const [sortOrder, setSortOrder] = useState("asc");
+
+  // loading
   const [loading, setLoading] = useState(true);
 
-  const fetchEarnings = () => {
-    const transactionsCollection = collection(db, "transactions");
+  // Fetch earnings based on filters
+  const calculateTotalsFromFilteredTransactions = () => {
+    const totalFare = filteredTransactions.reduce(
+      (acc, transaction) => acc + parseFloat(transaction.fare_amount || 0),
+      0
+    );
 
-    const unsubscribe = onSnapshot(transactionsCollection, (snapshot) => {
-      let earnings = 0;
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        earnings += Number(data.fare_amount || 0);
-      });
-
-      setTotalEarnings(earnings.toFixed(2));
-      setTotalTransactions(snapshot.size);
-    });
-
-    return unsubscribe;
+    setTotalEarnings(totalFare.toFixed(2)); // Update total earnings
+    setTotalTransactions(filteredTransactions.length); // Update total transactions
   };
+
+  useEffect(() => {
+    calculateTotalsFromFilteredTransactions(); // Recalculate totals whenever filters or transactions change
+    // eslint-disable-next-line
+  }, [filters, transactionHistory]);
 
   const fetchTransactionHistory = () => {
     const transactionsCollection = collection(db, "transactions");
@@ -65,13 +101,13 @@ const Wallet = () => {
     return unsubscribe;
   };
 
-  const fetchAdminWallet = (companyId) => {
-    const walletDoc = doc(db, "company", companyId, "wallet", "wallet");
+  const fetchAdminWallet = () => {
+    const walletDoc = doc(db, "wallet", "wallet");
 
     const unsubscribe = onSnapshot(walletDoc, (snapshot) => {
       if (snapshot.exists()) {
         const walletData = snapshot.data();
-        setWalletBalance(walletData.balance.toFixed(2));
+        setWalletBalance(walletData.balance);
       } else {
         console.log("No such wallet document!");
       }
@@ -87,7 +123,6 @@ const Wallet = () => {
   };
 
   useEffect(() => {
-    const unsubscribeEarnings = fetchEarnings();
     const unsubscribeTransactions = fetchTransactionHistory();
     fetchBuses();
 
@@ -104,29 +139,185 @@ const Wallet = () => {
     });
 
     return () => {
-      unsubscribeEarnings();
       unsubscribeTransactions();
       unsubscribeAuth();
     };
   }, []);
 
-  // other methods
+  // calculate
 
-  const formatNumber = (number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "PHP",
-    }).format(number);
+  const calculateMonthlyEarnings = (transactions) => {
+    const earningsByMonth = Array(12).fill(0); // Array to hold earnings for each month
+
+    transactions.forEach((transaction) => {
+      const date = dayjs(transaction.timestamp.toDate());
+      const month = date.month(); // Month index (0-11)
+      const amount = parseFloat(transaction.fare_amount) || 0;
+
+      earningsByMonth[month] += amount; // Sum up the earnings for each month
+    });
+
+    // Set the monthly earnings only if there are transactions
+    if (transactions.length > 0) {
+      setMonthlyEarnings(earningsByMonth);
+    } else {
+      setMonthlyEarnings(Array(12).fill(0)); // Reset to zeros if no transactions
+    }
   };
 
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "N/A";
-    const date = timestamp.toDate();
-    return date.toLocaleDateString("en-PH", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+  const filteredTransactionsByYear = transactionHistory.filter(
+    (transaction) => {
+      const transactionYear = dayjs(transaction.timestamp.toDate()).year();
+      return transactionYear === selectedYear; // Filter by selected year
+    }
+  );
+
+  useEffect(() => {
+    calculateMonthlyEarnings(filteredTransactionsByYear);
+    // eslint-disable-next-line
+  }, [transactionHistory, selectedYear]);
+
+  const barChartData = {
+    labels: [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    datasets: [
+      {
+        label: "Monthly Earnings",
+        data: monthlyEarnings,
+        fill: false,
+        backgroundColor: "rgba(75,192,192,0.4)",
+        borderColor: "rgba(75,192,192,1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+  // filter
+  const filteredTransactions = transactionHistory.filter((transaction) => {
+    const searchQuery = filters.searchQuery.toLowerCase();
+    const paymentMatch =
+      !filters.paymentType || transaction.payment_type === filters.paymentType;
+    const searchMatch =
+      !searchQuery ||
+      (transaction.bus_driver_name?.toLowerCase() ?? "").includes(
+        searchQuery
+      ) ||
+      (transaction.conductor_name?.toLowerCase() ?? "").includes(searchQuery) ||
+      (transaction.reference_number?.toString() ?? "").includes(searchQuery); // Check for reference number
+
+    let dateMatch = true;
+    if (filters.dateRange) {
+      const transactionDate = dayjs(transaction.timestamp.toDate());
+      const today = dayjs();
+
+      switch (filters.dateRange) {
+        case "today":
+          dateMatch = transactionDate.isSame(today, "day");
+          break;
+        case "yesterday":
+          const yesterday = today.clone().subtract(1, "day");
+          dateMatch = transactionDate.isSame(yesterday, "day");
+          break;
+        case "thisWeek":
+          dateMatch =
+            transactionDate.isAfter(today.startOf("week")) &&
+            transactionDate.isBefore(today.endOf("week"));
+          break;
+        case "lastWeek":
+          dateMatch =
+            transactionDate.isAfter(
+              today.subtract(1, "week").startOf("week")
+            ) &&
+            transactionDate.isBefore(today.subtract(1, "week").endOf("week"));
+          break;
+        case "thisMonth":
+          dateMatch =
+            transactionDate.isAfter(today.startOf("month")) &&
+            transactionDate.isBefore(today.endOf("month"));
+          break;
+        case "past90Days":
+          dateMatch = transactionDate.isAfter(today.subtract(90, "day"));
+          break;
+        // "custom" is not handled since it's disabled and shouldn't be selectable yet
+        default:
+          dateMatch = true;
+      }
+    }
+
+    return paymentMatch && searchMatch && dateMatch; // All conditions must be true
+  });
+
+  // total
+  const totalFare = filteredTransactions.reduce(
+    (acc, transaction) => acc + parseFloat(transaction.fare_amount || 0),
+    0
+  );
+
+  //paginated
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(
+    startIndex,
+    startIndex + rowsPerPage
+  );
+
+  // handle
+  const handleSortByDate = () => {
+    const sortedTransactions = [...transactionHistory].sort((a, b) => {
+      if (sortOrder === "asc") {
+        return a.timestamp - b.timestamp; // Ascending order
+      } else {
+        return b.timestamp - a.timestamp; // Descending order
+      }
     });
+
+    setTransactionHistory(sortedTransactions);
+    setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+  };
+
+  const handleRowClick = (transaction) => {
+    setSelectedTransaction(transaction);
+    setIsModalOpen(true); // Open the modal when a row is clicked
+  };
+
+  const handleCancel = () => {
+    setSelectedTransaction(null); // Reset the selected transaction
+    setIsModalOpen(false); // Close modal
+  };
+
+  const handlePointClick = (event, elements) => {
+    if (elements.length > 0) {
+      const firstPoint = elements[0];
+      const clickedMonthIndex = firstPoint.index; // Get the month index (0 for January, 1 for February, etc.)
+
+      // Create a filter for the selected month and year
+      const filteredByMonth = transactionHistory.filter((transaction) => {
+        const transactionDate = dayjs(transaction.timestamp.toDate());
+        return (
+          transactionDate.year() === selectedYear &&
+          transactionDate.month() === clickedMonthIndex
+        );
+      });
+
+      // Apply the filtered transactions
+      setTransactionHistory(filteredByMonth);
+
+      // Update the dateRange filter to "custom"
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        dateRange: "custom",
+      }));
+    }
   };
 
   const handleFilterChange = (e) => {
@@ -135,26 +326,9 @@ const Wallet = () => {
       ...prevFilters,
       [name]: value,
     }));
+
+    setCurrentPage(1);
   };
-
-  const filteredTransactions = transactionHistory.filter((transaction) => {
-    const searchQuery = filters.searchQuery.toLowerCase();
-    const paymentMatch =
-      !filters.paymentType || transaction.payment_type === filters.paymentType;
-    const searchMatch =
-      !searchQuery ||
-      transaction.bus_driver_name.toLowerCase().includes(searchQuery) ||
-      transaction.bus_number.toLowerCase().includes(searchQuery);
-
-    return paymentMatch && searchMatch; // Both conditions must be true
-  });
-
-  //paginated
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedTransactions = filteredTransactions.slice(
-    startIndex,
-    startIndex + rowsPerPage
-  );
 
   const handleNextPage = () => {
     setCurrentPage((prevPage) =>
@@ -191,8 +365,28 @@ const Wallet = () => {
     }
   };
 
+  const uniqueBusDrivers = new Set(
+    filteredTransactions
+      .map((transaction) => transaction.bus_driver_name?.toLowerCase()) // Extract and normalize bus driver names
+      .filter((name) => name) // Ensure only non-null names are considered
+  );
+
+  const isUniqueBusDriver =
+    uniqueBusDrivers.size === 1 &&
+    [...uniqueBusDrivers][0].includes(filters.searchQuery.toLowerCase());
+
+  const uniqueConductor = new Set(
+    filteredTransactions
+      .map((transaction) => transaction.conductor_name?.toLowerCase()) // Extract and normalize bus driver names
+      .filter((name) => name) // Ensure only non-null names are considered
+  );
+
+  const isUniqueConductor =
+    uniqueConductor.size === 1 &&
+    [...uniqueConductor][0].includes(filters.searchQuery.toLowerCase());
+
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6">
       {/* Top Row Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {/* Earnings Card */}
@@ -222,104 +416,280 @@ const Wallet = () => {
         </div>
       </div>
 
+      {/* Line Chart for Monthly Earnings */}
+      <div className="bg-base-300 shadow-lg rounded-lg p-4 mt-4">
+        <div className="flex justify-between items-center">
+          <div className="text-lg font-semibold">Monthly Earnings</div>
+          <div className="flex items-center">
+            <label
+              htmlFor="year-selector"
+              className="text-lg font-semibold mr-2"
+            >
+              Select Year:
+            </label>
+            <select
+              id="year-selector"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="select select-bordered"
+            >
+              {/* Year options from current year down to 2022 dynamically */}
+              {Array.from(
+                { length: dayjs().year() - 2022 },
+                (_, i) => dayjs().year() - i
+              ).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="relative h-72 w-full overflow-hidden">
+          {" "}
+          {/* Use DaisyUI utility classes */}
+          <Bar
+            data={barChartData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  min: 0,
+                  ticks: {
+                    stepSize: 200, // Customize the step size to 200
+                  },
+                },
+                x: {
+                  ticks: {
+                    autoSkip: true, // Automatically skip some ticks if there are too many
+                    maxTicksLimit: 12, // Limit the number of ticks on the x-axis
+                  },
+                },
+              },
+              plugins: {
+                legend: {
+                  display: false, // This will hide the legend
+                },
+              },
+              onClick: handlePointClick,
+            }}
+            height={300}
+          />
+        </div>
+      </div>
+
       {/* Transaction History Box */}
-      <div className="bg-base-300 shadow-lg rounded-lg p-4">
+      <div className="bg-base-300 shadow-lg rounded-lg p-4 mt-4">
         <div className="text-lg font-semibold">Transaction History</div>
 
         {/* Filter Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
-          <input
-            type="text"
-            name="searchQuery"
-            placeholder="Filter by Bus Driver Name or Bus Number"
-            value={filters.searchQuery}
-            onChange={handleFilterChange}
-            className="input input-bordered w-full"
-          />
+        <div className="flex items-center justify-between my-4">
+          <div className="flex items-center gap-4 flex-grow">
+            {" "}
+            {/* Inner flex for input alignment */}
+            <input
+              type="text"
+              name="searchQuery"
+              placeholder="Filter by Bus Driver Name, Conductor Name, or Reference Number"
+              value={filters.searchQuery}
+              onChange={handleFilterChange}
+              className="input input-bordered w-4/12" // Smaller width for the search input
+            />
+            <select
+              name="paymentType"
+              value={filters.paymentType}
+              onChange={handleFilterChange}
+              className="select select-bordered w-48" // Fixed width for transaction type dropdown
+            >
+              <option value="">All Payment Types</option>
+              <option value="Cash">Cash</option>
+              <option value="Cashless">Cashless</option>
+            </select>
+            <select
+              name="dateRange"
+              value={filters.dateRange}
+              onChange={(e) => {
+                handleFilterChange(e);
+                if (e.target.value === "") {
+                  // Reset to show all transactions when "All Transactions" is selected
+                  fetchTransactionHistory();
+                }
+              }}
+              className="select select-bordered w-48"
+            >
+              <option value="">All Transactions</option>
+              <option value="today" disabled={filters.dateRange === "custom"}>
+                Today
+              </option>
+              <option
+                value="yesterday"
+                disabled={filters.dateRange === "custom"}
+              >
+                Yesterday
+              </option>
+              <option
+                value="thisWeek"
+                disabled={filters.dateRange === "custom"}
+              >
+                This Week
+              </option>
+              <option
+                value="lastWeek"
+                disabled={filters.dateRange === "custom"}
+              >
+                Last Week
+              </option>
+              <option value="custom" disabled>
+                Custom
+              </option>
+            </select>
+          </div>
 
-          <select
-            name="paymentType"
-            value={filters.paymentType}
-            onChange={handleFilterChange}
-            className="select select-bordered w-6/12 max-w-xs"
-          >
-            <option value="">All Payment Types</option>{" "}
-            <option value="Cash">Cash</option>
-            <option value="Cashless">Cashless</option>
-          </select>
+          <ExportTransactions transactionHistory={transactionHistory} />
         </div>
 
-        {/* Transaction Table */}
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse bor">
             <thead>
               <tr>
+                <th
+                  className="border border-white px-4 py-2 cursor-pointer flex items-center gap-2"
+                  onClick={handleSortByDate}
+                >
+                  <span>
+                    {sortOrder === "asc" ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 15l7-7 7 7"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  Date
+                </th>
                 <th className="border border-white px-4 py-2">
                   Bus Driver Name
                 </th>
-                <th className="border border-white px-4 py-2">Bus Number</th>
+                <th className="border border-white px-4 py-2">
+                  Conductor Name
+                </th>
+                <th className="border border-white px-4 py-2">Trip</th>
                 <th className="border border-white px-4 py-2">
                   Reference Number
                 </th>
                 <th className="border border-white px-4 py-2">Payment Type</th>
                 <th className="border border-white px-4 py-2">Fare Amount</th>
-                <th className="border border-white px-4 py-2">Date</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: rowsPerPage }).map((_, index) => (
-                  <tr key={index}>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      <div className="skeleton h-4 w-24"></div>
-                    </td>
-                  </tr>
+                  <SkeletonTable key={index} /> // Skeleton
                 ))
               ) : paginatedTransactions.length > 0 ? (
                 paginatedTransactions.map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td className="border border-white px-4 py-2">
-                      {transaction.bus_driver_name}
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      {transaction.bus_number}
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      {transaction.reference_number}
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      {transaction.payment_type}
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      {formatNumber(transaction.fare_amount)}
-                    </td>
-                    <td className="border border-white px-4 py-2">
-                      {formatDate(transaction.timestamp)}
-                    </td>
-                  </tr>
+                  <PaginatedTable
+                    key={transaction.id}
+                    transaction={transaction}
+                    onRowClick={handleRowClick}
+                  /> // Data
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="border px-4 py-2 text-center">
+                  <td colSpan="7" className="border px-4 py-2 text-center">
                     No transactions found.
                   </td>
                 </tr>
               )}
+              {paginatedTransactions.length > 0 &&
+              (filters.searchQuery ||
+                filters.paymentType ||
+                filters.dateRange) ? (
+                <tr>
+                  {filters.searchQuery ? (
+                    <>
+                      {isUniqueBusDriver && (
+                        <>
+                          <td
+                            colSpan="1"
+                            className="border border-white text-end px-4 py-2 font-bold"
+                          ></td>
+                          <td className="border border-white text-end px-4 py-2">
+                            <span className="font-bold">
+                              Total Remit (10%):
+                            </span>{" "}
+                            {formatNumber(totalFare * 0.1)}
+                          </td>
+                          <td
+                            colSpan="4"
+                            className="border border-white text-end px-4 py-2 font-bold"
+                          ></td>
+                        </>
+                      )}
+
+                      {isUniqueConductor && (
+                        <>
+                          <td
+                            colSpan="2"
+                            className="border border-white text-end px-4 py-2 font-bold"
+                          ></td>
+                          <td className="border border-white text-end px-4 py-2">
+                            <span className="font-bold">Total Remit (8%):</span>{" "}
+                            {formatNumber(totalFare * 0.08)}
+                          </td>
+                          <td
+                            colSpan="3"
+                            className="border border-white text-end px-4 py-2 font-bold"
+                          ></td>
+                        </>
+                      )}
+
+                      {/* Fallback if no unique bus driver or conductor */}
+                      {!(isUniqueBusDriver || isUniqueConductor) && (
+                        <td
+                          colSpan="6"
+                          className="border border-white text-end px-4 py-2 font-bold"
+                        ></td>
+                      )}
+                    </>
+                  ) : (
+                    <td
+                      colSpan="6"
+                      className="border border-white text-end px-4 py-2 font-bold"
+                    ></td>
+                  )}
+
+                  <td className="border border-white text-end px-4 py-2">
+                    <span className="font-bold">Total:</span>{" "}
+                    {formatNumber(totalFare)}
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -388,6 +758,65 @@ const Wallet = () => {
             >
               &gt;
             </button>
+          </div>
+        </div>
+      )}
+
+      {isModalOpen && selectedTransaction && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md w-3/4">
+            <h2 className="font-bold text-lg">Transaction Details</h2>
+
+            {/* Modal content */}
+            <div>
+              <p>
+                <strong>Transaction ID:</strong> {selectedTransaction.id}
+              </p>
+              <p>
+                <strong>Bus Driver Name:</strong>{" "}
+                {selectedTransaction.bus_driver_name}
+              </p>
+              <p>
+                <strong>Bus Number:</strong> {selectedTransaction.bus_number}
+              </p>
+              <p>
+                <strong>Bus Type:</strong> {selectedTransaction.bus_type}
+              </p>
+              <p>
+                <strong>Conductor Name:</strong>{" "}
+                {selectedTransaction.conductor_name}
+              </p>
+              <p>
+                <strong>Trip:</strong> {selectedTransaction.origin} -{" "}
+                {selectedTransaction.destination}
+              </p>
+              <p>
+                <strong>Payment Type:</strong>{" "}
+                {selectedTransaction.payment_type}
+              </p>
+              <p>
+                <strong>Passenger Type:</strong>{" "}
+                {selectedTransaction.passenger_type}
+              </p>
+              <p>
+                <strong>Reference Number:</strong>{" "}
+                {selectedTransaction.reference_number}
+              </p>
+              <p>
+                <strong>Fare Amount:</strong>{" "}
+                {formatNumber(selectedTransaction.fare_amount)}
+              </p>
+              <p>
+                <strong>Date and Time:</strong>{" "}
+                {formatDateTime(selectedTransaction.timestamp)}
+              </p>
+            </div>
+
+            <div className="modal-action">
+              <button className="btn" onClick={handleCancel}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

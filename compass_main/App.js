@@ -8,86 +8,143 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Firebase
+import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
-// Navigator
 import AuthNavigator from './src/navigations/AuthNavigator';
 import MainNavigator from './src/navigations/MainNavigator';
 
 export default function App() {
-  // State management
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(async user => {
       setUser(user);
       if (user) {
-        await fetchFareData(user.uid);
+        await initializeUserData(user.uid);
       }
-
-      // Simulate loading time
-      setTimeout(() => {
-        setInitializing(false);
-      }, 1000);
+      setInitializing(false);
     });
 
-    requestLocationPermission(); // Request location permission on mount
+    requestPermissions();
 
-    return subscriber; // Cleanup subscription on unmount
+    return subscriber; // Cleanup on unmount
   }, []);
 
-  // Function to fetch fare data using the user's UID
-  async function fetchFareData(uid) {
+  // Initialize user data on login
+  async function initializeUserData(uid) {
     try {
-      const busDoc = await firestore().collection('buses').doc(uid).get();
-
-      if (busDoc.exists) {
-        const busData = busDoc.data();
-        const bus_id = busDoc.id;
-
+      const busData = await fetchBusData(uid);
+      if (busData) {
         const {route_id, bus_type} = busData;
-        const busDocWithId = {...busData, bus_id};
+        await fetchRouteAndFareData(route_id, bus_type);
+      }
 
-        await AsyncStorage.setItem('bus-data', JSON.stringify(busDocWithId)); // Save bus data locally
-        await fetchRouteAndFareData(route_id, bus_type); // Fetch related route and fare data
+      const emergencyStatus = await fetchEmergencyStatus(uid);
+      if (emergencyStatus !== null) {
+        await AsyncStorage.setItem(
+          'emergency-status',
+          JSON.stringify(emergencyStatus),
+        );
       }
     } catch (error) {
-      console.error('Error fetching fare data: ', error);
+      console.error('Error initializing user data:', error);
     }
   }
 
-  // Helper function to fetch route name and fare data
+  async function fetchEmergencyStatus(uid) {
+    try {
+      const busLocationDoc = await firestore()
+        .collection('busLocation')
+        .doc(uid)
+        .get();
+      if (busLocationDoc.exists) {
+        const data = busLocationDoc.data();
+        return data.emergency_status ?? false; // Return emergency_status, default to false if not present
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching emergency status:', error);
+      return null;
+    }
+  }
+
+  // Fetch bus data using UID
+  async function fetchBusData(uid) {
+    try {
+      const busDoc = await firestore().collection('buses').doc(uid).get();
+      if (busDoc.exists) {
+        const busData = {...busDoc.data(), bus_id: busDoc.id};
+        await AsyncStorage.setItem('bus-data', JSON.stringify(busData));
+        return busData;
+      }
+    } catch (error) {
+      console.error('Error fetching bus data:', error);
+    }
+  }
+
+  // Fetch route and fare data based on route ID and bus type
   async function fetchRouteAndFareData(routeId, busType) {
+    try {
+      const fareData = await fetchFareData(routeId);
+      if (fareData)
+        await AsyncStorage.setItem('fare-data', JSON.stringify(fareData));
+
+      const routeData = await fetchRouteName(routeId);
+      if (routeData) {
+        await AsyncStorage.setItem(
+          'route-data',
+          JSON.stringify(routeData.route_name),
+        );
+        await AsyncStorage.setItem(
+          'keypoints',
+          JSON.stringify(
+            routeData.keypoints.map(point => [point.latitude, point.longitude]),
+          ),
+        );
+      }
+
+      await AsyncStorage.setItem('bus-type', busType);
+    } catch (error) {
+      console.error('Error fetching route and fare data:', error);
+    }
+  }
+
+  async function fetchFareData(routeId) {
+    try {
+      const fareDoc = await firestore().collection('fares').doc(routeId).get();
+      return fareDoc.exists ? fareDoc.data() : null;
+    } catch (error) {
+      console.error('Error fetching fare data:', error);
+    }
+  }
+
+  async function fetchRouteName(routeId) {
     try {
       const routeDoc = await firestore()
         .collection('routes')
         .doc(routeId)
         .get();
-      const fareDoc = await firestore().collection('fares').doc(routeId).get();
-
-      if (fareDoc.exists) {
-        const fareData = fareDoc.data();
-        await AsyncStorage.setItem('fare-data', JSON.stringify(fareData));
-        console.log('Fare data fetched and stored locally');
-      }
-
       if (routeDoc.exists) {
-        const routeName = routeDoc.data().route_name;
-        await AsyncStorage.setItem('route-data', routeName);
-        console.log('Route name fetched and stored locally');
+        const routeData = routeDoc.data();
+        const {route_name, keypoints} = routeData;
+        return {route_name, keypoints};
       }
-
-      await AsyncStorage.setItem('bus-type', busType);
-      console.log('Bus type fetched and stored locally');
+      return null;
     } catch (error) {
-      console.error('Error fetching route and fare data: ', error);
+      console.error('Error fetching route name:', error);
     }
   }
 
-  // Function to request location permission
+  // Request location and notification permissions
+  async function requestPermissions() {
+    await requestLocationPermission();
+    await requestNotificationPermission();
+  }
+
   async function requestLocationPermission() {
     try {
       const granted = await PermissionsAndroid.request(
@@ -100,19 +157,90 @@ export default function App() {
           buttonPositive: 'OK',
         },
       );
-
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
         console.log('Location permission granted');
       } else {
         console.log('Location permission denied');
       }
-    } catch (err) {
-      console.warn(err);
+    } catch (error) {
+      console.warn('Location permission error:', error);
     }
   }
 
-  // Loading indicator while Firebase initializes
-  if (initializing) {
+  async function requestNotificationPermission() {
+    try {
+      const settings = await notifee.requestPermission();
+      console.log(
+        settings.authorizationStatus >= 1
+          ? 'Notification permission granted'
+          : 'Notification permission denied',
+      );
+    } catch (error) {
+      console.warn('Notification permission error:', error);
+    }
+  }
+
+  // Notification setup and display functions
+  async function setupNotification() {
+    const initialNotification = await notifee.getInitialNotification();
+    if (initialNotification) {
+      console.log(
+        'App opened via notification:',
+        initialNotification.notification,
+      );
+      await notifee.cancelNotification(initialNotification.notification.id);
+    }
+  }
+
+  async function showAdvancePaymentNotification() {
+    const channelId = await notifee.createChannel({
+      id: 'advance-payment',
+      name: 'Advance Payment Notifications',
+      importance: AndroidImportance.HIGH,
+    });
+
+    await notifee.displayNotification({
+      title: 'Advance Payment Requested',
+      body: 'A passenger has requested to pay in advance. Please review and verify their information.',
+      android: {
+        channelId,
+        smallIcon: 'ic_notification',
+        pressAction: {id: 'default'},
+      },
+    });
+  }
+
+  // Listen for advance payment requests
+  useEffect(() => {
+    if (user) {
+      const unsubscribe = firestore()
+        .collection('advancePayment')
+        .where('bus_id', '==', user.uid) // Use 'user.uid' or a specific bus_id
+        .where('triggered', '==', false)
+        .onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(async change => {
+            if (change.type === 'added') {
+              showAdvancePaymentNotification();
+
+              // update
+              await firestore()
+                .collection('advancePayment')
+                .doc(change.doc.id)
+                .update({triggered: true});
+            }
+          });
+        });
+      return unsubscribe;
+    }
+  }, [user]);
+
+  useEffect(() => {
+    setupNotification()
+      .then(() => setLoading(false))
+      .catch(console.error);
+  }, []);
+
+  if (loading || initializing) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -120,7 +248,6 @@ export default function App() {
     );
   }
 
-  // Navigation container based on user authentication state
   return (
     <NavigationContainer>
       {!user ? <AuthNavigator /> : <MainNavigator />}

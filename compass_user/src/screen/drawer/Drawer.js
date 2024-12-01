@@ -13,11 +13,22 @@ import {useIsFocused} from '@react-navigation/native';
 
 //firebase
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 import {IMAGES, ROUTES} from '../../constants';
 
 // Google
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import {
+  ArrowLeftStartOnRectangleIcon,
+  BanknotesIcon,
+  DocumentIcon,
+  QuestionMarkCircleIcon,
+  DocumentCheckIcon,
+} from 'react-native-heroicons/solid';
 
 const Drawer = props => {
   const {navigation} = props;
@@ -69,16 +80,23 @@ const Drawer = props => {
   const [userDisplayName, setUserDisplayName] = useState(null);
 
   useEffect(() => {
-    const getUserDisplayName = async () => {
-      const user = auth().currentUser;
+    const getUserData = async () => {
+      try {
+        const userDoc = await AsyncStorage.getItem('user-data');
 
-      if (user) {
-        setUserDisplayName(user.displayName);
+        if (userDoc) {
+          const userData = JSON.parse(userDoc);
+          setUserDisplayName(userData.fullName || 'ComPass User');
+        } else {
+          console.log('No bus data found in AsyncStorage');
+        }
+      } catch (error) {
+        console.error('Error fetching bus data from AsyncStorage: ', error);
       }
     };
 
-    if (focus == true) {
-      getUserDisplayName();
+    if (focus) {
+      getUserData();
     }
   }, [focus]);
 
@@ -90,12 +108,25 @@ const Drawer = props => {
     navigation.navigate(ROUTES.WALLET);
   };
 
+  const onAdvancePaymentPressed = () => {
+    // navigation.navigate(ROUTES.ADVANCEPAYMENTHISTORY);
+    console.log('pressed');
+  };
+
+  const onHelpPressed = () => {
+    navigation.navigate(ROUTES.SUPPORT);
+  };
+
+  const onAboutPressed = () => {
+    navigation.navigate(ROUTES.ABOUT);
+  };
+
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.root}>
         <View style={styles.profileContainer}>
           <View style={styles.profileContent}>
-            <Image source={IMAGES.logo} style={styles.profileImage} />
+            <Image source={IMAGES.user_profile} style={styles.profileImage} />
             <View style={styles.textContainer}>
               <Text style={styles.text}>{userDisplayName}</Text>
               {/* Profile */}
@@ -112,15 +143,46 @@ const Drawer = props => {
         <View style={styles.separator}></View>
 
         {/* Touchable Text Components */}
-        <TouchableOpacity onPress={onWalletPressed}>
+        <TouchableOpacity
+          onPress={onWalletPressed}
+          style={styles.menuItemContainer}>
+          <BanknotesIcon size={25} color="gray" />
           <Text style={styles.menuItem}>Wallet</Text>
         </TouchableOpacity>
-        {/* <TouchableOpacity>
-          <Text style={styles.menuItem}>Feedback</Text>
+
+        {/* <TouchableOpacity
+          onPress={onAdvancePaymentPressed}
+          style={styles.menuItemContainer}>
+          <DocumentCheckIcon size={25} color="gray" />
+          <Text style={styles.menuItem}>Advance Payments</Text>
         </TouchableOpacity> */}
-        <TouchableOpacity onPress={onLogoutPressed}>
-          <Text style={styles.menuItem}>Logout</Text>
+
+        <TouchableOpacity
+          style={styles.menuItemContainer}
+          onPress={onHelpPressed}>
+          <DocumentIcon size={25} color="gray" />
+          <Text style={styles.menuItem}>Feedback</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItemContainer}
+          onPress={onAboutPressed}>
+          <QuestionMarkCircleIcon size={25} color="gray" />
+          <Text style={styles.menuItem}>About</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={onLogoutPressed}
+          style={styles.menuItemContainer}>
+          <ArrowLeftStartOnRectangleIcon size={25} color="red" />
+          <Text style={styles.menuItemLogout}>Logout</Text>
+        </TouchableOpacity>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            © 2024 ComPass. All Rights Reserved.
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -153,6 +215,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     marginRight: 10,
+    borderWidth: 2, // Border width
+    borderColor: 'gray', // Border color
   },
 
   textContainer: {
@@ -191,9 +255,31 @@ const styles = StyleSheet.create({
   },
 
   // Menu items
-  menuItem: {
-    fontSize: 20,
+  menuItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 10,
+  },
+  menuItem: {
+    fontSize: 25,
+    marginLeft: 10,
+  },
+  menuItemLogout: {
+    fontSize: 25,
+    color: 'red',
+    marginLeft: 10,
+  },
+
+  footer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    color: 'gray',
   },
 });
 

@@ -11,6 +11,21 @@ export {default as Main} from './home/Main';
 // drawer
 export {default as Drawer} from './drawer/Drawer';
 
+//
+export {default as PaymentRequest} from './drawer/advance/PaymentRequest';
+
+//about
+export {default as About} from './drawer/about/About';
+
+// report
+
+export {default as Report} from './drawer/report/Report';
+
+// trip
+export {default as Trip} from './drawer/trip/Trip';
+
+export {default as QRCamera} from './drawer/trip/QRCamera';
+
 // child of drawer
 export {default as Profile} from './drawer/profile/Profile';
 

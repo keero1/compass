@@ -1,20 +1,6 @@
 import React, {useRef, useEffect, useState} from 'react';
-import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
-  Animated,
-  TextInput,
-  FlatList,
-  Text,
-  BackHandler,
-} from 'react-native';
+import {StyleSheet, View, Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-
-import {Svg, Image as ImageSvg, Defs, ClipPath, Circle} from 'react-native-svg';
 
 // ROUTES
 
@@ -22,15 +8,10 @@ import ROUTES from '../../constants/routes';
 
 import IMAGES from '../../constants/images';
 
-import notifee, {AndroidImportance} from '@notifee/react-native';
+import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
 
 // MAP
-import MapView, {
-  PROVIDER_GOOGLE,
-  Marker,
-  Callout,
-  Polyline,
-} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
+import MapView, {PROVIDER_GOOGLE, Marker, Polyline} from 'react-native-maps'; // remove PROVIDER_GOOGLE import if not using Google Maps
 import Geolocation from '@react-native-community/geolocation';
 
 // firebase
@@ -41,6 +22,12 @@ import {getRoute} from '../../components/utils/RoutesUtils';
 import HeaderComponent from './HeaderComponent';
 import FooterComponent from './FooterComponent';
 
+// utils
+
+import {calculateDistance, calculateETAWithDirectionsAPI} from './MapUtils';
+import CustomCallout from './CustomCallout';
+import ProximityAlertModal from './ProximityAlertModal';
+
 const Main = props => {
   const {navigation} = props;
   const mapRef = useRef(MapView);
@@ -49,23 +36,24 @@ const Main = props => {
   const [initialRegion, setInitialRegion] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
 
-  // search
-  const [searchQuery, setSearchQuery] = useState('');
   const [routes, setRoutes] = useState([]);
-  const [filteredRoutes, setFilteredRoutes] = useState([]);
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
+
+  // eta
+  const [eta, setEta] = useState(null);
 
   // marker
   const [marker, setMarker] = useState(null);
 
   // bus location
   const [busMarkers, setBusMarkers] = useState([]);
+  const [markerProximityRadius, setMarkerProximityRadius] = useState(1000);
+  const [isNotificationTriggered, setIsNotificationTriggered] = useState(false);
+  const [notificationBusCoordinate, setNotificationBusCoordinate] =
+    useState(null);
 
-  // search box
-
-  const [searchVisible, setSearchVisible] = useState(false);
-  const searchBoxHeight = useRef(new Animated.Value(0)).current;
-
-  const [notificationShown, setNotificationShown] = useState(false);
+  const [selectedRadius, setSelectedRadius] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   // default location
 
@@ -78,7 +66,6 @@ const Main = props => {
         ...doc.data(),
       }));
       setRoutes(allRoutes);
-      setFilteredRoutes(allRoutes);
     };
 
     fetchRoutes();
@@ -98,17 +85,14 @@ const Main = props => {
       error => {
         console.error(error);
       },
-      {enableHighAccuracy: true, timeout: 20000},
+      {enableHighAccuracy: true, interval: 20000},
     );
   }, []); // Empty dependency array to run only on mount
 
   // get bus location
 
-  // Optimized bus marker fetching and updating logic
   useEffect(() => {
     console.log('Effect triggered');
-    const fiveMinutesAgo = new Date();
-    fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
 
     const unsubscribe = firestore()
       .collection('busLocation')
@@ -125,7 +109,7 @@ const Main = props => {
           console.log('Processing document:', doc.id);
           const data = doc.data();
 
-          // Ensure data and doc.id are valid
+          // check if data and doc.id are valid
           if (!data || !doc.id) {
             console.error('Invalid data or document ID');
             return null; // Skip this document
@@ -151,13 +135,14 @@ const Main = props => {
               longitude: data.coordinates.longitude,
             },
             details: {
-              name: busData.bus_driver_name,
+              bus_number: busData.bus_number,
               license_plate: busData.license_plate,
               route_id: data.route_id,
               timestamp: data.timestamp,
               seat_count: busData.seat_count,
-              profile_picture: profilePicture,
+              speed: data.speed,
             },
+            emergency_status: data.emergency_status,
           };
 
           switch (change.type) {
@@ -203,99 +188,33 @@ const Main = props => {
     };
   }, []);
 
-  // notification
-
-  async function onDisplayNotification() {
-    // Request permissions (required for iOS)
-    await notifee.requestPermission();
-
-    // Create a channel (required for Android)
-    const channelId = await notifee.createChannel({
-      id: 'important',
-      name: 'Important Notifications',
-      importance: AndroidImportance.HIGH,
-    });
-
-    // Display a notification
-    await notifee.displayNotification({
-      title: 'Bus Nearby!',
-      body: 'A Bus is within 1 KM of your marker location. please be ready',
-      android: {
-        channelId,
-        importance: AndroidImportance.HIGH,
-        smallIcon: 'ic_launcher',
-        pressAction: {
-          id: 'default',
-        },
-        fullScreenAction: {
-          id: 'default',
-        },
-      },
-    });
-  }
-
   useEffect(() => {
     const checkBusProximity = async () => {
       if (!marker || busMarkers.length === 0) {
         return;
       }
 
-      let notified = false;
+      let closestBus = null; // Track the closest bus
+      let closestDistance = Infinity; // Start with an infinitely large distance
 
       for (const bus of busMarkers) {
         const distance = calculateDistance(bus.coordinate, marker);
 
-        if (distance <= 1000) {
-          if (!notificationShown && !notified) {
-            await onDisplayNotification();
-            setNotificationShown(true);
-            notified = true;
-
-            const userID = auth().currentUser.uid;
-            try {
-              await firestore().collection('markers').doc(userID).delete();
-              setMarker(null);
-            } catch (error) {
-              console.error('Error removing marker from Firestore: ', error);
-            }
-          }
-        } else if (distance > 1000) {
-          if (notified) {
-            setNotificationShown(false);
-          }
+        if (distance <= markerProximityRadius && distance < closestDistance) {
+          closestDistance = distance; // Update closest distance
+          closestBus = bus.coordinate; // Update closest bus coordinate
         }
+      }
+
+      if (closestBus && !isNotificationTriggered) {
+        await onDisplayNotification(closestBus); // Pass the closest bus coordinate
+        setIsNotificationTriggered(true);
+        console.log('Notification triggered');
       }
     };
 
     checkBusProximity();
-  }, [busMarkers, marker]);
-
-  useEffect(() => {
-    if (searchQuery.length > 0) {
-      const filtered = routes.filter(route =>
-        route.route_name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-      setFilteredRoutes(filtered);
-    } else {
-      setFilteredRoutes(routes);
-    }
-  }, [searchQuery, routes]);
-
-  useEffect(() => {
-    const handleBackPress = () => {
-      if (searchVisible) {
-        hideSearchBox();
-        return true;
-      }
-      return false;
-    };
-
-    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
-
-    return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
-    };
-  }, [searchVisible]);
+  }, [busMarkers, marker, markerProximityRadius, isNotificationTriggered]);
 
   useEffect(() => {
     let watchId;
@@ -312,7 +231,8 @@ const Main = props => {
         },
         {
           enableHighAccuracy: true,
-          distanceFilter: 10, // Update the location only if the user moves by 10 meters or more
+          distanceFilter: 10,
+          interval: 30000,
         },
       );
     };
@@ -326,78 +246,85 @@ const Main = props => {
     };
   }, []);
 
-  // SEARCH
+  useEffect(() => {
+    const handleNotificationPress = async () => {
+      if (notificationBusCoordinate && marker) {
+        const coordinates = [
+          [marker.latitude, marker.longitude],
+          [
+            notificationBusCoordinate.latitude,
+            notificationBusCoordinate.longitude,
+          ],
+        ];
 
-  const showSearchBox = () => {
-    setSearchVisible(true);
-    Animated.timing(searchBoxHeight, {
-      toValue: screenHeight * 0.95,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  };
+        const route = await getRoute(coordinates);
 
-  const hideSearchBox = () => {
-    setSearchQuery('');
-    Animated.timing(searchBoxHeight, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start(() => setSearchVisible(false));
-  };
+        setRouteCoordinates(route);
+        setNotificationBusCoordinate(null);
 
-  const handleRouteItemClick = async routeId => {
-    try {
-      // Query buses that match the selected route ID
-      const snapshot = await firestore()
-        .collection('busLocation')
-        .where('route_id', '==', routeId) // Assuming each bus document has a routeId field
-        .get();
-
-      const buses = [];
-      const currentTime = new Date();
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const lastSeen = data.timestamp.toDate();
-        const diffInSeconds = (currentTime - lastSeen) / 1000;
-
-        if (diffInSeconds <= 300) {
-          // 5 minutes
-          buses.push({
-            id: doc.id,
-            coordinate: {
-              latitude: data.coordinates.latitude,
-              longitude: data.coordinates.longitude,
-            },
-          });
-        }
-      });
-
-      if (buses.length === 0) {
-        Alert.alert(
-          'No Buses Online',
-          'No bus available right now for this route.',
-        );
-      } else {
-        // setBusMarkers(buses); // Update bus markers
-        Alert.alert('Number of buses online: ' + buses.length, 'bus xd');
+        mapRef.current.animateToRegion({
+          latitude: marker.latitude,
+          longitude: marker.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
       }
-    } catch (error) {
-      console.error('Error fetching bus locations:', error);
-      Alert.alert('Error', 'Failed to fetch bus locations.');
-    }
-  };
+    };
 
-  // SEARCH END
+    const unsubscribe = notifee.onForegroundEvent(({type}) => {
+      if (type === EventType.PRESS) {
+        handleNotificationPress();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [notificationBusCoordinate, marker]);
+
+  // notification
+
+  async function onDisplayNotification(busCoordinate) {
+    setNotificationBusCoordinate(busCoordinate);
+    // Request permissions (required for iOS)
+    await notifee.requestPermission();
+
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'important',
+      name: 'Important Notifications',
+      importance: AndroidImportance.HIGH,
+      sound: 'hollow',
+    });
+
+    // Display a notification
+    await notifee.displayNotification({
+      title: 'Bus Nearby!',
+      body: 'A Bus is within your selected proximity of your marker location.',
+      android: {
+        channelId,
+        importance: AndroidImportance.HIGH,
+        smallIcon: 'ic_notification',
+        sound: 'hollow',
+        pressAction: {
+          id: 'default',
+        },
+        fullScreenAction: {
+          id: 'default',
+        },
+      },
+    });
+  }
+
   const onMapPress = event => {
+    const {coordinate} = event.nativeEvent;
+
     if (routeCoordinates.length > 0) {
       setRouteCoordinates([]);
+      setEta(null);
       return;
     }
 
-    // user id
-    const userID = auth().currentUser.uid;
     if (marker) {
       Alert.alert(
         'Marker Already Placed',
@@ -406,51 +333,42 @@ const Main = props => {
       return;
     }
 
-    const {coordinate} = event.nativeEvent;
     const distance = calculateDistance(currentLocation, coordinate);
 
-    if (distance > 0) {
-      Alert.alert(
-        'Place Marker',
-        'Do you want to place a marker here?',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'OK',
-            onPress: async () => {
-              setMarker(coordinate);
-
-              try {
-                await firestore()
-                  .collection('markers')
-                  .doc(userID)
-                  .set({
-                    coordinates: {
-                      latitude: coordinate.latitude,
-                      longitude: coordinate.longitude,
-                    },
-                    timestamp: firestore.FieldValue.serverTimestamp(),
-                  });
-              } catch (error) {
-                console.error('Error updating Firestore document: ', error);
-                Alert.alert(
-                  'Update Failed',
-                  'Failed to update marker location.',
-                );
-              }
-            },
-          },
-        ],
-        {cancelable: true},
-      );
-    } else {
+    if (distance > 1000) {
       Alert.alert(
         'Out of Range',
         'Marker can only be placed within 1000 meters from your current location.',
       );
+      return;
+    }
+
+    setSelectedRadius(coordinate); // Set the coordinate for marker placement
+    setModalVisible(true);
+  };
+
+  const handleMarkerPlacement = async (coordinate, radius) => {
+    try {
+      const userID = auth().currentUser.uid;
+
+      await firestore()
+        .collection('markers')
+        .doc(userID)
+        .set({
+          coordinates: {
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude,
+          },
+          radius: radius,
+          timestamp: firestore.FieldValue.serverTimestamp(),
+        });
+
+      setMarker(coordinate);
+      setMarkerProximityRadius(radius);
+      setIsNotificationTriggered(false);
+    } catch (error) {
+      console.error('Error updating Firestore document: ', error);
+      Alert.alert('Update Failed', 'Failed to update marker location.');
     }
   };
 
@@ -469,6 +387,8 @@ const Main = props => {
           text: 'Delete',
           onPress: async () => {
             setMarker(null);
+            setIsNotificationTriggered(false);
+            setRouteCoordinates([]);
 
             try {
               await firestore().collection('markers').doc(userID).delete();
@@ -482,7 +402,7 @@ const Main = props => {
       {cancelable: true},
     );
   };
-  const [routeCoordinates, setRouteCoordinates] = useState([]);
+
   const fetchRouteData = async routeId => {
     try {
       const routeDoc = await firestore()
@@ -500,9 +420,12 @@ const Main = props => {
     }
   };
 
-  const onBusMarkerPressed = async routeId => {
+  const markerRefs = useRef([]);
+
+  const onBusMarkerPressed = async (busX, index) => {
     try {
-      const routeData = await fetchRouteData(routeId);
+      console.log('Selected routeId:', busX.details.route_id);
+      const routeData = await fetchRouteData(busX.details.route_id);
 
       const coordinates = routeData.keypoints.map(point => [
         point.latitude,
@@ -511,68 +434,37 @@ const Main = props => {
 
       const route = await getRoute(coordinates);
 
+      if (currentLocation && busMarkers.length > 0) {
+        const bus = busMarkers.find(bus => bus.id === busX.id);
+
+        console.log('Selected bus:', bus.id);
+
+        if (bus.details.speed === 0) {
+          setEta(null);
+        } else {
+          const etaInMinutes = await calculateETAWithDirectionsAPI(
+            currentLocation,
+            bus.coordinate,
+            bus.details.speed,
+          );
+          setEta(etaInMinutes);
+        }
+      }
+
+      // reshow the callout cause the first callout dont load the eta and speed
+      setTimeout(() => {
+        markerRefs.current[index].showCallout();
+      });
+
       setRouteCoordinates(route);
     } catch (error) {
       console.error('Error processing route:', error);
     }
   };
 
-  // limit distance
-  const calculateDistance = (coord1, coord2) => {
-    // Radius of the Earth in meters
-    const earthRadius = 6371e3;
-
-    // Convert latitude and longitude from degrees to radians
-    const latitude1Radians = (coord1.latitude * Math.PI) / 180;
-    const latitude2Radians = (coord2.latitude * Math.PI) / 180;
-    const latitudeDifferenceRadians =
-      ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
-    const longitudeDifferenceRadians =
-      ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
-
-    // Haversine formula
-    const a =
-      Math.sin(latitudeDifferenceRadians / 2) *
-        Math.sin(latitudeDifferenceRadians / 2) +
-      Math.cos(latitude1Radians) *
-        Math.cos(latitude2Radians) *
-        Math.sin(longitudeDifferenceRadians / 2) *
-        Math.sin(longitudeDifferenceRadians / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    // Calculate the distance
-    const distance = earthRadius * c;
-
-    return distance;
-  };
-
-  const markerRefs = useRef([]);
-
-
-  /**
-   * This is for pre-loading the callout (tanginang package yan may bug di nag loload image sa first tap/load ng callout). 
-   * Diko pa natest sa nagalaw na bus since nag a-update yon ng marker HAHAHAHHH
-   */
-
-  useEffect(() => {
-    if (busMarkers.length > 0) {
-      busMarkers.forEach((bus, index) => {
-        if (markerRefs.current[index]) {
-          markerRefs.current[index].showCallout(); // load the callout to cook the image
-        }
-
-        markerRefs.current[index].hideCallout(); // unload the callout ready to be pressed
-      });
-    }
-  }, [busMarkers]);
-
   return (
     <SafeAreaView style={styles.container}>
-      <HeaderComponent
-        navigation={navigation}
-        ROUTES={ROUTES}
-        onSearchPressed={showSearchBox}
-      />
+      <HeaderComponent navigation={navigation} ROUTES={ROUTES} />
       {/* 14.823320026254835, 121.05946449733479 */}
       <View style={styles.mapContainer}>
         <MapView
@@ -599,37 +491,33 @@ const Main = props => {
           )}
 
           {/* Bus markers */}
-          {busMarkers.map((bus, index) => (
-            <Marker
-              ref={el => (markerRefs.current[index] = el)}
-              key={`${bus.id}-${index}`} // Add index for extra uniqueness
-              coordinate={bus.coordinate}
-              onPress={() => onBusMarkerPressed(bus.details.route_id)}
-              pinColor="blue">
-              <Callout style={{alignItems: 'center'}}>
-                <Svg width={120} height={120}>
-                  <Defs>
-                    <ClipPath id="clip">
-                      <Circle cx="50%" cy="50%" r="40%" />
-                    </ClipPath>
-                  </Defs>
-                  <ImageSvg
-                    width={120}
-                    height={120}
-                    preserveAspectRatio="xMidYMid slice"
-                    href={bus.details.profile_picture}
-                    clipPath="url(#clip)"
-                  />
-                </Svg>
-                <Text>Driver Name: {bus.details.name}</Text>
-                <Text>License Plate: {bus.details.license_plate}</Text>
-                <Text>
-                  Last Update: {bus.details.timestamp.toDate().toLocaleString()}
-                </Text>
-                <Text>Seat Slots: {bus.details.seat_count} / 56</Text>
-              </Callout>
-            </Marker>
-          ))}
+          {busMarkers.map((bus, index) => {
+            const routeIcons = {
+              XoUoz68kkO4HYY968qOa: 'bus1',
+              qaeFwYGWez7U8kQWF10b: 'bus2',
+            };
+
+            const busIcon = bus.emergency_status
+              ? 'bus3'
+              : routeIcons[bus.details.route_id] || 'bus1';
+
+            return (
+              <Marker
+                ref={el => (markerRefs.current[index] = el)}
+                key={`${bus.id}-${index}`} // Add index for extra uniqueness
+                coordinate={bus.coordinate}
+                onPress={() => onBusMarkerPressed(bus, index)}
+                image={{uri: busIcon}}>
+                <CustomCallout
+                  navigation={navigation}
+                  routes={ROUTES.ADVANCEPAYMENT}
+                  currentLocation={currentLocation}
+                  eta={eta}
+                  bus={bus}
+                />
+              </Marker>
+            );
+          })}
 
           {/* Draw polyline */}
           {routeCoordinates.length > 0 && (
@@ -647,58 +535,22 @@ const Main = props => {
           ROUTES={ROUTES}
         />
       </View>
-
-      {searchVisible && (
-        <Animated.View style={[styles.searchBox, {height: searchBoxHeight}]}>
-          <TouchableOpacity onPress={hideSearchBox} style={styles.closeButton}>
-            <Icon name="close" size={30} color="black" />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Routes"
-            onChangeText={text => setSearchQuery(text)}
-          />
-
-          {routes.length > 0 && (
-            <FlatList
-              data={filteredRoutes}
-              keyExtractor={(item, index) => `${item.id}-${index}`} // Use index if id might not be unique
-              renderItem={({item}) => (
-                <TouchableOpacity
-                  style={styles.routeItemContainer}
-                  onPress={() => handleRouteItemClick(item.id)}>
-                  <Text style={styles.routeItem}>{item.route_name}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          )}
-        </Animated.View>
-      )}
+      <ProximityAlertModal
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        handleMarkerPlacement={handleMarkerPlacement}
+        selectedRadius={selectedRadius}
+      />
     </SafeAreaView>
   );
 };
 
 export default Main;
 
-const screenHeight = Dimensions.get('window').height;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F4F4FB',
-  },
-  //Callout
-  imageWrapperAndroid: {
-    height: 200,
-    flex: 1,
-    marginTop: -85,
-    width: 330,
-    alignContent: 'center',
-    alignItems: 'center',
-  },
-  imageAndroid: {
-    height: 100,
-    width: 180,
   },
 
   mapContainer: {
@@ -709,48 +561,5 @@ const styles = StyleSheet.create({
 
   map: {
     ...StyleSheet.absoluteFillObject,
-  },
-
-  searchBox: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    zIndex: 1000,
-  },
-  searchInput: {
-    height: 40,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginTop: 30,
-    marginBottom: 20,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-  },
-  routeItemContainer: {
-    padding: 15,
-    backgroundColor: '#f8f8f8',
-    borderRadius: 8,
-    marginVertical: 5,
-    elevation: 1, // for Android shadow
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 5, // for iOS shadow
-  },
-  routeItem: {
-    fontSize: 16,
-    color: '#333',
   },
 });

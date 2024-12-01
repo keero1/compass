@@ -18,7 +18,10 @@ import {
 
 import noLandMarkStyle from "../../styles/map/noLandMarkStyle.json";
 
-import Frieren from "../../assets/images/frieren.png";
+import Frieren from "../../assets/images/user_icon.png";
+import bus1 from "../../assets/images/bus1_final.svg";
+import bus2 from "../../assets/images/bus2_final.png";
+import bus3 from "../../assets/images/bus_alert.svg";
 
 import "./Main.css";
 
@@ -57,7 +60,7 @@ const Main = () => {
   const fetchBusDetails = async (busId) => {
     console.log("fetching bus details");
     try {
-      const busDoc = doc(db, "buses", busId); // Adjust the collection name if needed
+      const busDoc = doc(db, "buses", busId);
       const busSnapshot = await getDoc(busDoc);
 
       if (busSnapshot.exists()) {
@@ -104,8 +107,10 @@ const Main = () => {
             lat: data.coordinates.latitude,
             lng: data.coordinates.longitude,
             timestamp: data.timestamp.toDate(),
+            speed: data.speed,
             id: busId, // Include the bus ID
             details: busDetails, // Include the bus details
+            emergency_status: data.emergency_status,
           };
         })
       );
@@ -185,7 +190,10 @@ const Main = () => {
     setClickedMarkerIndex(index); // Track the clicked marker index
     setInfoWindowOpen({
       details: markers[index].details,
+      speed: markers[index].speed,
+      timestamp: markers[index].timestamp.toLocaleString(),
       markerRef: markerInstancesRef.current[index],
+      emergency_status: markers[index].emergency_status,
     });
   };
 
@@ -193,7 +201,10 @@ const Main = () => {
     const markerRef = markerInstancesRef.current[index];
     setInfoWindowOpen({
       details: markers[index].details,
+      speed: markers[index].speed,
+      timestamp: markers[index].timestamp.toLocaleString(),
       markerRef,
+      emergency_status: markers[index].emergency_status,
     });
   };
 
@@ -227,16 +238,34 @@ const Main = () => {
             }}
             onClick={onMapClick}
           >
-            {markers.map((marker, index) => (
-              <Marker
-                key={index}
-                position={{ lat: marker.lat, lng: marker.lng }}
-                onMouseOver={() => handleHoverMouse(index)}
-                onMouseOut={handleMouseOut}
-                onClick={() => handleMarkerClick(index)}
-                ref={(el) => (markerInstancesRef.current[index] = el)}
-              />
-            ))}
+            {markers.map((marker, index) => {
+              const icon = marker.emergency_status
+                ? {
+                    url: bus3,
+                    scaledSize: new window.google.maps.Size(45, 55),
+                  }
+                : marker.details.route_id === routes[0].id
+                ? {
+                    url: bus1, // Icon for route 1
+                    scaledSize: new window.google.maps.Size(40, 40),
+                  }
+                : {
+                    url: bus2, // Icon for other routes
+                    scaledSize: new window.google.maps.Size(40, 40),
+                  };
+
+              return (
+                <Marker
+                  key={index}
+                  position={{ lat: marker.lat, lng: marker.lng }}
+                  onMouseOver={() => handleHoverMouse(index)}
+                  onMouseOut={handleMouseOut}
+                  onClick={() => handleMarkerClick(index)}
+                  ref={(el) => (markerInstancesRef.current[index] = el)}
+                  icon={icon} // Set the icon for the marker
+                />
+              );
+            })}
 
             {infoWindowOpen && (
               <InfoWindow
@@ -258,10 +287,21 @@ const Main = () => {
                     </div>
                   </div>
                   <div className="text-center text-sm whitespace-nowrap">
+                    {infoWindowOpen.emergency_status && (
+                      <p className="text-red-600">
+                        <strong> 🚨 EMERGENCY: Active 🚨</strong>
+                      </p>
+                    )}
                     <p>
                       <strong>Bus Driver:</strong>{" "}
                       {infoWindowOpen.details.bus_driver_name}
                     </p>
+                    {infoWindowOpen.details.conductor_name && (
+                      <p>
+                        <strong>Conductor:</strong>{" "}
+                        {infoWindowOpen.details.conductor_name}
+                      </p>
+                    )}
                     <p>
                       <strong>Phone Number:</strong>
                       {"(+63) "}
@@ -278,6 +318,21 @@ const Main = () => {
                     <p>
                       <strong>Seat Taken:</strong>{" "}
                       {infoWindowOpen.details.seat_count} / 56
+                    </p>
+                    <p>
+                      <strong>Speed:</strong>{" "}
+                      {infoWindowOpen.emergency_status
+                        ? "NOT AVAILABLE"
+                        : isNaN(infoWindowOpen.speed)
+                        ? 0
+                        : Math.round(infoWindowOpen.speed / 10) * 10}{" "}
+                      {infoWindowOpen.emergency_status ||
+                      isNaN(infoWindowOpen.speed)
+                        ? ""
+                        : "KM/h"}
+                    </p>
+                    <p>
+                      <strong>Last Updated:</strong> {infoWindowOpen.timestamp}
                     </p>
                   </div>
                 </div>

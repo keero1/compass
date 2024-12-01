@@ -10,6 +10,11 @@ import {
   PaymentConfirmation,
   Transactions,
   TransactionDetails,
+  Trip,
+  About,
+  QRCamera,
+  PaymentRequest,
+  Report,
 } from '../screen';
 import {ROUTES} from '../constants';
 import CustomBack from '../components/inputs/CustomBack';
@@ -34,6 +39,65 @@ function HomeNavigator() {
           title: false,
           headerRight: () => <CustomBack navigation={navigation} />,
           headerTransparent: true,
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.PAYMENTREQUEST}
+        component={PaymentRequest}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.TRIP}
+        component={Trip}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.QRCAMERA}
+        component={QRCamera}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerTransparent: true,
+          headerTitle: () => null,
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.ABOUT}
+        component={About}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
+        })}
+      />
+      <InsideStack.Screen
+        name={ROUTES.REPORT}
+        component={Report}
+        options={() => ({
+          ...TransitionPresets.SlideFromRightIOS,
+          gestureDirection: 'horizontal',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#F4F4FB', // Set header background color
+          },
         })}
       />
       <InsideStack.Screen

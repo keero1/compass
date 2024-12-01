@@ -11,9 +11,16 @@ import {
 
 import {useIsFocused} from '@react-navigation/native';
 
-//firebase
+import {
+  ArrowRightCircleIcon,
+  BanknotesIcon,
+  MapPinIcon,
+  ArrowLeftStartOnRectangleIcon,
+  QuestionMarkCircleIcon,
+  ExclamationCircleIcon,
+} from 'react-native-heroicons/solid';
+
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 
 import {IMAGES, ROUTES} from '../../constants';
 
@@ -23,8 +30,6 @@ const Drawer = props => {
   const {navigation} = props;
 
   const focus = useIsFocused();
-
-  const onShutdownPressed = () => {};
 
   // get the name
 
@@ -53,6 +58,10 @@ const Drawer = props => {
     }
   }, [focus]);
 
+  const onTripPressed = () => {
+    navigation.navigate(ROUTES.TRIP);
+  };
+
   const onProfilePress = () => {
     navigation.navigate(ROUTES.PROFILE);
   };
@@ -61,8 +70,45 @@ const Drawer = props => {
     navigation.navigate(ROUTES.PAYMENT);
   };
 
+  // const onPaymentRequestPressed = () => {
+  //   navigation.navigate(ROUTES.PAYMENTREQUEST);
+  // };
+
   const onTransactionPressed = () => {
     navigation.navigate(ROUTES.TRANSACTIONS);
+  };
+
+  const onReportPressed = () => {
+    navigation.navigate(ROUTES.REPORT);
+  };
+
+  const onAboutPressed = () => {
+    navigation.navigate(ROUTES.ABOUT);
+  };
+
+  const onLogoutPressed = () => {
+    Alert.alert('Alert', 'Confirm Logout?', [
+      {
+        text: 'Logout',
+        onPress: async () => {
+          try {
+            await AsyncStorage.clear();
+            console.log('Async Storage Cleared');
+
+            auth()
+              .signOut()
+              .then(() => console.log('User signed out'));
+          } catch (error) {
+            console.error('Error during logout:', error);
+          }
+        },
+      },
+      {
+        text: 'No',
+        onPress: () => console.log('Cancelled'),
+        style: 'cancel',
+      },
+    ]);
   };
 
   return (
@@ -71,7 +117,9 @@ const Drawer = props => {
         <View style={styles.profileContainer}>
           <View style={styles.profileContent}>
             <Image
-              source={profilePicture ? {uri: profilePicture} : IMAGES.logo}
+              source={
+                profilePicture ? {uri: profilePicture} : IMAGES.user_profile
+              }
               style={styles.profileImage}
             />
             <View style={styles.textContainer}>
@@ -86,23 +134,49 @@ const Drawer = props => {
           </View>
         </View>
 
-        {/* Line separator */}
         <View style={styles.separator}></View>
-
-        {/* Touchable Text Components */}
-        <TouchableOpacity onPress={onPaymentPressed}>
+        <TouchableOpacity
+          onPress={onTripPressed}
+          style={styles.menuItemContainer}>
+          <MapPinIcon size={30} color="gray" />
+          <Text style={styles.menuItem}>Trip</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onPaymentPressed}
+          style={styles.menuItemContainer}>
+          <BanknotesIcon size={30} color="gray" />
           <Text style={styles.menuItem}>Payment</Text>
         </TouchableOpacity>
-        {/* Touchable Text Components */}
-        <TouchableOpacity onPress={onTransactionPressed}>
+        {/* <TouchableOpacity
+          onPress={onPaymentRequestPressed}
+          style={styles.menuItemContainer}>
+          <BanknotesIcon size={30} color="gray" />
+          <Text style={styles.menuItem}>Payment Request</Text>
+        </TouchableOpacity> */}
+        <TouchableOpacity
+          onPress={onTransactionPressed}
+          style={styles.menuItemContainer}>
+          <ArrowRightCircleIcon size={30} color="gray" />
           <Text style={styles.menuItem}>Transactions</Text>
         </TouchableOpacity>
-        {/* <TouchableOpacity>
-          <Text style={styles.menuItem}>Settings</Text>
-        </TouchableOpacity> */}
-        {/* <TouchableOpacity onPress={onShutdownPressed}>
-          <Text style={styles.menuItem}>Shutdown</Text>
-        </TouchableOpacity> */}
+        <TouchableOpacity
+          onPress={onReportPressed}
+          style={styles.menuItemContainer}>
+          <ExclamationCircleIcon size={30} color="gray" />
+          <Text style={styles.menuItem}>Report</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onAboutPressed}
+          style={styles.menuItemContainer}>
+          <QuestionMarkCircleIcon size={30} color="gray" />
+          <Text style={styles.menuItem}>About</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onLogoutPressed}
+          style={styles.menuItemContainer}>
+          <ArrowLeftStartOnRectangleIcon size={30} color="red" />
+          <Text style={styles.menuItemX}>Logout</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -143,7 +217,7 @@ const styles = StyleSheet.create({
   },
 
   text: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -173,9 +247,21 @@ const styles = StyleSheet.create({
   },
 
   // Menu items
-  menuItem: {
-    fontSize: 20,
+  menuItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 10,
+  },
+
+  menuItem: {
+    fontSize: 25,
+    marginLeft: 10, // Add margin to the left for spacing
+  },
+
+  menuItemX: {
+    fontSize: 25,
+    marginLeft: 10, // Add margin to the left for spacing
+    color: 'red',
   },
 });
 

@@ -4,30 +4,29 @@ import {
   View,
   StyleSheet,
   Image,
-  useWindowDimensions,
   Text,
   TouchableOpacity,
   Modal,
   TextInput,
   Alert,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 
+import {launchImageLibrary} from 'react-native-image-picker';
+
+import {PlusCircleIcon} from 'react-native-heroicons/solid';
+
 import {useIsFocused} from '@react-navigation/native';
 
-import {COLORS} from '../../../constants';
 import IMAGES from '../../../constants/images';
 
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Profile = props => {
-  const {navigation} = props;
-  const {height} = useWindowDimensions();
-
+const Profile = () => {
   const [profilePicture, setProfilePicture] = useState(null);
 
   const [userFullName, setUserFullName] = useState(null);
@@ -35,8 +34,18 @@ const Profile = props => {
   const [userName, setUserName] = useState(null);
   const [newDriverName, setNewDriverName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [busData, setBusData] = useState([]);
+
+  // password
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordChangeModalVisible, setPasswordChangeModalVisible] =
+    useState(false);
 
   const [loading, setLoading] = useState(false);
+
+  const [loadingModalVisible, setLoadingModalVisible] = useState(false);
 
   const focus = useIsFocused();
 
@@ -70,11 +79,39 @@ const Profile = props => {
     }
   }, [focus]);
 
+  useEffect(() => {
+    const fetchBusData = async () => {
+      try {
+        const busDataString = await AsyncStorage.getItem('bus-data');
+        const routeDataString = await AsyncStorage.getItem('route-data');
+
+        if (busDataString && routeDataString) {
+          const busData = JSON.parse(busDataString);
+
+          // Extract and set only the needed fields
+          setBusData({
+            license_number: busData.license_plate,
+            bus_number: busData.bus_number,
+            route_name: routeDataString.route_name,
+          });
+        }
+      } catch (error) {
+        console.error(
+          'Error fetching bus and route data from AsyncStorage:',
+          error,
+        );
+      }
+    };
+
+    fetchBusData();
+  }, []);
+
   const requestNameChange = async () => {
     const user = auth().currentUser;
 
     if (user && newDriverName.trim() !== '') {
       setLoading(true);
+      setLoadingModalVisible(true);
       try {
         // Check for existing pending requests
         const pendingRequestsSnapshot = await firestore()
@@ -101,50 +138,116 @@ const Profile = props => {
         setModalVisible(false); // Close modal after submission
         setNewDriverName(''); // Reset input
       } catch (error) {
-        console.error('Error submitting name change request:', error);
+        console.log('Error submitting name change request:', error);
         Alert.alert('Error', 'Failed to submit name change request.');
       } finally {
         setLoading(false);
+        setLoadingModalVisible(false);
       }
     } else {
       Alert.alert('Error', 'Please enter a valid driver name.');
     }
   };
 
-  const onLogoutPressed = () => {
-    Alert.alert('Alert', 'Confirm Logout?', [
-      {
-        text: 'Logout',
-        onPress: async () => {
-          try {
-            await AsyncStorage.clear();
-            console.log('Async Storage Cleared');
+  const handleChoosePhoto = async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      maxWidth: 300,
+      maxHeight: 300,
+      quality: 0.5,
+    });
 
-            auth()
-              .signOut()
-              .then(() => console.log('User signed out'));
-          } catch (error) {
-            console.error('Error during logout:', error);
-          }
-        },
-      },
-      {
-        text: 'No',
-        onPress: () => console.log('Cancelled'),
-        style: 'cancel',
-      },
-    ]);
+    if (!result.didCancel && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const fileName = `profilePicture/${auth().currentUser.uid}_${Date.now()}`;
+
+      setLoading(true);
+      setLoadingModalVisible(true);
+      try {
+        const reference = storage().ref(fileName);
+        await reference.putFile(uri);
+        const imageUrl = await reference.getDownloadURL();
+
+        // Update Firestore
+        await firestore()
+          .collection('buses')
+          .doc(auth().currentUser.uid)
+          .update({
+            profile_picture: imageUrl,
+          });
+
+        setProfilePicture(imageUrl);
+
+        const existingBusData = await AsyncStorage.getItem('bus-data');
+        if (existingBusData) {
+          const busData = JSON.parse(existingBusData);
+          busData.profile_picture = imageUrl; // Modify the profile picture field
+          await AsyncStorage.setItem('bus-data', JSON.stringify(busData)); // Save updated bus data
+        }
+
+        Alert.alert('Success', 'Profile picture updated successfully!');
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        Alert.alert('Error', 'Failed to update profile picture.');
+      } finally {
+        setLoading(false);
+        setLoadingModalVisible(false);
+      }
+    }
+  };
+
+  // change password
+  const handleChangePassword = async () => {
+    const user = auth().currentUser;
+
+    if (newPassword === confirmNewPassword) {
+      setLoading(true);
+      try {
+        // Reauthenticate the user
+        const credential = auth.EmailAuthProvider.credential(
+          user.email,
+          currentPassword,
+        );
+        await user.reauthenticateWithCredential(credential);
+
+        // Update password
+        await user.updatePassword(newPassword);
+        Alert.alert('Success', 'Password changed successfully!');
+        setPasswordChangeModalVisible(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } catch (error) {
+        console.log('Error changing password:', error);
+        Alert.alert(
+          'Error',
+          'Failed to change password. Please check your current password and try again.',
+        );
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      Alert.alert('Error', 'New passwords do not match.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.main}>
       <View style={styles.logoContainer}>
-        <View>
-          <Image
-            source={profilePicture ? {uri: profilePicture} : IMAGES.logo}
-            style={styles.logo}
-          />
-        </View>
+        <TouchableOpacity onPress={handleChoosePhoto} disabled={loading}>
+          <View>
+            <Image
+              source={
+                profilePicture ? {uri: profilePicture} : IMAGES.user_profile
+              }
+              style={styles.logo}
+            />
+            <View style={styles.iconOverlay}>
+              <PlusCircleIcon size={40} color="gray" />
+            </View>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -153,23 +256,52 @@ const Profile = props => {
             <Text style={styles.sectionTitle}>Account Details</Text>
 
             <View style={styles.detailBox}>
-              <TouchableOpacity
-                style={styles.detailItem}
-                onPress={() => setModalVisible(true)}>
+              <View style={styles.detailItem}>
                 <Text style={styles.detailTitle}>Full Name</Text>
                 <Text style={styles.detailText}>
                   {userFullName || 'ComPass Driver'}
                 </Text>
-              </TouchableOpacity>
+              </View>
 
               <View style={styles.separator} />
 
-              <TouchableOpacity style={styles.detailItem}>
+              <View style={styles.detailItem}>
                 <Text style={styles.detailTitle}>Phone Number</Text>
                 <Text style={styles.detailText}>
                   (+63) {phoneNumber || 912345678}
                 </Text>
-              </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>Bus Information</Text>
+
+            <View style={styles.detailBox}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailTitle}>Route Name</Text>
+                <Text style={styles.detailText}>
+                  {busData.route_name || 'license'}
+                </Text>
+              </View>
+
+              <View style={styles.separator} />
+
+              <View style={styles.detailItem}>
+                <Text style={styles.detailTitle}>Bus License</Text>
+                <Text style={styles.detailText}>
+                  {busData.license_number || 'license'}
+                </Text>
+              </View>
+
+              <View style={styles.separator} />
+
+              <View style={styles.detailItem}>
+                <Text style={styles.detailTitle}>Bus Number</Text>
+                <Text style={styles.detailText}>
+                  {busData.bus_number || 'bus number'}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -186,19 +318,8 @@ const Profile = props => {
 
               <TouchableOpacity
                 style={styles.detailItemX}
-                onPress={() => console.log('password')}>
+                onPress={() => setPasswordChangeModalVisible(true)}>
                 <Text style={styles.detailTitle}>Password</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.sectionBox}>
-            <Text style={styles.sectionTitle}>Advanced</Text>
-            <View style={styles.detailBox}>
-              <TouchableOpacity
-                style={styles.detailItemX}
-                onPress={onLogoutPressed}>
-                <Text style={styles.deleteAccounText}>Logout</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -239,6 +360,75 @@ const Profile = props => {
             </View>
           </View>
         </Modal>
+
+        {/* Change Password Modal */}
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={passwordChangeModalVisible}
+          onRequestClose={() => setPasswordChangeModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Change Password</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Current Password"
+                secureTextEntry
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="New Password"
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Confirm New Password"
+                secureTextEntry
+                value={confirmNewPassword}
+                onChangeText={setConfirmNewPassword}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  disabled={loading}
+                  onPress={handleChangePassword}>
+                  <Text style={styles.modalButtonText}>
+                    {loading ? 'Changing Password...' : 'Change Password'}{' '}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  disabled={loading}
+                  onPress={() => {
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmNewPassword('');
+                    setPasswordChangeModalVisible(false);
+                  }}>
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={loadingModalVisible}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Uploading...</Text>
+              <Text style={styles.modalText}>
+                Please wait while we update your profile picture.
+              </Text>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -257,6 +447,13 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
+  },
+  iconOverlay: {
+    position: 'absolute',
+    bottom: 5, // Position at the bottom
+    right: 5, // Position to the right
+    borderRadius: 20, // Half of icon size to make it a circle
+    padding: 5,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -292,10 +489,6 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 16,
-  },
-  deleteAccounText: {
-    fontSize: 16,
-    color: '#FF0000',
   },
   separator: {
     height: 1,
@@ -349,6 +542,9 @@ const styles = StyleSheet.create({
   },
   modalCancelButton: {
     backgroundColor: '#FF0000',
+    // Add the same centering properties if not already included
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
