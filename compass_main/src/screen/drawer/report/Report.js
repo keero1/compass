@@ -5,11 +5,11 @@ import {
   FlatList,
   View,
   ActivityIndicator,
-  Button,
+  TouchableOpacity,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import firestore from '@react-native-firebase/firestore';
-import { Linking } from 'react-native';
+import {Linking} from 'react-native';
 
 const Report = () => {
   const [reports, setReports] = useState([]); // State to hold report data
@@ -49,6 +49,15 @@ const Report = () => {
     );
   };
 
+  const getStatusColor = status => {
+    if (status === 'Cancelled' || status === 'Closed') {
+      return '#E74C3C';
+    } else if (status === 'Active') {
+      return '#27AE60';
+    }
+    return '#888';
+  };
+
   const renderReport = ({item}) => (
     <View style={styles.reportContainer}>
       <Text style={styles.reportSubject}>{item.subject}</Text>
@@ -56,30 +65,29 @@ const Report = () => {
         Driver: {item.bus_driver_name} | Type: {item.bus_type} | Conductor:{' '}
         {item.conductor_name}
       </Text>
-      <Text style={styles.reportCoordinates}>
-        Coordinates: {item.coordinates.latitude}, {item.coordinates.longitude}
-      </Text>
       <Text style={styles.reportTimestamp}>
         Reported on {item.timestamp?.toDate().toLocaleDateString()} at{' '}
         {item.timestamp?.toDate().toLocaleTimeString()}
       </Text>
-      <Text style={styles.reportTimestamp}>Status: {item.status}</Text>
-      <Button
-        title="View in Map"
+      <Text style={[styles.reportStatus, {color: getStatusColor(item.status)}]}>
+        Status: {item.status}
+      </Text>
+      <TouchableOpacity
+        style={styles.button}
         onPress={() =>
           openGoogleMaps(item.coordinates.latitude, item.coordinates.longitude)
-        }
-        color="#176B87" // Set the button color
-      />
+        }>
+        <Text style={styles.buttonText}>View on Map</Text>
+      </TouchableOpacity>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#176B87" /> // Show loading spinner
+        <ActivityIndicator size="large" color="#3498db" />
       ) : error ? (
-        <Text style={styles.errorText}>{error}</Text> // Show error message
+        <Text style={styles.errorText}>{error}</Text>
       ) : (
         <FlatList
           data={reports}
@@ -92,49 +100,62 @@ const Report = () => {
   );
 };
 
-// Styles for the report page
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F4FB',
-    paddingHorizontal: 20,
+    backgroundColor: '#FAFAFA', // Light background color
+    paddingHorizontal: 16,
   },
   listContent: {
     paddingVertical: 16,
   },
   reportContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
     padding: 20,
-    borderRadius: 10,
-    marginBottom: 12,
+    borderRadius: 12,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 5,
   },
   reportSubject: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#333',
-    marginBottom: 6,
-  },
-  reportDetails: {
-    fontSize: 15,
-    color: '#666',
     marginBottom: 8,
   },
-  reportCoordinates: {
-    fontSize: 13,
-    color: '#999',
-    marginBottom: 6,
+  reportDetails: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 12,
   },
   reportTimestamp: {
     fontSize: 12,
-    color: '#999',
+    color: '#888',
     marginBottom: 6,
   },
+  reportStatus: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#27AE60', // Green for active status
+    marginBottom: 8,
+  },
+  button: {
+    backgroundColor: '#176B87', // Modern blue color
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   errorText: {
-    color: 'red',
+    color: '#E74C3C',
     textAlign: 'center',
     fontSize: 16,
   },

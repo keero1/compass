@@ -118,11 +118,22 @@ const Main = props => {
   }, []);
 
   useEffect(() => {
-    // Fetch initial location
+    let movementTimer = null;
+
+    const processLocation = (position, isInitial, hasMoved) => {
+      const {latitude, longitude, speed} = position.coords;
+      const speedInKmh = isInitial || hasMoved ? 0 : speed * 3.6;
+      setCurrentLocation({latitude, longitude});
+      updateBusLocation(latitude, longitude, speedInKmh);
+
+      console.log(
+        `${isInitial ? 'Initial' : 'Current'} Speed: ${speedInKmh} km/h`,
+      );
+    };
+
     Geolocation.getCurrentPosition(
       position => {
-        const {latitude, longitude, speed} = position.coords;
-        setCurrentLocation({latitude, longitude});
+        const {latitude, longitude} = position.coords;
         setInitialRegion({
           latitude,
           longitude,
@@ -130,46 +141,60 @@ const Main = props => {
           longitudeDelta: 0.01,
         });
 
-        const speedInKmh = speed * 3.6; // m/s to km/h
-        console.log('Initial Speed: ', speedInKmh, 'km/h');
-
-        // Send initial location to Firestore
-        updateBusLocation(latitude, longitude, speedInKmh);
+        processLocation(position, true);
       },
       error => {
         console.error(error);
       },
-      {enableHighAccuracy: true, interval: 20000},
+      {enableHighAccuracy: true},
     );
 
     fetchSeatCount();
 
-    // Set interval to update location every 100 meter
     const watchId = Geolocation.watchPosition(
       position => {
-        const {latitude, longitude, speed} = position.coords;
-        setCurrentLocation({latitude, longitude});
+        processLocation(position, false, false);
 
-        // Send updated location to Firestore
-        const speedInKmh = speed * 3.6; // m/s to km/h
-        console.log('Current Speed: ', speedInKmh, 'km/h');
-        updateBusLocation(latitude, longitude, speedInKmh);
+        if (movementTimer) {
+          clearInterval(movementTimer);
+        }
+
+        movementTimer = setInterval(() => {
+          console.log('Checking if the bus has moved...');
+          handleNoMovement();
+        }, 60 * 1000);
       },
       error => {
         console.error(error);
       },
       {
         enableHighAccuracy: true,
-        distanceFilter: 100, // Trigger updates only if the device moves more than 100 meters
-        interval: 30000, //updates 30 seconds if no movement
+        distanceFilter: 100,
       },
     );
 
-    // Cleanup interval on unmount
-    return () => Geolocation.clearWatch(watchId);
-  }, []); // Empty dependency array to run only on mount
+    // no movement
+    const handleNoMovement = () => {
+      console.log("Bus hasn't moved for a while. triggering fallback...");
+      Geolocation.getCurrentPosition(
+        position => {
+          processLocation(position, false, true); // Force update
+        },
+        error => {
+          console.error(error);
+        },
+        {enableHighAccuracy: true},
+      );
+    };
 
-  // Function to update bus location in Firestore
+    return () => {
+      if (movementTimer) {
+        clearInterval(movementTimer); // Clean up the interval when the component unmounts
+      }
+      Geolocation.clearWatch(watchId); // Clear the watch position
+    };
+  }, []);
+
   const updateBusLocation = async (latitude, longitude, speed) => {
     try {
       const busDocRef = firestore().collection('busLocation').doc(user);
@@ -297,8 +322,14 @@ const Main = props => {
     setIsModalVisible(true); // Show modal on button press
   };
 
-  const handleConfirmAlert = async () => {
+  const handleButtonPress = async () => {
     setIsLoading(true);
+
+    if (emergencyStatus) {
+      stopEmergency();
+      return;
+    }
+
     try {
       // Get bus data from AsyncStorage
       const busData = await AsyncStorage.getItem('bus-data');
@@ -313,26 +344,6 @@ const Main = props => {
         ) {
           const {latitude, longitude} = currentLocation;
 
-          // Check if there's already an active emergency report for this bus_id
-          const emergencySnapshot = await firestore()
-            .collection('reportEmergency')
-            .where('bus_id', '==', parsedBusData.bus_id)
-            .where('status', 'in', ['Active', 'Pending'])
-            .get();
-
-          if (!emergencySnapshot.empty) {
-            // If there's already an active report, update emergency status in AsyncStorage and local state
-            console.log('Emergency report already active for this bus');
-            await AsyncStorage.setItem(
-              'emergency-status',
-              JSON.stringify(true),
-            ); // Save status
-            setEmergencyStatus(true);
-            ToastAndroid.show('Emergency already reported', ToastAndroid.SHORT);
-            return; // Do nothing further
-          }
-
-          // Otherwise, create a new emergency report
           const emergencyData = {
             subject: `Emergency Report`,
             bus_id: parsedBusData.bus_id,
@@ -376,14 +387,43 @@ const Main = props => {
     }
   };
 
-  const handleCancelAlert = async () => {
+  const stopEmergency = async () => {
     try {
-      setEmergencyStatus(false);
+      const querySnapshot = await firestore()
+        .collection('reportEmergency')
+        .where('bus_id', '==', user)
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+        .get();
+
+      if (!querySnapshot.empty) {
+        const latestReportDoc = querySnapshot.docs[0];
+        const reportId = latestReportDoc.id;
+
+        await firestore().collection('reportEmergency').doc(reportId).update({
+          status: 'Cancelled',
+          cancelled_by_user: true,
+          cancellation_timestamp: firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log('Latest emergency report status updated to "Cancelled"');
+      } else {
+        console.log('No emergency reports found for the user');
+      }
+
+      await firestore().collection('busLocation').doc(user).update({
+        emergency_status: false,
+      });
+
       await AsyncStorage.setItem('emergency-status', JSON.stringify(false)); // Save status
-      console.log('Emergency Alert Canceled');
+
+      console.log('Emergency Alert stopped');
     } catch (error) {
       console.error('Error canceling emergency status:', error);
     } finally {
+      setEmergencyStatus(false);
+      setIsLoading(false);
+      ToastAndroid.show('EMERGENCY ALERT STOPPED', ToastAndroid.SHORT);
       setIsModalVisible(false); // Close modal
     }
   };
@@ -470,28 +510,29 @@ const Main = props => {
             <Text style={styles.modalTitle}>Report Emergency</Text>
 
             {/* Warning Message */}
-            <Text style={styles.modalWarning}>
-              This action will alert the admin and should only be used in case
-              of an actual emergency or accident.
-            </Text>
+            {emergencyStatus ? (
+              <Text style={styles.modalWarning}>
+                An emergency has already been reported. Press "Stop" to cancel
+                the emergency alert if the situation is resolved.
+              </Text>
+            ) : (
+              <Text style={styles.modalWarning}>
+                This action will alert the admin and should only be used in case
+                of an actual emergency or accident.
+              </Text>
+            )}
 
             {/* Loading Spinner */}
             {isLoading ? (
               <ActivityIndicator size="large" color="#f00" />
             ) : (
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  onPress={handleConfirmAlert}
-                  disabled={emergencyStatus}
-                  style={styles.modalButton}>
-                  <Text style={styles.modalButtonText}>Report</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleCancelAlert}
-                  style={styles.modalButton}>
-                  <Text style={styles.modalButtonText}>Stop</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                onPress={handleButtonPress}
+                style={styles.modalButton}>
+                <Text style={styles.modalButtonText}>
+                  {emergencyStatus ? 'Stop' : 'Report'}
+                </Text>
+              </TouchableOpacity>
             )}
           </View>
         </View>
