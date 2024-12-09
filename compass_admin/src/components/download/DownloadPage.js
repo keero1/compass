@@ -6,7 +6,7 @@ import Footer from "./Footer";
 // Import the CSS file for animations
 import "./fadeAnimations.css";
 
-import appUI from "../../assets/images/app_ui.png";
+import appUI from "../../assets/images/app_ui_2.png";
 import appIcon from "../../assets/images/app_icon.png";
 
 function DownloadPage() {
