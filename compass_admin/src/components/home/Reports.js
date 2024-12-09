@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { db } from "../../firebase/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, doc, updateDoc, onSnapshot } from "firebase/firestore";
 
 const reportsCollection = collection(db, "reportEmergency");
 
@@ -23,35 +23,40 @@ const Reports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
 
-  const fetchReportData = useCallback(async () => {
-    try {
-      const querySnapshot = await getDocs(reportsCollection);
-      const fetchedReports = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
+  const fetchReportData = useCallback(() => {
+    const unsubscribe = onSnapshot(
+      reportsCollection,
+      (querySnapshot) => {
+        const fetchedReports = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
 
-        return {
-          report_id: doc.id,
-          createdAt: data.timestamp.toDate(), // Save raw timestamp
-          date: formatDate(data.timestamp), // Use formatted date
-          busDriverName: data.bus_driver_name,
-          busNumber: data.bus_number,
-          busType: data.bus_type,
-          conductorName: data.conductor_name,
-          phoneNumber: data.phone_number,
-          subject: data.subject,
-          status: data.status,
-        };
-      });
+          return {
+            report_id: doc.id,
+            createdAt: data.timestamp.toDate(), // Save raw timestamp
+            date: formatDate(data.timestamp), // Use formatted date
+            busDriverName: data.bus_driver_name,
+            busNumber: data.bus_number,
+            busType: data.bus_type,
+            conductorName: data.conductor_name,
+            phoneNumber: data.phone_number,
+            subject: data.subject,
+            status: data.status,
+          };
+        });
 
-      // Sort reports based on timestamp in descending order
-      fetchedReports.sort((a, b) => b.createdAt - a.createdAt);
+        // Sort reports based on timestamp in descending order
+        fetchedReports.sort((a, b) => b.createdAt - a.createdAt);
 
-      setReports(fetchedReports);
-    } catch (error) {
-      console.error("Error fetching report data:", error);
-    } finally {
-      setLoading(false);
-    }
+        setReports(fetchedReports);
+        setLoading(false); // Once data is received, stop loading
+      },
+      (error) => {
+        console.error("Error fetching report data:", error);
+        setLoading(false); // Stop loading in case of an error
+      }
+    );
+
+    return unsubscribe; // Return the unsubscribe function to stop listening when component unmounts
   }, []);
 
   useEffect(() => {
@@ -121,31 +126,33 @@ const Reports = () => {
     setIsSaving(true);
     try {
       const reportRef = doc(db, "reportEmergency", selectedReport.report_id);
-      const newStatus =
-        selectedReport.status === "Pending" ? "Closed" : "Pending";
 
-      await updateDoc(reportRef, {
-        status: newStatus,
-      });
-
-      if (newStatus === "Closed") {
-        const busId = selectedReport.busNumber;
-
-        const busLocationRef = doc(db, "busLocation", busId);
-
-        await updateDoc(busLocationRef, {
-          emergency_status: false,
+      if (selectedReport.status === "Active") {
+        await updateDoc(reportRef, {
+          status: "Pending",
         });
 
-        console.log(`Emergency status for bus ${busId} set to false`);
+        setSelectedReport((prev) => ({
+          ...prev,
+          status: "Pending",
+        }));
+
+        alert(`Successfully updated the report status to Pending.`);
       }
 
-      setSelectedReport((prev) => ({
-        ...prev,
-        status: newStatus,
-      }));
+      if (selectedReport.status === "Pending") {
+        await updateDoc(reportRef, {
+          status: "Closed", // Change this to your desired closed status
+        });
 
-      alert(`Successfully updated the report status to ${newStatus}.`);
+        setSelectedReport((prev) => ({
+          ...prev,
+          status: "Closed", // Update locally to match the new status
+        }));
+
+        alert(`Successfully closed the report.`);
+      }
+
       fetchReportData();
       closeModal();
     } catch (error) {
@@ -194,6 +201,7 @@ const Reports = () => {
             <option value="active">Active</option>
             <option value="pending">Pending</option>
             <option value="closed">Closed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
         <table className="table w-full">
@@ -319,16 +327,20 @@ const Reports = () => {
             </div>
 
             <div className="modal-action">
-              {selectedReport.status !== "Closed" && (
+              {selectedReport.status === "Active" && (
                 <button
                   onClick={handleChangeStatus}
                   className={`btn ${isSaving ? "btn-disabled" : "btn-primary"}`}
                 >
-                  {isSaving
-                    ? "Processing..."
-                    : selectedReport.status === "Pending"
-                    ? "Close"
-                    : "Mark as Pending"}
+                  {isSaving ? "Processing..." : "Mark as Pending"}
+                </button>
+              )}
+              {selectedReport.status === "Pending" && (
+                <button
+                  onClick={handleChangeStatus}
+                  className={`btn ${isSaving ? "btn-disabled" : "btn-primary"}`}
+                >
+                  {isSaving ? "Processing..." : "Close"}
                 </button>
               )}
               <button className="btn" onClick={closeModal}>
