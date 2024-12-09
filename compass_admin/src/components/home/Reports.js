@@ -41,6 +41,7 @@ const Reports = () => {
             phoneNumber: data.phone_number,
             subject: data.subject,
             status: data.status,
+            bus_id: data.bus_id,
           };
         });
 
@@ -141,6 +142,8 @@ const Reports = () => {
       }
 
       if (selectedReport.status === "Pending") {
+        const busLocationRef = doc(db, "busLocation", selectedReport.bus_id);
+
         await updateDoc(reportRef, {
           status: "Closed", // Change this to your desired closed status
         });
@@ -149,6 +152,10 @@ const Reports = () => {
           ...prev,
           status: "Closed", // Update locally to match the new status
         }));
+
+        await updateDoc(busLocationRef, {
+          emergency_status: false,
+        });
 
         alert(`Successfully closed the report.`);
       }
