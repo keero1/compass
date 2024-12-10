@@ -194,8 +194,6 @@ const Reports = () => {
             onChange={handleFilterChange}
           >
             <option value="all">All Subjects</option>
-            <option value="Accident">Accident</option>
-            <option value="Maintenance">Maintenance</option>
             <option value="Emergency Report">Emergency</option>
           </select>
           <select

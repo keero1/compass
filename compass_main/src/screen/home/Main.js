@@ -60,6 +60,40 @@ const Main = props => {
   const [routeCoordinates, setRouteCoordinates] = useState([]);
 
   useEffect(() => {
+    const unsubscribe = firestore()
+      .collection('reportEmergency')
+      .where('bus_id', '==', user)
+      .onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(async change => {
+          if (change.type === 'modified') {
+            const reportData = change.doc.data();
+
+            if (reportData.status === 'Closed') {
+              setEmergencyStatus(false);
+              console.log('Emergency report closed by admin');
+
+              try {
+                await AsyncStorage.setItem(
+                  'emergencyStatus',
+                  JSON.stringify(true),
+                );
+              } catch (error) {
+                console.error(
+                  'Error updating emergency status in AsyncStorage:',
+                  error,
+                );
+              }
+            } else if (reportData.status === 'Active') {
+              setEmergencyStatus(true);
+            }
+          }
+        });
+      });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const fetchEmergencyStatus = async () => {
       try {
         const storedStatus = await AsyncStorage.getItem('emergency-status');
