@@ -58,13 +58,13 @@ function App() {
           <Route
             path="/d/user"
             element={
-              <Download fileUrl="https://github.com/keero1/compass-bin/releases/download/1.0.0/compass_user.apk" />
+              <Download fileUrl="https://github.com/keero1/compass-bin/releases/download/1.0.1/compass-passenger.apk" />
             }
           />
           <Route
             path="/d/bus-driver"
             element={
-              <Download fileUrl="https://github.com/keero1/compass-bin/releases/download/1.0.0/compass_bus.apk" />
+              <Download fileUrl="https://github.com/keero1/compass-bin/releases/download/1.0.1/compass-driver.apk" />
             }
           />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
